@@ -1,6 +1,6 @@
 import * as pathUtil from 'path';
 import * as ts from 'typescript';
-import { getDecorators } from '../utils/decoratorUtils';
+import {getDecorators, getDecoratorTextValue} from '../utils/decoratorUtils';
 import { getJSDocDescription, getJSDocTag, isExistJSDocTag } from '../utils/jsDocUtils';
 import { normalizePath } from '../utils/pathUtils';
 import { EndpointGenerator } from './endpointGenerator';
@@ -101,6 +101,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         this.method = methodDecorator.text.toLowerCase();
         this.debugger('Processing method %s decorators.', this.getCurrentLocation());
 
+        /*
         const pathDecorators = getDecorators(this.node, decorator => decorator.text === 'Path');
 
         if (pathDecorators && pathDecorators.length > 1) {
@@ -112,6 +113,26 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         } else {
             this.path = '';
         }
+         */
+        const values : Array<string> = [];
+
+        try {
+            const path : string | undefined = getDecoratorTextValue(this.node, decorator => decorator.text === 'Path');
+            if(typeof path === 'undefined') {
+                const httpMethod : string | undefined = getDecoratorTextValue(this.node, decorator => ['Get','Post','Put','All','Delete','Patch','Options','Head'].indexOf(decorator.text) !== -1);
+                if(typeof httpMethod !== 'undefined') {
+                    values.push(httpMethod);
+                }
+            } else {
+                values.push(path);
+            }
+
+        } catch (e) {
+            console.log(e);
+        }
+
+        this.path = values.length > 0 ? normalizePath(values.join('/')) : '';
+
         this.debugger('Mapping endpoint %s %s', this.method, this.path);
     }
 
@@ -169,6 +190,6 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     }
 
     private supportsPathMethod(method: string) {
-        return ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS', 'HEAD'].some(m => m === method);
+        return ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS', 'HEAD'].some(m => m.toLowerCase() === method.toLowerCase());
     }
 }

@@ -13,7 +13,18 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
 
     constructor(node: ts.ClassDeclaration) {
         super(node, 'controllers');
-        this.pathValue = normalizePath(getDecoratorTextValue(node, decorator => decorator.text === 'Path'));
+        const values : Array<string> = [getDecoratorTextValue(node, decorator => decorator.text === 'Path' || decorator.text === 'Controller')];
+
+        try {
+            const httpMethod : string | undefined = getDecoratorTextValue(node, decorator => ['Get','Post','Put','All','Delete','Patch','Options','Head'].indexOf(decorator.text) !== -1);
+            if(typeof httpMethod !== 'undefined') {
+                values.push(httpMethod);
+            }
+        } catch (e) {
+            console.log(e);
+        }
+
+        this.pathValue = normalizePath(values.join('/'));
     }
 
     public isValid() {
@@ -63,16 +74,16 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
 
     private buildMethodsForClass(node: ts.ClassDeclaration, genericTypeMap?: Map<String, ts.TypeNode>) {
         return node.members
-            .filter(m => (m.kind === ts.SyntaxKind.MethodDeclaration))
-            .filter(m => !isDecorator(m, decorator => 'Hidden' === decorator.text))
+            .filter((m: { kind: any; }) => (m.kind === ts.SyntaxKind.MethodDeclaration))
+            .filter((m: any) => !isDecorator(m, decorator => 'Hidden' === decorator.text))
             .map((m: ts.MethodDeclaration) => new MethodGenerator(m, this.pathValue || '', genericTypeMap))
-            .filter(generator => {
+            .filter((generator: MethodGenerator) => {
                 if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {
                     this.genMethods.add(generator.getMethodName());
                     return true;
                 }
                 return false;
             })
-            .map(generator => generator.generate());
+            .map((generator: MethodGenerator) => generator.generate());
     }
 }
