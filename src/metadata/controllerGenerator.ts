@@ -21,7 +21,7 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
                 values.push(httpMethod);
             }
         } catch (e) {
-            console.log(e);
+            //g(e);
         }
 
         this.pathValue = normalizePath(values.join('/'));
@@ -73,6 +73,10 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
     }
 
     private buildMethodsForClass(node: ts.ClassDeclaration, genericTypeMap?: Map<String, ts.TypeNode>) {
+        if(typeof node === 'undefined') {
+            return [];
+        }
+
         return node.members
             .filter((m: { kind: any; }) => (m.kind === ts.SyntaxKind.MethodDeclaration))
             .filter((m: any) => !isDecorator(m, decorator => 'Hidden' === decorator.text))

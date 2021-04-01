@@ -1,10 +1,9 @@
-import * as debug from 'debug';
-import * as glob from 'glob';
+import {sync} from 'glob';
 import * as _ from 'lodash';
-import * as mm from 'minimatch';
 import * as ts from 'typescript';
 import { isDecorator } from '../utils/decoratorUtils';
 import { ControllerGenerator } from './controllerGenerator';
+import M = require("minimatch");
 
 export class MetadataGenerator {
     public static current: MetadataGenerator;
@@ -13,7 +12,7 @@ export class MetadataGenerator {
     private readonly program: ts.Program;
     private referenceTypes: { [typeName: string]: ReferenceType } = {};
     private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: ReferenceType }) => void>();
-    private debugger = debug('typescript-rest-swagger:metadata');
+    private debugger = (msg: string, data?: any, options?: any) => msg;
 
     constructor(entryFile: string | Array<string>, compilerOptions: ts.CompilerOptions, private readonly  ignorePaths?: Array<string>) {
         const sourceFiles = this.getSourceFiles(entryFile);
@@ -26,16 +25,16 @@ export class MetadataGenerator {
     }
 
     public generate(): Metadata {
-        this.program.getSourceFiles().forEach(sf => {
+        this.program.getSourceFiles().forEach((sf: any) => {
             if (this.ignorePaths && this.ignorePaths.length) {
                 for (const path of this.ignorePaths) {
-                    if(!sf.fileName.includes('node_modules/typescript-rest/') && mm(sf.fileName, path)) {
+                    if(!sf.fileName.includes('node_modules/typescript-rest/') && M(sf.fileName, path)) {
                         return;
                     }
                 }
             }
 
-            ts.forEachChild(sf, node => {
+            ts.forEachChild(sf, (node: any) => {
                 this.nodes.push(node);
             });
         });
@@ -100,8 +99,8 @@ export class MetadataGenerator {
         const options = { cwd: process.cwd() };
         sourceFilesExpressions.forEach(pattern => {
             this.debugger('Searching pattern: %s with options: %j', pattern, options);
-            const matches = glob.sync(pattern, options);
-            matches.forEach(file => result.add(file));
+            const matches = sync(pattern, options);
+            matches.forEach(file => {result.add(file) });
         });
 
         return Array.from(result);
@@ -111,6 +110,7 @@ export class MetadataGenerator {
         return this.nodes
             .filter(node => node.kind === ts.SyntaxKind.ClassDeclaration)
             .filter(node => !isDecorator(node, decorator => 'Hidden' === decorator.text))
+            .filter(node => isDecorator(node, decorator => decorator.text === 'Path' || decorator.text === 'Controller'))
             .map((classDeclaration: ts.ClassDeclaration) => new ControllerGenerator(classDeclaration))
             .filter(generator => generator.isValid())
             .map(generator => generator.generate());

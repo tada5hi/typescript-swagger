@@ -652,7 +652,7 @@ function getSubClassGenericTypes(genericTypeMap?: Map<String, ts.TypeNode>, type
 }
 
 export function getSuperClass(node: ts.ClassDeclaration, typeArguments?: Map<String, ts.TypeNode>) {
-    const clauses = node.heritageClauses;
+    const clauses = node?.heritageClauses;
     if (clauses) {
         const filteredClauses = clauses.filter(clause => clause.token === ts.SyntaxKind.ExtendsKeyword);
         if (filteredClauses.length > 0) {
@@ -671,7 +671,7 @@ export function getSuperClass(node: ts.ClassDeclaration, typeArguments?: Map<Str
 
 function buildGenericTypeMap(node: ts.ClassDeclaration, typeArguments?: ReadonlyArray<ts.TypeNode>) {
     const result: Map<String, ts.TypeNode> = new Map<String, ts.TypeNode>();
-    if (node.typeParameters && typeArguments) {
+    if (typeof node !== 'undefined' && node.typeParameters && typeArguments) {
         node.typeParameters.forEach((typeParam, index) => {
             const paramName = typeParam.name.text;
             result.set(paramName, typeArguments[index]);

@@ -1,6 +1,5 @@
 'use strict';
 
-import * as debug from 'debug';
 import * as _ from 'lodash';
 import * as ts from 'typescript';
 import { getDecorators } from '../utils/decoratorUtils';
@@ -9,11 +8,10 @@ import { resolveType } from './resolveType';
 
 export abstract class EndpointGenerator<T extends ts.Node> {
     protected node: T;
-    protected debugger: debug.Debugger;
+    protected debugger = (msg: string, data?: any, options?: any) => msg;
 
     constructor(node: T, name: string) {
         this.node = node;
-        this.debugger = debug(`typescript-rest-swagger:metadata:${name}`);
     }
 
     protected getDecoratorValues(decoratorName: string, acceptMultiple: boolean = false) {

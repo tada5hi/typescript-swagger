@@ -18,14 +18,19 @@ export class ParameterGenerator {
             case 'Param':
                 return this.getRequestParameter(this.parameter);
             case 'CookieParam':
+            case 'Cookies':
                 return this.getCookieParameter(this.parameter);
             case 'FormParam':
+            case 'Body':
                 return this.getFormParameter(this.parameter);
             case 'HeaderParam':
+            case 'Headers':
                 return this.getHeaderParameter(this.parameter);
             case 'QueryParam':
+            case 'Query':
                 return this.getQueryParameter(this.parameter);
             case 'PathParam':
+            case 'Params':
                 return this.getPathParameter(this.parameter);
             case 'FileParam':
                 return this.getFileParameter(this.parameter);
@@ -37,6 +42,9 @@ export class ParameterGenerator {
             case 'ContextNext':
             case 'ContextLanguage':
             case 'ContextAccept':
+            case 'Request':
+            case 'Response':
+            case 'Next':
                 return this.getContextParameter(this.parameter);
             default:
                 return this.getBodyParameter(this.parameter);
@@ -56,10 +64,11 @@ export class ParameterGenerator {
         if (!this.supportsBodyParameters(this.method)) {
             throw new Error(`Param can't support '${this.getCurrentLocation()}' method.`);
         }
+
         return {
             description: this.getParameterDescription(parameter),
             in: 'param',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'Param') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'Param' || ident.text === 'Params') || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken,
             type: type
@@ -142,7 +151,7 @@ export class ParameterGenerator {
         return {
             description: this.getParameterDescription(parameter),
             in: 'cookie',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'CookieParam') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'CookieParam' || ident.text === 'Cookies') || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: {typeName: ''}
@@ -178,7 +187,7 @@ export class ParameterGenerator {
         return {
             description: this.getParameterDescription(parameter),
             in: 'header',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'HeaderParam') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'HeaderParam' || ident.text === 'Headers') || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: type
@@ -187,7 +196,7 @@ export class ParameterGenerator {
 
     private getQueryParameter(parameter: ts.ParameterDeclaration): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
-        const parameterOptions = getDecoratorOptions(this.parameter, ident => ident.text === 'QueryParam') || {};
+        const parameterOptions = getDecoratorOptions(this.parameter, ident => ident.text === 'QueryParam' || ident.text === 'Query') || {};
         let type = this.getValidatedType(parameter);
 
         if (!this.supportQueryDataType(type)) {
@@ -207,7 +216,7 @@ export class ParameterGenerator {
             in: 'query',
             // maxItems: parameterOptions.maxItems,
             // minItems: parameterOptions.minItems,
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'QueryParam') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'QueryParam' ||ident.text === 'Query') || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: type
@@ -217,7 +226,7 @@ export class ParameterGenerator {
     private getPathParameter(parameter: ts.ParameterDeclaration): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
         const type = this.getValidatedType(parameter);
-        const pathName = getDecoratorTextValue(this.parameter, ident => ident.text === 'PathParam') || parameterName;
+        const pathName = getDecoratorTextValue(this.parameter, ident => ident.text === 'PathParam' || ident.text === 'Params') || parameterName;
 
         if (!this.supportPathDataType(type)) {
             throw new InvalidParameterException(`Parameter '${parameterName}:${type}' can't be passed as a path parameter in '${this.getCurrentLocation()}'.`);
@@ -248,14 +257,17 @@ export class ParameterGenerator {
     }
 
     private supportsBodyParameters(method: string) {
-        return ['delete', 'post', 'put', 'patch'].some(m => m === method);
+        return ['delete', 'post', 'put', 'patch', 'get'].some(m => m === method);
     }
 
     private supportParameterDecorator(decoratorName: string) {
         return ['HeaderParam', 'QueryParam', 'Param', 'FileParam',
                 'PathParam', 'FilesParam', 'FormParam', 'CookieParam',
                 'Context', 'ContextRequest', 'ContextResponse', 'ContextNext',
-                'ContextLanguage', 'ContextAccept'].some(d => d === decoratorName);
+                'ContextLanguage', 'ContextAccept',
+            // decorators/express
+                'Params', 'Response', 'Request', 'Next'
+        ].some(d => d === decoratorName);
     }
 
     private supportPathDataType(parameterType: Type) {
@@ -265,7 +277,7 @@ export class ParameterGenerator {
     private supportQueryDataType(parameterType: Type) {
         // Copied from supportPathDataType and added 'array'. Not sure if all options apply to queries, but kept to avoid breaking change.
         return ['string', 'integer', 'long', 'float', 'double', 'date',
-            'datetime', 'buffer', 'boolean', 'enum', 'array'].find(t => t === parameterType.typeName);
+            'datetime', 'buffer', 'boolean', 'enum', 'array', 'object'].find(t => t === parameterType.typeName);
     }
 
     private getValidatedType(parameter: ts.ParameterDeclaration) {

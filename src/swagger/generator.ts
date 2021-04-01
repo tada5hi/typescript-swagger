@@ -1,7 +1,5 @@
-import * as debug from 'debug';
 import * as fs from 'fs';
 import * as _ from 'lodash';
-import * as mkdirp from 'mkdirp';
 import * as pathUtil from 'path';
 import * as YAML from 'yamljs';
 import { Specification, SwaggerConfig } from '../config';
@@ -12,7 +10,7 @@ import {
 import { Swagger } from './swagger';
 
 export class SpecGenerator {
-    private debugger = debug('typescript-rest-swagger:spec-generator');
+    private debugger = (msg: string, data?: any, options?: any) => msg;
 
     constructor(private readonly metadata: Metadata, private readonly config: SwaggerConfig) { }
 
@@ -27,8 +25,8 @@ export class SpecGenerator {
         return new Promise<void>((resolve, reject) => {
             const swaggerDirs = _.castArray(this.config.outputDirectory);
             this.debugger('Saving specs to folders: %j', swaggerDirs);
-            swaggerDirs.forEach(swaggerDir => {
-                mkdirp(swaggerDir).then(() => {
+            swaggerDirs.forEach((swaggerDir: string) => {
+                fs.promises.mkdir(swaggerDir, {recursive: true}).then(() => {
                     this.debugger('Saving specs json file to folder: %j', swaggerDir);
                     fs.writeFile(`${swaggerDir}/swagger.json`, JSON.stringify(spec, null, '\t'), (err: any) => {
                         if (err) {

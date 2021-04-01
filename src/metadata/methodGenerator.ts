@@ -101,34 +101,16 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         this.method = methodDecorator.text.toLowerCase();
         this.debugger('Processing method %s decorators.', this.getCurrentLocation());
 
-        /*
-        const pathDecorators = getDecorators(this.node, decorator => decorator.text === 'Path');
-
-        if (pathDecorators && pathDecorators.length > 1) {
-            throw new Error(`Only one Path decorator in '${this.getCurrentLocation}' method is acceptable, Found: ${httpMethodDecorators.map(d => d.text).join(', ')}`);
-        }
-        if (pathDecorators) {
-            const pathDecorator = pathDecorators[0];
-            this.path = pathDecorator ? `/${normalizePath(pathDecorator.arguments[0])}` : '';
-        } else {
-            this.path = '';
-        }
-         */
         const values : Array<string> = [];
 
-        try {
-            const path : string | undefined = getDecoratorTextValue(this.node, decorator => decorator.text === 'Path');
-            if(typeof path === 'undefined') {
-                const httpMethod : string | undefined = getDecoratorTextValue(this.node, decorator => ['Get','Post','Put','All','Delete','Patch','Options','Head'].indexOf(decorator.text) !== -1);
-                if(typeof httpMethod !== 'undefined') {
-                    values.push(httpMethod);
-                }
-            } else {
-                values.push(path);
+        const path : string | undefined = getDecoratorTextValue(this.node, decorator => decorator.text === 'Path');
+        if(typeof path === 'undefined') {
+            const httpMethod : string | undefined = getDecoratorTextValue(this.node, decorator => ['Get','Post','Put','All','Delete','Patch','Options','Head'].indexOf(decorator.text) !== -1);
+            if(typeof httpMethod !== 'undefined') {
+                values.push(httpMethod);
             }
-
-        } catch (e) {
-            console.log(e);
+        } else {
+            values.push(path);
         }
 
         this.path = values.length > 0 ? normalizePath(values.join('/')) : '';
