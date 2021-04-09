@@ -1,30 +1,28 @@
-[![npm version](https://badge.fury.io/js/typescript-rest-swagger.svg)](https://badge.fury.io/js/typescript-rest-swagger)
-[![Build Status](https://travis-ci.org/thiagobustamante/typescript-rest-swagger.svg?branch=master)](https://travis-ci.org/thiagobustamante/typescript-rest-swagger)
-[![Coverage Status](https://coveralls.io/repos/github/thiagobustamante/typescript-rest-swagger/badge.svg?branch=master)](https://coveralls.io/github/thiagobustamante/typescript-rest-swagger?branch=master)
-[![Known Vulnerabilities](https://snyk.io/test/github/thiagobustamante/typescript-rest-swagger/badge.svg?targetFile=package.json)](https://snyk.io/test/github/thiagobustamante/typescript-rest-swagger?targetFile=package.json)
+# Swagger generation for decorator api 🚀
+This is a tool to generate swagger files from the following projects:
+- [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
+- [@decorators/express](https://github.com/serhiisol/node-decorators)
 
-# Swagger for Typescript-rest
-This is a tool to generate swagger files from a [typescript-rest](https://github.com/thiagobustamante/typescript-rest) project.
+It was originally a fork of the [typescript-rest](https://github.com/thiagobustamante/typescript-rest) project.
 
 **Table of Contents** 
 
-- [Swagger for Typescript-rest](#swagger-for-typescript-rest)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Swagger Decorators](#swagger-decorators)
-      - [@Response](#response)
-      - [@Example](#example)
-      - [@Tags](#tags)
-      - [@Consumes](#consumes)
-      - [@Produces](#produces)
-      - [@Hidden](#hidden)
-      - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
-    - [SwaggerConfig.json](#swaggerconfigjson)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Swagger Decorators](#swagger-decorators)
+    - [@Response](#response)
+    - [@Example](#example)
+    - [@Tags](#tags)
+    - [@Consumes](#consumes)
+    - [@Produces](#produces)
+    - [@Hidden](#hidden)
+    - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
+  - [SwaggerConfig.json](#swaggerconfigjson)
 
 ## Installation
 
 ```bash
-npm install typescript-rest-swagger -g
+npm install typescript-swagger -g
 ```
 
 ## Usage
@@ -64,7 +62,8 @@ For example above options are required for `swaggerGen` to understand relative i
 
 ### Swagger Decorators
 
-The documentation will be generated consulting all [typescript-rest](https://github.com/thiagobustamante/typescript-rest) decorators present on your code.
+The documentation will be generated consulting all [typescript-rest](https://github.com/thiagobustamante/typescript-rest) as well
+[@decorators/express](https://github.com/serhiisol/node-decorators) decorators present on your code.
 However, there are some additional informations that can be provided, only with documentation purposes, through some other decorators present into this library.
 
 Some examples:

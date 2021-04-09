@@ -1,10 +1,11 @@
 {
-  "name": "typescript-rest-swagger",
-  "version": "1.1.6",
-  "description": "Generate Swagger files from a typescript-rest project",
+  "name": "typescript-swagger",
+  "version": "0.0.1",
+  "description": "Generate Swagger files from a typescript-rest or a @decorators/express project",
   "keywords": [
     "typescript",
     "typescript-rest",
+    "@decorators/express",
     "swagger",
     "open api",
     "rest",
@@ -27,7 +28,11 @@
     "tsc": "tsc",
     "preblushOnly": "tsc -d"
   },
-  "author": "Thiago da Rosa de Bustamante <trbustamante@gmail.com>",
+  "author": {
+    "name": "Peter Placzek",
+    "email": "tadashi@animesu.net",
+    "url": "https:/github.com/Tada5hi"
+  },
   "license": "MIT",
   "dependencies": {
     "argparse": "^1.0.10",
@@ -70,7 +75,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thiagobustamante/typescript-rest-swagger.git"
+    "url": "https://github.com/tada5hi/typescript-swagger.git"
   },
   "bin": {
     "swaggerGen": "dist/cli.js"
