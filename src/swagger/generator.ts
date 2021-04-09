@@ -1,12 +1,14 @@
-import * as fs from 'fs';
-import * as _ from 'lodash';
-import * as pathUtil from 'path';
-import * as YAML from 'yamljs';
+import { promises, writeFile }from 'fs';
+import {castArray, union} from 'lodash';
+import {posix} from 'path';
+import {stringify} from 'yamljs';
 import { Specification, SwaggerConfig } from '../config';
+
 import {
     ArrayType, EnumerateType, Metadata, Method, ObjectType, Parameter,
     Property, ReferenceType, ResponseType, Type
 } from '../metadata/metadataGenerator';
+
 import { Swagger } from './swagger';
 
 export class SpecGenerator {
@@ -23,18 +25,18 @@ export class SpecGenerator {
             spec = await this.convertToOpenApiSpec(spec);
         }
         return new Promise<void>((resolve, reject) => {
-            const swaggerDirs = _.castArray(this.config.outputDirectory);
+            const swaggerDirs = castArray(this.config.outputDirectory);
             this.debugger('Saving specs to folders: %j', swaggerDirs);
             swaggerDirs.forEach((swaggerDir: string) => {
-                fs.promises.mkdir(swaggerDir, {recursive: true}).then(() => {
+                promises.mkdir(swaggerDir, {recursive: true}).then(() => {
                     this.debugger('Saving specs json file to folder: %j', swaggerDir);
-                    fs.writeFile(`${swaggerDir}/swagger.json`, JSON.stringify(spec, null, '\t'), (err: any) => {
+                    writeFile(`${swaggerDir}/swagger.json`, JSON.stringify(spec, null, '\t'), (err: any) => {
                         if (err) {
                             return reject(err);
                         }
                         if (this.config.yaml) {
                             this.debugger('Saving specs yaml file to folder: %j', swaggerDir);
-                            fs.writeFile(`${swaggerDir}/swagger.yaml`, YAML.stringify(spec, 1000), (errYaml: any) => {
+                            writeFile(`${swaggerDir}/swagger.yaml`, stringify(spec, 1000), (errYaml: any) => {
                                 if (errYaml) {
                                     return reject(errYaml);
                                 }
@@ -129,13 +131,13 @@ export class SpecGenerator {
             this.debugger('Generating paths for controller: %s', controller.name);
             controller.methods.forEach(method => {
                 this.debugger('Generating paths for method: %s', method.name);
-                const path = pathUtil.posix.join('/', (controller.path ? controller.path : ''), method.path);
+                const path = posix.join('/', (controller.path ? controller.path : ''), method.path);
                 paths[path] = paths[path] || {};
-                method.consumes = _.union(controller.consumes, method.consumes);
-                method.produces = _.union(controller.produces, method.produces);
-                method.tags = _.union(controller.tags, method.tags);
+                method.consumes = union(controller.consumes, method.consumes);
+                method.produces = union(controller.produces, method.produces);
+                method.tags = union(controller.tags, method.tags);
                 method.security = method.security || controller.security;
-                method.responses = _.union(controller.responses, method.responses);
+                method.responses = union(controller.responses, method.responses);
                 const pathObject: any = paths[path];
                 pathObject[method.method] = this.buildPathMethod(controller.name, method);
                 this.debugger('Generated path for method %s: %j', method.name, pathObject[method.method]);

@@ -3,12 +3,11 @@
 
 import { ArgumentParser } from 'argparse';
 import * as debug from 'debug';
-import * as fs from 'fs-extra-promise';
-import * as _ from 'lodash';
+import {readJSONSync} from 'fs-extra-promise';
+import {endsWith} from 'lodash';
 import { isAbsolute, join } from 'path';
-import * as path from 'path';
-import * as ts from 'typescript';
-import * as YAML from 'yamljs';
+import {CompilerOptions, convertCompilerOptionsFromJson} from 'typescript';
+import {load } from 'yamljs';
 import { Config, Specification, SwaggerConfig } from './config';
 import { MetadataGenerator } from './metadata/metadataGenerator';
 import { SpecGenerator } from './swagger/generator';
@@ -83,13 +82,13 @@ function getPackageJsonValue(key: string): string {
 
 function getConfig(configPath = 'swagger.json'): Config {
     const configFile = `${workingDir}/${configPath}`;
-    if (_.endsWith(configFile, '.yml') || _.endsWith(configFile, '.yaml')) {
-        return YAML.load(configFile);
-    } else if (_.endsWith(configFile, '.js')) {
-        return require(path.join(configFile));
+    if (endsWith(configFile, '.yml') || endsWith(configFile, '.yaml')) {
+        return load(configFile);
+    } else if (endsWith(configFile, '.js')) {
+        return require(join(configFile));
     }
     else {
-        return fs.readJSONSync(configFile);
+        return readJSONSync(configFile);
     }
 }
 
@@ -100,13 +99,13 @@ function validateSwaggerConfig(conf: SwaggerConfig): SwaggerConfig {
     conf.name = conf.name || nameDefault;
     conf.description = conf.description || descriptionDefault;
     conf.license = conf.license || licenseDefault;
-    conf.yaml = conf.yaml === false ? false : true;
+    conf.yaml = conf.yaml !== false;
     conf.outputFormat = conf.outputFormat ? Specification[conf.outputFormat] : Specification.Swagger_2;
 
     return conf;
 }
 
-function getCompilerOptions(loadTsconfig: boolean, tsconfigPath?: string | null): ts.CompilerOptions {
+function getCompilerOptions(loadTsconfig: boolean, tsconfigPath?: string | null): CompilerOptions {
     if (!loadTsconfig && tsconfigPath) {
         loadTsconfig = true;
     }
@@ -124,7 +123,7 @@ function getCompilerOptions(loadTsconfig: boolean, tsconfigPath?: string | null)
             throw new Error('Invalid tsconfig');
         }
         return tsConfig.compilerOptions
-            ? ts.convertCompilerOptionsFromJson(tsConfig.compilerOptions, cwd).options
+            ? convertCompilerOptionsFromJson(tsConfig.compilerOptions, cwd).options
             : {};
     } catch (err) {
         if (err.code === 'MODULE_NOT_FOUND') {

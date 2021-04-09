@@ -261,12 +261,13 @@ export class ParameterGenerator {
     }
 
     private supportParameterDecorator(decoratorName: string) {
-        return ['HeaderParam', 'QueryParam', 'Param', 'FileParam',
-                'PathParam', 'FilesParam', 'FormParam', 'CookieParam',
-                'Context', 'ContextRequest', 'ContextResponse', 'ContextNext',
-                'ContextLanguage', 'ContextAccept',
+        return [
+            'HeaderParam', 'QueryParam', 'Param', 'FileParam',
+            'PathParam', 'FilesParam', 'FormParam', 'CookieParam',
+            'Context', 'ContextRequest', 'ContextResponse', 'ContextNext',
+            'ContextLanguage', 'ContextAccept',
             // decorators/express
-                'Params', 'Response', 'Request', 'Next'
+            'Params', 'Response', 'Request', 'Next'
         ].some(d => d === decoratorName);
     }
 

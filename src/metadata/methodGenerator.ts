@@ -4,7 +4,7 @@ import {getDecorators, getDecoratorTextValue} from '../utils/decoratorUtils';
 import { getJSDocDescription, getJSDocTag, isExistJSDocTag } from '../utils/jsDocUtils';
 import { normalizePath } from '../utils/pathUtils';
 import { EndpointGenerator } from './endpointGenerator';
-import { Method, ResponseData, ResponseType, Type } from './metadataGenerator';
+import {Method, Parameter, ResponseData, ResponseType, Type} from './metadataGenerator';
 import { ParameterGenerator } from './parameterGenerator';
 import { resolveType } from './resolveType';
 
@@ -51,6 +51,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             tags: this.getDecoratorValues('Tags'),
             type: type
         };
+
         this.debugger('Generated Metadata for method %s: %j', this.getCurrentLocation(), methodMetadata);
         return methodMetadata;
     }
@@ -63,7 +64,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
 
     private buildParameters() {
         this.debugger('Processing method %s parameters.', this.getCurrentLocation());
-        const parameters = this.node.parameters.map(p => {
+        const parameters = this.node.parameters.map((p: ts.ParameterDeclaration) => {
             try {
                 const path = pathUtil.posix.join('/', (this.controllerPath ? this.controllerPath : ''), this.path);
 
@@ -74,10 +75,10 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
                 const parameterId = p.name as ts.Identifier;
                 throw new Error(`Error generate parameter method: '${controllerId.text}.${methodId.text}' argument: ${parameterId.text} ${e}`);
             }
-        }).filter(p => (p.in !== 'context') && (p.in !== 'cookie'));
+        }).filter((p: Parameter) => (p.in !== 'context') && (p.in !== 'cookie'));
 
-        const bodyParameters = parameters.filter(p => p.in === 'body');
-        const formParameters = parameters.filter(p => p.in === 'formData');
+        const bodyParameters = parameters.filter((p: Parameter) => p.in === 'body');
+        const formParameters = parameters.filter((p: Parameter) => p.in === 'formData');
 
         if (bodyParameters.length > 1) {
             throw new Error(`Only one body parameter allowed in '${this.getCurrentLocation()}' method.`);

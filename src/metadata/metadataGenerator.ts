@@ -1,9 +1,10 @@
 import {sync} from 'glob';
 import * as _ from 'lodash';
 import * as ts from 'typescript';
-import { isDecorator } from '../utils/decoratorUtils';
+import {isDecorator} from '../utils/decoratorUtils';
 import { ControllerGenerator } from './controllerGenerator';
-import M = require("minimatch");
+
+const M = require("minimatch");
 
 export class MetadataGenerator {
     public static current: MetadataGenerator;
@@ -28,7 +29,11 @@ export class MetadataGenerator {
         this.program.getSourceFiles().forEach((sf: any) => {
             if (this.ignorePaths && this.ignorePaths.length) {
                 for (const path of this.ignorePaths) {
-                    if(!sf.fileName.includes('node_modules/typescript-rest/') && M(sf.fileName, path)) {
+                    if(
+                        !sf.fileName.includes('node_modules/typescript-rest/') &&
+                        !sf.fileName.includes('node_modules/@decorators') &&
+                        M(sf.fileName, path)
+                    ) {
                         return;
                     }
                 }
@@ -100,7 +105,7 @@ export class MetadataGenerator {
         sourceFilesExpressions.forEach(pattern => {
             this.debugger('Searching pattern: %s with options: %j', pattern, options);
             const matches = sync(pattern, options);
-            matches.forEach(file => {result.add(file) });
+            matches.forEach(file => {result.add(file); });
         });
 
         return Array.from(result);

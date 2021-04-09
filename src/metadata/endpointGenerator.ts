@@ -1,18 +1,19 @@
 'use strict';
 
-import * as _ from 'lodash';
-import * as ts from 'typescript';
+import {castArray} from 'lodash';
+import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, TypeNode} from 'typescript';
 import { getDecorators } from '../utils/decoratorUtils';
 import { ResponseType } from './metadataGenerator';
 import { resolveType } from './resolveType';
 
-export abstract class EndpointGenerator<T extends ts.Node> {
+export abstract class EndpointGenerator<T extends Node> {
     protected node: T;
-    protected debugger = (msg: string, data?: any, options?: any) => msg;
 
-    constructor(node: T, name: string) {
+    protected constructor(node: T, name: string) {
         this.node = node;
     }
+
+    protected debugger = (msg: string, data?: any, options?: any) => msg;
 
     protected getDecoratorValues(decoratorName: string, acceptMultiple: boolean = false) {
         const decorators = getDecorators(this.node, decorator => decorator.text === decoratorName);
@@ -38,12 +39,12 @@ export abstract class EndpointGenerator<T extends ts.Node> {
 
         return securities.map(security => ({
             name: security[1] ? security[1] : 'default',
-            scopes: security[0] ? _.castArray(this.handleRolesArray(security[0])) : []
+            scopes: security[0] ? castArray(this.handleRolesArray(security[0])) : []
         }));
     }
 
-    protected handleRolesArray(argument: ts.ArrayLiteralExpression): Array<string> {
-        if (ts.isArrayLiteralExpression(argument)) {
+    protected handleRolesArray(argument: ArrayLiteralExpression): Array<string> {
+        if (isArrayLiteralExpression(argument)) {
             return argument.elements.map(value => value.getText())
                 .map(val => (val && val.startsWith('\'') && val.endsWith('\'')) ? val.slice(1, -1) : val);
         } else {
@@ -66,19 +67,19 @@ export abstract class EndpointGenerator<T extends ts.Node> {
     }
 
     protected getInitializerValue(initializer: any) {
-        switch (initializer.kind as ts.SyntaxKind) {
-            case ts.SyntaxKind.ArrayLiteralExpression:
+        switch (initializer.kind as SyntaxKind) {
+            case SyntaxKind.ArrayLiteralExpression:
                 return initializer.elements.map((e: any) => this.getInitializerValue(e));
-            case ts.SyntaxKind.StringLiteral:
+            case SyntaxKind.StringLiteral:
                 return initializer.text;
-            case ts.SyntaxKind.TrueKeyword:
+            case SyntaxKind.TrueKeyword:
                 return true;
-            case ts.SyntaxKind.FalseKeyword:
+            case SyntaxKind.FalseKeyword:
                 return false;
-            case ts.SyntaxKind.NumberKeyword:
-            case ts.SyntaxKind.FirstLiteralToken:
+            case SyntaxKind.NumberKeyword:
+            case SyntaxKind.FirstLiteralToken:
                 return parseInt(initializer.text, 10);
-            case ts.SyntaxKind.ObjectLiteralExpression:
+            case SyntaxKind.ObjectLiteralExpression:
                 const nestedObject: any = {};
 
                 initializer.properties.forEach((p: any) => {
@@ -91,7 +92,7 @@ export abstract class EndpointGenerator<T extends ts.Node> {
         }
     }
 
-    protected getResponses(genericTypeMap?: Map<String, ts.TypeNode>): Array<ResponseType> {
+    protected getResponses(genericTypeMap?: Map<String, TypeNode>): Array<ResponseType> {
         const decorators = getDecorators(this.node, decorator => decorator.text === 'Response');
         if (!decorators || !decorators.length) { return []; }
         this.debugger('Generating Responses for %s', this.getCurrentLocation());

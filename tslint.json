@@ -16,6 +16,7 @@
     "only-arrow-functions": false,
     "interface-name": false,
     "max-classes-per-file": false,
+    "member-ordering": false,
     "no-var-requires": false,
     "ban-types": false,
     "no-unused-expression": true,

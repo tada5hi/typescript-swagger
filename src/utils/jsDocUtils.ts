@@ -1,13 +1,13 @@
-import * as ts from 'typescript';
+import {JSDoc, JSDocTag, Node} from 'typescript';
 
-export function getJSDocDescription(node: ts.Node) {
-    const jsDocs = (node as any).jsDoc as Array<ts.JSDoc>;
+export function getJSDocDescription(node: Node) {
+    const jsDocs = (node as any).jsDoc as Array<JSDoc>;
     if (!jsDocs || !jsDocs.length) { return ''; }
 
     return jsDocs[0].comment || '';
 }
 
-export function getJSDocTag(node: ts.Node, tagName: string) {
+export function getJSDocTag(node: Node, tagName: string) {
     const tags = getJSDocTags(node, tagName);
     if (!tags || !tags.length) {
         return undefined;
@@ -15,27 +15,24 @@ export function getJSDocTag(node: ts.Node, tagName: string) {
     return tags[0].comment;
 }
 
-export function isExistJSDocTag(node: ts.Node, tagName: string) {
+export function isExistJSDocTag(node: Node, tagName: string) {
     const tags = getJSDocTags(node, tagName);
-    if (!tags || !tags.length) {
-        return false;
-    }
-    return true;
+    return !(!tags || !tags.length);
 }
 
-function getJSDocTags(node: ts.Node, tagName: string) {
+function getJSDocTags(node: Node, tagName: string) {
     return getMatchingJSDocTags(node, t => t.tagName.text === tagName);
 }
 
-export function getFirstMatchingJSDocTagName(node: ts.Node, isMatching: (t: ts.JSDocTag) => boolean) {
+export function getFirstMatchingJSDocTagName(node: Node, isMatching: (t: JSDocTag) => boolean) {
     const tags = getMatchingJSDocTags(node, isMatching);
     if (!tags || !tags.length) { return undefined; }
 
     return tags[0].tagName.text;
 }
 
-function getMatchingJSDocTags(node: ts.Node, isMatching: (t: ts.JSDocTag) => boolean) {
-    const jsDocs = (node as any).jsDoc as Array<ts.JSDoc>;
+function getMatchingJSDocTags(node: Node, isMatching: (t: JSDocTag) => boolean) {
+    const jsDocs = (node as any).jsDoc as Array<JSDoc>;
     if (!jsDocs || !jsDocs.length) { return undefined; }
 
     const jsDoc = jsDocs[0];

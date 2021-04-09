@@ -1,5 +1,5 @@
-import * as _ from 'lodash';
-import * as ts from 'typescript';
+import {union} from 'lodash';
+import {ClassDeclaration, MethodDeclaration, SyntaxKind, TypeNode} from 'typescript';
 import { getDecoratorTextValue, isDecorator } from '../utils/decoratorUtils';
 import { normalizePath } from '../utils/pathUtils';
 import { EndpointGenerator } from './endpointGenerator';
@@ -7,21 +7,17 @@ import { Controller } from './metadataGenerator';
 import { MethodGenerator } from './methodGenerator';
 import { getSuperClass } from './resolveType';
 
-export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> {
+export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     private readonly pathValue: string | undefined;
     private genMethods: Set<string> = new Set<string>();
 
-    constructor(node: ts.ClassDeclaration) {
+    constructor(node: ClassDeclaration) {
         super(node, 'controllers');
         const values : Array<string> = [getDecoratorTextValue(node, decorator => decorator.text === 'Path' || decorator.text === 'Controller')];
 
-        try {
-            const httpMethod : string | undefined = getDecoratorTextValue(node, decorator => ['Get','Post','Put','All','Delete','Patch','Options','Head'].indexOf(decorator.text) !== -1);
-            if(typeof httpMethod !== 'undefined') {
-                values.push(httpMethod);
-            }
-        } catch (e) {
-            //g(e);
+        const httpMethod : string | undefined = getDecoratorTextValue(node, decorator => ['Get','Post','Put','All','Delete','Patch','Options','Head'].indexOf(decorator.text) !== -1);
+        if(typeof httpMethod !== 'undefined') {
+            values.push(httpMethod);
         }
 
         this.pathValue = normalizePath(values.join('/'));
@@ -55,7 +51,7 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
     }
 
     protected getCurrentLocation(): string {
-        return (this.node as ts.ClassDeclaration).name.text;
+        return (this.node as ClassDeclaration).name.text;
     }
 
     private buildMethods() {
@@ -65,22 +61,23 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
             typeArguments: null
         };
         while (targetClass) {
-            result = _.union(result, this.buildMethodsForClass(targetClass.type, targetClass.typeArguments));
+            result = union(result, this.buildMethodsForClass(targetClass.type, targetClass.typeArguments));
             targetClass = getSuperClass(targetClass.type, targetClass.typeArguments);
         }
 
         return result;
     }
 
-    private buildMethodsForClass(node: ts.ClassDeclaration, genericTypeMap?: Map<String, ts.TypeNode>) {
+
+    private buildMethodsForClass(node: ClassDeclaration, genericTypeMap?: Map<String, TypeNode>) {
         if(typeof node === 'undefined') {
             return [];
         }
 
         return node.members
-            .filter((m: { kind: any; }) => (m.kind === ts.SyntaxKind.MethodDeclaration))
+            .filter((m: { kind: any; }) => (m.kind === SyntaxKind.MethodDeclaration))
             .filter((m: any) => !isDecorator(m, decorator => 'Hidden' === decorator.text))
-            .map((m: ts.MethodDeclaration) => new MethodGenerator(m, this.pathValue || '', genericTypeMap))
+            .map((m: MethodDeclaration) => new MethodGenerator(m, this.pathValue || '', genericTypeMap))
             .filter((generator: MethodGenerator) => {
                 if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {
                     this.genMethods.add(generator.getMethodName());

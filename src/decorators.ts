@@ -19,7 +19,7 @@
  * ```
  * A Default response is created in swagger documentation from the method return analisys. So any response declared
  * through this decorator is an additional response created.
- * @param status The response status code
+ * @param name
  * @param description A description for this response
  * @param example An optional example of response to be added to method documentation.
  */

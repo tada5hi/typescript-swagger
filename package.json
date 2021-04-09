@@ -24,7 +24,8 @@
     "pretest": "cross-env NODE_ENV=test npm run build && npm run lint",
     "test": "cross-env NODE_ENV=test jest --config ./test/jest.config.js",
     "test:coverage": "cross-env NODE_ENV=test jest --config ./test/jest.config.js --coverage --coverageReporters=text-lcov",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "preblushOnly": "tsc -d"
   },
   "author": "Thiago da Rosa de Bustamante <trbustamante@gmail.com>",
   "license": "MIT",
