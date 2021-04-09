@@ -9,7 +9,7 @@ import {
     Property, ReferenceType, ResponseType, Type
 } from '../metadata/metadataGenerator';
 
-import { Swagger } from './swagger';
+import { Swagger } from './index';
 
 export class SpecGenerator {
     private debugger = (msg: string, data?: any, options?: any) => msg;

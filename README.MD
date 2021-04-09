@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/typescript-swagger.svg)](https://badge.fury.io/js/typescript-swagger)
+
 # Swagger generation for decorator api 🚀
 This is a tool to generate swagger files from the following projects:
 - [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
