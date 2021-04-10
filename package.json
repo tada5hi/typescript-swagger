@@ -1,6 +1,6 @@
 {
   "name": "typescript-swagger",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Generate Swagger files from a typescript-rest or a @decorators/express project",
   "keywords": [
     "typescript",

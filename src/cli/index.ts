@@ -44,23 +44,32 @@ parser.addArgument(
 );
 
 const parameters = parser.parseArgs();
-const config = getSwaggerConfig(workingDir, parameters.config);
-const compilerOptions = getCompilerOptions(parameters.tsconfig, parameters.tsconfig_path);
-debugLog('Starting Swagger generation tool');
-debugLog('Compiler Options: %j', compilerOptions);
 
-const swaggerConfig = validateSwaggerConfig(workingDir, config.swagger);
-debugLog('Swagger Config: %j', swaggerConfig);
+try {
+    const config = getSwaggerConfig(workingDir, parameters.config);
 
-debugLog('Processing Services Metadata');
-const metadata = new MetadataGenerator(swaggerConfig.entryFile, compilerOptions, swaggerConfig.ignore).generate();
-debugLog('Generated Metadata: %j', metadata);
+    const compilerOptions = getCompilerOptions(parameters.tsconfig, parameters.tsconfig_path);
+    debugLog('Starting Swagger generation tool');
+    debugLog('Compiler Options: %j', compilerOptions);
 
-new SpecGenerator(metadata, swaggerConfig).generate()
-    .then(() => {
-        debugLog('Generation completed.');
-    })
-    .catch((err: any) => {
-        debugLog(`Error generating swagger. ${err}`);
-    });
+    const swaggerConfig = validateSwaggerConfig(workingDir, config.swagger);
+    debugLog('Swagger Config: %j', swaggerConfig);
+
+    debugLog('Processing Services Metadata');
+    const metadata = new MetadataGenerator(swaggerConfig.entryFile, compilerOptions, swaggerConfig.ignore).generate();
+    debugLog('Generated Metadata: %j', metadata);
+
+    new SpecGenerator(metadata, swaggerConfig).generate()
+        .then(() => {
+            console.log('Generation completed');
+        })
+        .catch((err: any) => {
+            console.log(`Error generating swagger. ${err}`);
+        });
+
+} catch (e) {
+    console.log('Swagger config not found. Did you specify the path to the swagger config file?');
+    process.exit(1);
+}
+
 
