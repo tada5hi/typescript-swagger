@@ -1,6 +1,6 @@
 {
   "name": "typescript-swagger",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Generate Swagger files from a typescript-rest or a @decorators/express project",
   "keywords": [
     "typescript",
@@ -78,7 +78,7 @@
     "url": "https://github.com/tada5hi/typescript-swagger.git"
   },
   "bin": {
-    "swaggerGen": "dist/cli.js"
+    "swaggerGen": "dist/cli/index.js"
   },
   "directories": {
     "lib": "dist",

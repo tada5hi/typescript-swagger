@@ -72,7 +72,7 @@ Some examples:
 
 ```typescript
 import {Path, Accept, GET} from 'typescript-rest';
-import {Tags} from 'typescript-rest-swagger';
+import {Tags} from 'typescript-swagger';
 
 @Path('mypath')
 export class MyService {
@@ -109,7 +109,7 @@ export class MyService {
 }
 ```
 
-These are the available swagger decorators, provided by typescript-rest-swagger:
+These are the available swagger decorators by this library:
 
 #### @Response
 
