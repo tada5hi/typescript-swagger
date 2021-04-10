@@ -2,6 +2,7 @@
 
 import {castArray} from 'lodash';
 import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, TypeNode} from 'typescript';
+import {useDebugger} from "../debug";
 import { getDecorators } from '../utils/decoratorUtils';
 import { ResponseType } from './metadataGenerator';
 import { resolveType } from './resolveType';
@@ -13,7 +14,7 @@ export abstract class EndpointGenerator<T extends Node> {
         this.node = node;
     }
 
-    protected debugger = (msg: string, data?: any, options?: any) => msg;
+    protected debugger = useDebugger();
 
     protected getDecoratorValues(decoratorName: string, acceptMultiple: boolean = false) {
         const decorators = getDecorators(this.node, decorator => decorator.text === decoratorName);

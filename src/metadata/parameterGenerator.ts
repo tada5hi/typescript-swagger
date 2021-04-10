@@ -267,7 +267,7 @@ export class ParameterGenerator {
             'Context', 'ContextRequest', 'ContextResponse', 'ContextNext',
             'ContextLanguage', 'ContextAccept',
             // decorators/express
-            'Params', 'Response', 'Request', 'Next'
+            'Params', 'Response', 'Request', 'Next', 'Body'
         ].some(d => d === decoratorName);
     }
 

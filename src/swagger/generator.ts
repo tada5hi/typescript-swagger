@@ -1,18 +1,28 @@
+import {Debugger} from "debug";
 import { promises, writeFile }from 'fs';
 import {castArray, union} from 'lodash';
 import {posix} from 'path';
+import {CompilerOptions} from "typescript";
 import {stringify} from 'yamljs';
 import { Specification, SwaggerConfig } from '../config';
+import {useDebugger} from "../debug";
 
 import {
-    ArrayType, EnumerateType, Metadata, Method, ObjectType, Parameter,
+    ArrayType, EnumerateType, Metadata, MetadataGenerator, Method, ObjectType, Parameter,
     Property, ReferenceType, ResponseType, Type
 } from '../metadata/metadataGenerator';
 
 import { Swagger } from './index';
 
+export async function generateDocumentation(swaggerConfig: SwaggerConfig, tsConfig: CompilerOptions) : Promise<string> {
+    const metadata = new MetadataGenerator(swaggerConfig.entryFile, tsConfig, swaggerConfig.ignore).generate();
+    await new SpecGenerator(metadata, swaggerConfig).generate();
+
+    return Array.isArray(swaggerConfig.outputDirectory) ? swaggerConfig.outputDirectory.join('/') : swaggerConfig.outputDirectory;
+}
+
 export class SpecGenerator {
-    private debugger = (msg: string, data?: any, options?: any) => msg;
+    private debugger : Debugger = useDebugger();
 
     constructor(private readonly metadata: Metadata, private readonly config: SwaggerConfig) { }
 

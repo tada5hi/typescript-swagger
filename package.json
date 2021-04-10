@@ -1,6 +1,6 @@
 {
   "name": "typescript-swagger",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Generate Swagger files from a typescript-rest or a @decorators/express project",
   "keywords": [
     "typescript",
@@ -13,8 +13,8 @@
     "codegen",
     "generation"
   ],
-  "main": "./dist/decorators.js",
-  "typings": "./dist/decorators.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "scripts": {
     "start": "tsc -w",
     "build": "npm run clean && tsc",

@@ -2,7 +2,8 @@
 'use strict';
 
 import {ArgumentParser} from 'argparse';
-import debug, {Debugger} from 'debug';
+import {Debugger} from 'debug';
+import {useDebugger} from "../debug";
 import {MetadataGenerator} from '../metadata/metadataGenerator';
 import {SpecGenerator} from '../swagger/generator';
 import {getCompilerOptions, getSwaggerConfig, validateSwaggerConfig} from "./utils";
@@ -10,7 +11,7 @@ import {getCompilerOptions, getSwaggerConfig, validateSwaggerConfig} from "./uti
 
 const packageJson = require('../../package.json');
 
-const debugLog : Debugger = debug(packageJson.name);
+const debugLog : Debugger = useDebugger();
 const workingDir: string = process.cwd();
 
 const parser = new ArgumentParser({
@@ -22,7 +23,7 @@ const parser = new ArgumentParser({
 parser.addArgument(
     ['-c', '--config'],
     {
-        help: 'The swagger config file (swagger.json or swagger.yml or swaggerCongig.js).'
+        help: 'The swagger config file (swagger.json or swagger.yml or swaggerConfig.js).'
     }
 );
 

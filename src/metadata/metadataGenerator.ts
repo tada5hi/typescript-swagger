@@ -1,6 +1,7 @@
 import {sync} from 'glob';
 import * as _ from 'lodash';
 import * as ts from 'typescript';
+import {useDebugger} from "../debug";
 import {isDecorator} from '../utils/decoratorUtils';
 import { ControllerGenerator } from './controllerGenerator';
 
@@ -13,7 +14,7 @@ export class MetadataGenerator {
     private readonly program: ts.Program;
     private referenceTypes: { [typeName: string]: ReferenceType } = {};
     private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: ReferenceType }) => void>();
-    private debugger = (msg: string, data?: any, options?: any) => msg;
+    private debugger = useDebugger();
 
     constructor(entryFile: string | Array<string>, compilerOptions: ts.CompilerOptions, private readonly  ignorePaths?: Array<string>) {
         const sourceFiles = this.getSourceFiles(entryFile);

@@ -27,7 +27,27 @@ It was originally a fork of the [typescript-rest](https://github.com/thiagobusta
 npm install typescript-swagger -g
 ```
 
-## Usage
+## Build
+
+You can either build the `swagger.yml` and `swagger.json` file by command line or on runtime of your application. 
+The files will be generated in the `outputDirectory` specified in the `SwaggerConfig`.
+
+The [tsconfig.json](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) file contains the compilerOptions, which
+are required for this library to work. The compilerOptions could look lke the following example:
+
+```json
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        }
+    }
+}
+```
+In case of the above configuration, the library can understand relative imports like `import something from '@/something'`.
+
+### CLI
 
 ```bash
 swaggerGen -c ./swaggerConfig.json
@@ -47,20 +67,31 @@ Where the [swaggerConfig.json](#swaggerconfigjson) file, contains settings about
 }
 ```
 
-Where the [tsconfig.json](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) file contains compilerOptions. For example:
+### Runtime
 
-```json
-{
-    "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "@/*": ["src/*"]
-        }
-    }
+```typescript
+const packageJson = require('package.json');
+const tsConfig = require('tsconfig.json');
+
+export const swaggerConfig : SwaggerConfig = {
+    yaml: true,
+    name: 'API - Documentation',
+    description: packageJson.description,
+    basePath: '',
+    version: packageJson.version,
+    outputDirectory: 'public',
+    entryFile: path.join('src', 'controllers', '**', '*.ts'),
+    ignore: ['**/node_modules/**'],
+    consumes: ['application/json'],
+    produces: ['application/json']
+}
+
+export async function generateSwaggerDocumentation() : Promise<string> {
+    return await generateDocumentation(swaggerConfig, tsConfig);
 }
 ```
 
-For example above options are required for `swaggerGen` to understand relative imports like `import something from '@/something'`.
+## Usage
 
 ### Swagger Decorators
 
