@@ -72,24 +72,26 @@ Where the [swaggerConfig.json](#swaggerconfigjson) file, contains settings about
 ### Runtime
 
 ```typescript
+import {SwaggerConfig, generateDocumentation} from "typescript-swagger";
+
 const packageJson = require('package.json');
 const tsConfig = require('tsconfig.json');
 
-export const swaggerConfig : SwaggerConfig = {
-    yaml: true,
-    name: 'API - Documentation',
-    description: packageJson.description,
-    basePath: '',
-    version: packageJson.version,
-    outputDirectory: 'public',
-    entryFile: path.join('src', 'controllers', '**', '*.ts'),
-    ignore: ['**/node_modules/**'],
-    consumes: ['application/json'],
-    produces: ['application/json']
+export const swaggerConfig: SwaggerConfig = {
+  yaml: true,
+  name: 'API - Documentation',
+  description: packageJson.description,
+  basePath: '',
+  version: packageJson.version,
+  outputDirectory: 'public',
+  entryFile: path.join('src', 'controllers', '**', '*.ts'),
+  ignore: ['**/node_modules/**'],
+  consumes: ['application/json'],
+  produces: ['application/json']
 }
 
-export async function generateSwaggerDocumentation() : Promise<string> {
-    return await generateDocumentation(swaggerConfig, tsConfig);
+export async function generateSwaggerDocumentation(): Promise<string> {
+  return await generateDocumentation(swaggerConfig, tsConfig);
 }
 ```
 
