@@ -5,11 +5,12 @@ This is a tool to generate swagger files from the following projects:
 - [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
 - [@decorators/express](https://github.com/serhiisol/node-decorators)
 
-It was originally a fork of the [typescript-rest](https://github.com/thiagobustamante/typescript-rest) project.
-
 **Table of Contents** 
 
 - [Installation](#installation)
+- [Build](#build)
+  - [CLI](#cli)
+  - [Runtime](#runtime)
 - [Usage](#usage)
   - [Swagger Decorators](#swagger-decorators)
     - [@Response](#response)
@@ -20,6 +21,8 @@ It was originally a fork of the [typescript-rest](https://github.com/thiagobusta
     - [@Hidden](#hidden)
     - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
   - [SwaggerConfig.json](#swaggerconfigjson)
+
+It was originally a fork of the [typescript-rest](https://github.com/thiagobustamante/typescript-rest) project.
 
 ## Installation
 
