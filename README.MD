@@ -21,8 +21,7 @@ This is a tool to generate swagger files from the following projects:
     - [@Hidden](#hidden)
     - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
   - [SwaggerConfig.json](#swaggerconfigjson)
-
-It was originally a fork of the [typescript-rest](https://github.com/thiagobustamante/typescript-rest) project.
+- [Credits](#credits)
 
 ## Installation
 
@@ -371,3 +370,7 @@ swagger:
   ignore:
     - /node_modules/**    
 ```
+
+### Credits
+
+It was originally a fork of the [typescript-rest-swagger](https://github.com/thiagobustamante/typescript-rest-swagger) project.
