@@ -5,7 +5,7 @@ import { normalizePath } from '../utils/pathUtils';
 import { EndpointGenerator } from './endpointGenerator';
 import { Controller } from './metadataGenerator';
 import { MethodGenerator } from './methodGenerator';
-import { getSuperClass } from './resolveType';
+import { getSuperClass } from './resolver';
 
 export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     private readonly pathValue: string | undefined;

@@ -5,7 +5,7 @@ import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, Type
 import {useDebugger} from "../debug";
 import { getDecorators } from '../utils/decoratorUtils';
 import { ResponseType } from './metadataGenerator';
-import { resolveType } from './resolveType';
+import { resolveType } from './resolver';
 
 export abstract class EndpointGenerator<T extends Node> {
     protected node: T;
@@ -25,8 +25,7 @@ export abstract class EndpointGenerator<T extends Node> {
         let result: Array<any>;
         if (acceptMultiple) {
             result = decorators.map(d => d.arguments);
-        }
-        else {
+        } else {
             const d = decorators[0];
             result = d.arguments;
         }

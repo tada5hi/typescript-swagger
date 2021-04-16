@@ -1,27 +1,38 @@
 import {sync} from 'glob';
-import * as _ from 'lodash';
-import * as ts from 'typescript';
+import {castArray} from 'lodash';
+import {
+    ClassDeclaration,
+    CompilerOptions,
+    createProgram,
+    forEachChild,
+    InterfaceDeclaration,
+    Node,
+    Program,
+    SyntaxKind,
+    TypeChecker
+} from 'typescript';
 import {useDebugger} from "../debug";
 import {isDecorator} from '../utils/decoratorUtils';
-import { ControllerGenerator } from './controllerGenerator';
+import {ControllerGenerator} from './controllerGenerator';
+import {BaseType, ReferenceType} from "./resolver/type";
 
 const M = require("minimatch");
 
 export class MetadataGenerator {
     public static current: MetadataGenerator;
-    public readonly nodes = new Array<ts.Node>();
-    public readonly typeChecker: ts.TypeChecker;
-    private readonly program: ts.Program;
+    public readonly nodes = new Array<Node>();
+    public readonly typeChecker: TypeChecker;
+    private readonly program: Program;
     private referenceTypes: { [typeName: string]: ReferenceType } = {};
     private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: ReferenceType }) => void>();
     private debugger = useDebugger();
 
-    constructor(entryFile: string | Array<string>, compilerOptions: ts.CompilerOptions, private readonly  ignorePaths?: Array<string>) {
+    constructor(entryFile: string | Array<string>, compilerOptions: CompilerOptions, private readonly  ignorePaths?: Array<string>) {
         const sourceFiles = this.getSourceFiles(entryFile);
         this.debugger('Starting Metadata Generator');
         this.debugger('Source files: %j ', sourceFiles);
         this.debugger('Compiler Options: %j ', compilerOptions);
-        this.program = ts.createProgram(sourceFiles, compilerOptions);
+        this.program = createProgram(sourceFiles, compilerOptions);
         this.typeChecker = this.program.getTypeChecker();
         MetadataGenerator.current = this;
     }
@@ -32,7 +43,7 @@ export class MetadataGenerator {
                 for (const path of this.ignorePaths) {
                     if(
                         !sf.fileName.includes('node_modules/typescript-rest/') &&
-                        !sf.fileName.includes('node_modules/@decorators') &&
+                        !sf.fileName.includes('node_modules/@decorators/express') &&
                         M(sf.fileName, path)
                     ) {
                         return;
@@ -40,7 +51,7 @@ export class MetadataGenerator {
                 }
             }
 
-            ts.forEachChild(sf, (node: any) => {
+            forEachChild(sf, (node: any) => {
                 this.nodes.push(node);
             });
         });
@@ -76,8 +87,8 @@ export class MetadataGenerator {
     public getClassDeclaration(className: string) {
         const found = this.nodes
             .filter(node => {
-                const classDeclaration = (node as ts.ClassDeclaration);
-                return (node.kind === ts.SyntaxKind.ClassDeclaration && classDeclaration.name && classDeclaration.name.text === className);
+                const classDeclaration = (node as ClassDeclaration);
+                return (node.kind === SyntaxKind.ClassDeclaration && classDeclaration.name && classDeclaration.name.text === className);
             });
         if (found && found.length) {
             return found[0];
@@ -88,8 +99,8 @@ export class MetadataGenerator {
     public getInterfaceDeclaration(className: string) {
         const found = this.nodes
             .filter(node => {
-                const interfaceDeclaration = (node as ts.InterfaceDeclaration);
-                return (node.kind === ts.SyntaxKind.InterfaceDeclaration && interfaceDeclaration.name && interfaceDeclaration.name.text === className);
+                const interfaceDeclaration = (node as InterfaceDeclaration);
+                return (node.kind === SyntaxKind.InterfaceDeclaration && interfaceDeclaration.name && interfaceDeclaration.name.text === className);
             });
         if (found && found.length) {
             return found[0];
@@ -100,7 +111,7 @@ export class MetadataGenerator {
     private getSourceFiles(sourceFiles: string | Array<string>) {
         this.debugger('Getting source files from expressions');
         this.debugger('Source file patterns: %j ', sourceFiles);
-        const sourceFilesExpressions = _.castArray(sourceFiles);
+        const sourceFilesExpressions = castArray(sourceFiles);
         const result: Set<string> = new Set<string>();
         const options = { cwd: process.cwd() };
         sourceFilesExpressions.forEach(pattern => {
@@ -114,10 +125,10 @@ export class MetadataGenerator {
 
     private buildControllers() {
         return this.nodes
-            .filter(node => node.kind === ts.SyntaxKind.ClassDeclaration)
+            .filter(node => node.kind === SyntaxKind.ClassDeclaration)
             .filter(node => !isDecorator(node, decorator => 'Hidden' === decorator.text))
             .filter(node => isDecorator(node, decorator => decorator.text === 'Path' || decorator.text === 'Controller'))
-            .map((classDeclaration: ts.ClassDeclaration) => new ControllerGenerator(classDeclaration))
+            .map((classDeclaration: ClassDeclaration) => new ControllerGenerator(classDeclaration))
             .filter(generator => generator.isValid())
             .map(generator => generator.generate());
     }
@@ -147,7 +158,7 @@ export interface Method {
     name: string;
     parameters: Array<Parameter>;
     path: string;
-    type: Type;
+    type: BaseType;
     tags: Array<string>;
     responses: Array<ResponseType>;
     security?: Array<Security>;
@@ -162,7 +173,7 @@ export interface Parameter {
     in: string;
     name: string;
     required: boolean;
-    type: Type;
+    type: BaseType;
     collectionFormat?: boolean;
     allowEmptyValue?: boolean;
     default?: any;
@@ -175,44 +186,21 @@ export interface Security {
     scopes?: Array<string>;
 }
 
-export interface Type {
-    typeName: string;
-    typeArgument?: Type;
-}
-
-export interface EnumerateType extends Type {
-    enumMembers: Array<string>;
-}
-
-export interface ReferenceType extends Type {
-    description: string;
-    properties: Array<Property>;
-    additionalProperties?: Array<Property>;
-}
-
-export interface ObjectType extends Type {
-    properties: Array<Property>;
-}
-
-export interface ArrayType extends Type {
-    elementType: Type;
-}
-
 export interface ResponseType {
     description: string;
     status: string;
-    schema?: Type;
+    schema?: BaseType;
     examples?: any;
 }
 
 export interface Property {
     description: string;
     name: string;
-    type: Type;
+    type: BaseType;
     required: boolean;
 }
 
 export interface ResponseData {
     status: string;
-    type: Type;
+    type: BaseType;
 }

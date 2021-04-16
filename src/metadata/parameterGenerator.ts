@@ -1,7 +1,8 @@
 import * as ts from 'typescript';
 import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from '../utils/decoratorUtils';
-import { MetadataGenerator, Parameter, Type } from './metadataGenerator';
-import { getCommonPrimitiveAndArrayUnionType, getLiteralValue, resolveType } from './resolveType';
+import { MetadataGenerator, Parameter} from './metadataGenerator';
+import { getLiteralValue, resolveType } from './resolver';
+import {BaseType} from "./resolver/type";
 
 export class ParameterGenerator {
     constructor(
@@ -21,7 +22,6 @@ export class ParameterGenerator {
             case 'Cookies':
                 return this.getCookieParameter(this.parameter);
             case 'FormParam':
-            case 'Body':
                 return this.getFormParameter(this.parameter);
             case 'HeaderParam':
             case 'Headers':
@@ -197,15 +197,18 @@ export class ParameterGenerator {
     private getQueryParameter(parameter: ts.ParameterDeclaration): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
         const parameterOptions = getDecoratorOptions(this.parameter, ident => ident.text === 'QueryParam' || ident.text === 'Query') || {};
-        let type = this.getValidatedType(parameter);
+        const type = this.getValidatedType(parameter);
 
         if (!this.supportQueryDataType(type)) {
+            /*
             const arrayType = getCommonPrimitiveAndArrayUnionType(parameter.type);
             if (arrayType && this.supportQueryDataType(arrayType)) {
                 type = arrayType;
             } else {
                 throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a query parameter in '${this.getCurrentLocation()}'.`);
             }
+             */
+            throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a query parameter in '${this.getCurrentLocation()}'.`);
         }
 
         return {
@@ -271,11 +274,11 @@ export class ParameterGenerator {
         ].some(d => d === decoratorName);
     }
 
-    private supportPathDataType(parameterType: Type) {
+    private supportPathDataType(parameterType: BaseType) {
         return ['string', 'integer', 'long', 'float', 'double', 'date', 'datetime', 'buffer', 'boolean', 'enum'].find(t => t === parameterType.typeName);
     }
 
-    private supportQueryDataType(parameterType: Type) {
+    private supportQueryDataType(parameterType: BaseType) {
         // Copied from supportPathDataType and added 'array'. Not sure if all options apply to queries, but kept to avoid breaking change.
         return ['string', 'integer', 'long', 'float', 'double', 'date',
             'datetime', 'buffer', 'boolean', 'enum', 'array', 'object'].find(t => t === parameterType.typeName);

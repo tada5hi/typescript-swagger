@@ -4,9 +4,10 @@ import {getDecorators, getDecoratorTextValue} from '../utils/decoratorUtils';
 import { getJSDocDescription, getJSDocTag, isExistJSDocTag } from '../utils/jsDocUtils';
 import { normalizePath } from '../utils/pathUtils';
 import { EndpointGenerator } from './endpointGenerator';
-import {Method, Parameter, ResponseData, ResponseType, Type} from './metadataGenerator';
+import {Method, Parameter, ResponseData, ResponseType} from './metadataGenerator';
 import { ParameterGenerator } from './parameterGenerator';
-import { resolveType } from './resolveType';
+import { resolveType } from './resolver';
+import {BaseType} from "./resolver/type";
 
 export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private method: string;
@@ -119,7 +120,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         this.debugger('Mapping endpoint %s %s', this.method, this.path);
     }
 
-    private getMethodSuccessResponse(type: Type): ResponseType {
+    private getMethodSuccessResponse(type: BaseType): ResponseType {
         const responseData = this.getMethodSuccessResponseData(type);
         return {
             description: type.typeName === 'void' ? 'No content' : 'Ok',
@@ -129,7 +130,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         };
     }
 
-    private getMethodSuccessResponseData(type: Type): ResponseData {
+    private getMethodSuccessResponseData(type: BaseType): ResponseData {
         switch (type.typeName) {
             case 'void': return { status: '204', type: type };
             case 'NewResource': return { status: '201', type: type.typeArgument || type };

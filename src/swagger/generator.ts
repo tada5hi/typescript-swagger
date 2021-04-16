@@ -8,9 +8,10 @@ import { Specification, SwaggerConfig } from '../config';
 import {useDebugger} from "../debug";
 
 import {
-    ArrayType, EnumerateType, Metadata, MetadataGenerator, Method, ObjectType, Parameter,
-    Property, ReferenceType, ResponseType, Type
+    Metadata, MetadataGenerator, Method, Parameter,
+    Property, ResponseType
 } from '../metadata/metadataGenerator';
+import {ArrayType, BaseType, EnumerateType, ObjectType, ReferenceType} from "../metadata/resolver/type";
 
 import { Swagger } from './index';
 
@@ -338,7 +339,7 @@ export class SpecGenerator {
         return `${controllerNameWithoutSuffix}${methodName.charAt(0).toUpperCase() + methodName.substr(1)}`;
     }
 
-    private getSwaggerType(type: Type) {
+    private getSwaggerType(type: BaseType) {
         const swaggerType = this.getSwaggerTypeForPrimitiveType(type);
         if (swaggerType) {
             return swaggerType;
@@ -363,7 +364,7 @@ export class SpecGenerator {
         return this.getSwaggerTypeForObjectType(objectType);
     }
 
-    private getSwaggerTypeForPrimitiveType(type: Type) {
+    private getSwaggerTypeForPrimitiveType(type: BaseType) {
         const typeMap: { [name: string]: Swagger.Schema } = {
             binary: { type: 'string', format: 'binary' },
             boolean: { type: 'boolean' },

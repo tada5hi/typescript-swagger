@@ -90,8 +90,8 @@ export const swaggerConfig: SwaggerConfig = {
   produces: ['application/json']
 }
 
-export async function generateSwaggerDocumentation(): Promise<string> {
-  return await generateDocumentation(swaggerConfig, tsConfig);
+export async function generateSwaggerDocumentation(): Promise<void> {
+    await generateDocumentation(swaggerConfig, tsConfig);
 }
 ```
 

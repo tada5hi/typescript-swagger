@@ -15,7 +15,7 @@ export function getJSDocTag(node: Node, tagName: string) {
     return tags[0].comment;
 }
 
-export function isExistJSDocTag(node: Node, tagName: string) {
+export function isExistJSDocTag(node: Node, tagName: string) : boolean {
     const tags = getJSDocTags(node, tagName);
     return !(!tags || !tags.length);
 }

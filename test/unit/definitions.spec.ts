@@ -152,7 +152,7 @@ describe('Definition generation', () => {
       const param = jsonata('paths."/mypath/multi-query".get.parameters[1]').evaluate(spec);
       expect(param.name).toEqual('name');
       expect(param.required).toEqual(false);
-      expect(param.type).toEqual('array');
+      expect(param.type).toEqual('array'); // its union type of Array<string> and string -> object
       expect(param.items).toBeDefined;
       expect(param.items.type).toEqual('string');
       expect(param.collectionFormat).toEqual('multi');
