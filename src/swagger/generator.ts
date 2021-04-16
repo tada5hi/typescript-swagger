@@ -11,7 +11,7 @@ import {
     Metadata, MetadataGenerator, Method, Parameter,
     Property, ResponseType
 } from '../metadata/metadataGenerator';
-import {ArrayType, BaseType, EnumerateType, ObjectType, ReferenceType} from "../metadata/resolver/type";
+import {ResolverType} from "../metadata/resolver/type";
 
 import { Swagger } from './index';
 
@@ -339,32 +339,32 @@ export class SpecGenerator {
         return `${controllerNameWithoutSuffix}${methodName.charAt(0).toUpperCase() + methodName.substr(1)}`;
     }
 
-    private getSwaggerType(type: BaseType) {
+    private getSwaggerType(type: ResolverType.BaseType) {
         const swaggerType = this.getSwaggerTypeForPrimitiveType(type);
         if (swaggerType) {
             return swaggerType;
         }
 
-        const arrayType = type as ArrayType;
+        const arrayType = type as ResolverType.ArrayType;
         if (arrayType.elementType) {
             return this.getSwaggerTypeForArrayType(arrayType);
         }
 
-        const enumType = type as EnumerateType;
+        const enumType = type as ResolverType.EnumerateType;
         if (enumType.enumMembers) {
             return this.getSwaggerTypeForEnumType(enumType);
         }
 
-        const refType = type as ReferenceType;
+        const refType = type as ResolverType.ReferenceType;
         if (refType.properties && refType.description !== undefined) {
-            return this.getSwaggerTypeForReferenceType(type as ReferenceType);
+            return this.getSwaggerTypeForReferenceType(type as ResolverType.ReferenceType);
         }
 
-        const objectType = type as ObjectType;
+        const objectType = type as ResolverType.ObjectType;
         return this.getSwaggerTypeForObjectType(objectType);
     }
 
-    private getSwaggerTypeForPrimitiveType(type: BaseType) {
+    private getSwaggerTypeForPrimitiveType(type: ResolverType.BaseType) {
         const typeMap: { [name: string]: Swagger.Schema } = {
             binary: { type: 'string', format: 'binary' },
             boolean: { type: 'boolean' },
@@ -386,15 +386,15 @@ export class SpecGenerator {
         return typeMap[type.typeName];
     }
 
-    private getSwaggerTypeForObjectType(objectType: ObjectType): Swagger.Schema {
+    private getSwaggerTypeForObjectType(objectType: ResolverType.ObjectType): Swagger.Schema {
         return { type: 'object', properties: this.buildProperties(objectType.properties) };
     }
 
-    private getSwaggerTypeForArrayType(arrayType: ArrayType): Swagger.Schema {
+    private getSwaggerTypeForArrayType(arrayType: ResolverType.ArrayType): Swagger.Schema {
         return { type: 'array', items: this.getSwaggerType(arrayType.elementType) };
     }
 
-    private getSwaggerTypeForEnumType(enumType: EnumerateType): Swagger.Schema {
+    private getSwaggerTypeForEnumType(enumType: ResolverType.EnumerateType): Swagger.Schema {
         function getDerivedTypeFromValues(values: Array<any>): string {
             return values.reduce((derivedType: string, item: any) => {
                 const currentType = typeof item;
@@ -410,7 +410,7 @@ export class SpecGenerator {
         };
     }
 
-    private getSwaggerTypeForReferenceType(referenceType: ReferenceType): Swagger.Schema {
+    private getSwaggerTypeForReferenceType(referenceType: ResolverType.ReferenceType): Swagger.Schema {
         return { $ref: `#/definitions/${referenceType.typeName}` };
     }
 }

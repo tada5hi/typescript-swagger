@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from '../utils/decoratorUtils';
 import { MetadataGenerator, Parameter} from './metadataGenerator';
 import { getLiteralValue, resolveType } from './resolver';
-import {BaseType} from "./resolver/type";
+import {ResolverType} from "./resolver/type";
 
 export class ParameterGenerator {
     constructor(
@@ -274,11 +274,11 @@ export class ParameterGenerator {
         ].some(d => d === decoratorName);
     }
 
-    private supportPathDataType(parameterType: BaseType) {
+    private supportPathDataType(parameterType:  ResolverType.BaseType) {
         return ['string', 'integer', 'long', 'float', 'double', 'date', 'datetime', 'buffer', 'boolean', 'enum'].find(t => t === parameterType.typeName);
     }
 
-    private supportQueryDataType(parameterType: BaseType) {
+    private supportQueryDataType(parameterType:  ResolverType.BaseType) {
         // Copied from supportPathDataType and added 'array'. Not sure if all options apply to queries, but kept to avoid breaking change.
         return ['string', 'integer', 'long', 'float', 'double', 'date',
             'datetime', 'buffer', 'boolean', 'enum', 'array', 'object'].find(t => t === parameterType.typeName);

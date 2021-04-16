@@ -44,7 +44,7 @@ syntaxKindMap[SyntaxKind.StringKeyword] = 'string';
 syntaxKindMap[SyntaxKind.BooleanKeyword] = 'boolean';
 syntaxKindMap[SyntaxKind.VoidKeyword] = 'void';
 
-const localReferenceTypeCache: { [typeName: string]: ReferenceType } = {};
+const localReferenceTypeCache: { [typeName: string]: ResolverType.ReferenceType } = {};
 const inProgressTypes: { [typeName: string]: boolean } = {};
 
 type UsableDeclaration = InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration;
@@ -53,6 +53,7 @@ export interface TypeNodeResolverContext {
     [key: string]: TypeReferenceNode | TypeNode;
 }
 
+/*
 export class TypeNodeResolver {
     constructor(
         private readonly typeNode: TypeNode,
@@ -66,7 +67,7 @@ export class TypeNodeResolver {
 
     }
 }
-
+*/
 export function resolveType(typeNode?: TypeNode, genericTypeMap?: Map<String, TypeNode>): ResolverType.BaseType {
     if (!typeNode) {
         return { typeName: 'void' };
@@ -140,7 +141,7 @@ export function resolveType(typeNode?: TypeNode, genericTypeMap?: Map<String, Ty
         } as ResolverType.ArrayType;
     }
 
-    const enumType = getResolverType.EnumerateType(typeNode);
+    const enumType = getResolverType(typeNode);
     if (enumType) {
         return enumType;
     }
@@ -225,7 +226,7 @@ function getDateType(typeNode: TypeNode): ResolverType.BaseType {
     }
 }
 
-function getResolverType.EnumerateType(typeNode: TypeNode): ResolverType.ResolverType.EnumerateType | undefined {
+function getResolverType(typeNode: TypeNode): ResolverType.EnumerateType | undefined {
     const enumName = (typeNode as any).typeName.text;
     const enumTypes = MetadataGenerator.current.nodes
         .filter(node => node.kind === SyntaxKind.EnumDeclaration)
@@ -251,7 +252,7 @@ function getResolverType.EnumerateType(typeNode: TypeNode): ResolverType.Resolve
             return getEnumValue(member) || index;
         }),
         typeName: 'enum',
-    } as ResolverType.ResolverType.EnumerateType;
+    } as ResolverType.EnumerateType;
 }
 
 function parseEnumValueByKind(value: string, kind: SyntaxKind): any {
@@ -298,7 +299,7 @@ function getIntersectionType(typeNode: TypeNode) : IntersectionType {
             return type.getText() ? removeQuotes(type.getText()) : index;
         }),
         typeName: 'intersection',
-    } as IntersectionType;
+    } as ResolverType.IntersectionType;
 }
 
 function removeQuotes(str: string) {
@@ -324,14 +325,15 @@ function getLiteralType(typeNode: TypeNode): ResolverType.EnumerateType | undefi
     } as ResolverType.EnumerateType;
 }
 
-function getInlineObjectType(typeNode: TypeNode): ObjectType {
+function getInlineObjectType(typeNode: TypeNode): ResolverType.ObjectType {
     return {
         properties: getModelTypeProperties(typeNode),
+        // @ts-ignore
         typeName: ''
     };
 }
 
-function getReferenceType(type: EntityName, genericTypeMap?: Map<String, TypeNode>, genericTypes?: Array<TypeNode>): ReferenceType {
+function getReferenceType(type: EntityName, genericTypeMap?: Map<String, TypeNode>, genericTypes?: Array<TypeNode>): ResolverType.ReferenceType {
     let typeName = resolveFqTypeName(type);
     if (genericTypeMap && genericTypeMap.has(typeName)) {
         const refType: any = genericTypeMap.get(typeName);
@@ -355,7 +357,7 @@ function getReferenceType(type: EntityName, genericTypeMap?: Map<String, TypeNod
         const properties = getModelTypeProperties(modelTypeDeclaration, genericTypes);
         const additionalProperties = getModelTypeAdditionalProperties(modelTypeDeclaration);
 
-        const referenceType: ReferenceType = {
+        const referenceType: ResolverType.ReferenceType = {
             description: getModelDescription(modelTypeDeclaration),
             properties: properties,
             typeName: typeNameWithGenerics,
@@ -790,11 +792,11 @@ function resolveTypeArguments(node: ClassDeclaration, typeArguments?: ReadonlyAr
 /**
  * Used to identify union types of a primitive and array of the same primitive, e.g. `string | string[]`
  */
-export function getCommonPrimitiveAndArrayUnionType(typeNode?: TypeNode): BaseType | null {
+export function getCommonPrimitiveAndArrayUnionType(typeNode?: TypeNode): ResolverType.BaseType | null {
     if (typeNode && typeNode.kind === SyntaxKind.UnionType) {
         const union = typeNode as UnionTypeNode;
         const types = union.types.map(t => resolveType(t));
-        const arrType = types.find(t => t.typeName === 'array') as ArrayType | undefined;
+        const arrType = types.find(t => t.typeName === 'array') as ResolverType.ArrayType | undefined;
         const primitiveType = types.find(t => t.typeName !== 'array');
 
         if (types.length === 2 && arrType && arrType.elementType && primitiveType && arrType.elementType.typeName === primitiveType.typeName) {

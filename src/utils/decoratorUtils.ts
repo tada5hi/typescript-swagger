@@ -14,21 +14,23 @@ export function getDecorators(node: Node, isMatching: (identifier: DecoratorData
             if (isCallExpression(x)) {
                 if (x.arguments) {
                     result.arguments = x.arguments.map((argument: any) => {
-                        if (isStringLiteral(argument)) {
-                            return argument.text;
-                        } else if (isNumericLiteral(argument)) {
+                        if (isStringLiteral(argument) || isNumericLiteral(argument)) {
                             return argument.text;
                         } else {
                             return argument;
                         }
                     });
                 }
+
                 if (x.typeArguments) {
                     result.typeArguments = x.typeArguments;
                 }
+
                 x = x.expression;
             }
+
             result.text = x.text || x.name.text;
+
             return result as DecoratorData;
         })
         .filter(isMatching);

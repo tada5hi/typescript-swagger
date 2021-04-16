@@ -14,7 +14,7 @@ import {
 import {useDebugger} from "../debug";
 import {isDecorator} from '../utils/decoratorUtils';
 import {ControllerGenerator} from './controllerGenerator';
-import {BaseType, ReferenceType} from "./resolver/type";
+import {ResolverType} from "./resolver/type";
 
 const M = require("minimatch");
 
@@ -23,8 +23,8 @@ export class MetadataGenerator {
     public readonly nodes = new Array<Node>();
     public readonly typeChecker: TypeChecker;
     private readonly program: Program;
-    private referenceTypes: { [typeName: string]: ReferenceType } = {};
-    private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: ReferenceType }) => void>();
+    private referenceTypes: { [typeName: string]: ResolverType.ReferenceType} = {};
+    private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: ResolverType.ReferenceType}) => void>();
     private debugger = useDebugger();
 
     constructor(entryFile: string | Array<string>, compilerOptions: CompilerOptions, private readonly  ignorePaths?: Array<string>) {
@@ -72,7 +72,7 @@ export class MetadataGenerator {
         return this.typeChecker;
     }
 
-    public addReferenceType(referenceType: ReferenceType) {
+    public addReferenceType(referenceType: ResolverType.ReferenceType) {
         this.referenceTypes[referenceType.typeName] = referenceType;
     }
 
@@ -80,7 +80,7 @@ export class MetadataGenerator {
         return this.referenceTypes[typeName];
     }
 
-    public onFinish(callback: (referenceTypes: { [typeName: string]: ReferenceType }) => void) {
+    public onFinish(callback: (referenceTypes: { [typeName: string]: ResolverType.ReferenceType}) => void) {
         this.circularDependencyResolvers.push(callback);
     }
 
@@ -136,7 +136,7 @@ export class MetadataGenerator {
 
 export interface Metadata {
     controllers: Array<Controller>;
-    referenceTypes: { [typeName: string]: ReferenceType };
+    referenceTypes: { [typeName: string]: ResolverType.ReferenceType};
 }
 
 export interface Controller {
@@ -158,7 +158,7 @@ export interface Method {
     name: string;
     parameters: Array<Parameter>;
     path: string;
-    type: BaseType;
+    type: ResolverType.BaseType;
     tags: Array<string>;
     responses: Array<ResponseType>;
     security?: Array<Security>;
@@ -173,7 +173,7 @@ export interface Parameter {
     in: string;
     name: string;
     required: boolean;
-    type: BaseType;
+    type: ResolverType.BaseType;
     collectionFormat?: boolean;
     allowEmptyValue?: boolean;
     default?: any;
@@ -189,18 +189,18 @@ export interface Security {
 export interface ResponseType {
     description: string;
     status: string;
-    schema?: BaseType;
+    schema?: ResolverType.BaseType;
     examples?: any;
 }
 
 export interface Property {
     description: string;
     name: string;
-    type: BaseType;
+    type: ResolverType.BaseType;
     required: boolean;
 }
 
 export interface ResponseData {
     status: string;
-    type: BaseType;
+    type: ResolverType.BaseType;
 }
