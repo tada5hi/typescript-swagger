@@ -72,6 +72,10 @@ export class MetadataGenerator {
         return this.typeChecker;
     }
 
+    public isExportedNode(node: Node) {
+        return true;
+    }
+
     public addReferenceType(referenceType: ResolverType.ReferenceType) {
         this.referenceTypes[referenceType.typeName] = referenceType;
     }
@@ -194,9 +198,13 @@ export interface ResponseType {
 }
 
 export interface Property {
-    description: string;
+    default?: any;
+    format?: string;
+    example?: unknown;
+    validators: Record<string, { value?: any, message?: string }>;
+    description?: string;
     name: string;
-    type: ResolverType.BaseType;
+    type: ResolverType.Type;
     required: boolean;
 }
 

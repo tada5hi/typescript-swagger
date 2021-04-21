@@ -1,8 +1,9 @@
 import * as ts from 'typescript';
 import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from '../utils/decoratorUtils';
 import { MetadataGenerator, Parameter} from './metadataGenerator';
-import { getLiteralValue, resolveType } from './resolver';
+import { resolveType } from './resolver';
 import {ResolverType} from "./resolver/type";
+import {getInitializerValue} from "./resolver/utils";
 
 export class ParameterGenerator {
     constructor(
@@ -84,7 +85,7 @@ export class ParameterGenerator {
             name: parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken,
-            type: {typeName: ''}
+            type: null
         };
     }
 
@@ -142,11 +143,11 @@ export class ParameterGenerator {
 
     private getCookieParameter(parameter: ts.ParameterDeclaration): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
-//        const type = this.getValidatedType(parameter);
+        const type = this.getValidatedType(parameter);
 
-        // if (!this.supportPathDataType(type)) {
-        //     throw new Error(`Cookie can't support '${this.getCurrentLocation()}' method.`);
-        // }
+        if (!this.supportPathDataType(type)) {
+           throw new Error(`Cookie can't support '${this.getCurrentLocation()}' method.`);
+        }
 
         return {
             description: this.getParameterDescription(parameter),
@@ -154,7 +155,7 @@ export class ParameterGenerator {
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'CookieParam' || ident.text === 'Cookies') || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
-            type: {typeName: ''}
+            type: type
         };
     }
 
@@ -214,7 +215,7 @@ export class ParameterGenerator {
         return {
             // allowEmptyValue: parameterOptions.allowEmptyValue,
             collectionFormat: parameterOptions.collectionFormat,
-            default: this.getDefaultValue(parameter.initializer),
+            default: getInitializerValue(parameter.initializer, MetadataGenerator.current.typeChecker),
             description: this.getParameterDescription(parameter),
             in: 'query',
             // maxItems: parameterOptions.maxItems,
@@ -289,11 +290,6 @@ export class ParameterGenerator {
             throw new Error(`Parameter ${parameter.name} doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`);
         }
         return resolveType(parameter.type, this.genericTypeMap);
-    }
-
-    private getDefaultValue(initializer?: ts.Expression) {
-        if (!initializer) { return; }
-        return getLiteralValue(initializer);
     }
 }
 

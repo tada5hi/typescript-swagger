@@ -1,5 +1,11 @@
 import {isCallExpression, isNumericLiteral, isStringLiteral, Node} from 'typescript';
 
+/**
+ * Get Decorators for a specific node.
+ *
+ * @param node
+ * @param isMatching
+ */
 export function getDecorators(node: Node, isMatching: (identifier: DecoratorData) => boolean): Array<DecoratorData> {
     const decorators = node.decorators;
     if (!decorators || !decorators.length) { return []; }

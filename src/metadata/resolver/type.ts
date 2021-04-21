@@ -1,57 +1,146 @@
 import {Property} from "../metadataGenerator";
 
 export namespace ResolverType {
+    export type TypeStringLiteral =
+        | 'string'
+        | 'boolean'
+        | 'double'
+        | 'float'
+        | 'file'
+        | 'integer'
+        | 'long'
+        | 'enum'
+        | 'array'
+        | 'datetime'
+        | 'date'
+        | 'binary'
+        | 'buffer'
+        | 'byte'
+        | 'void'
+        | 'object'
+        | 'any'
+        | 'refEnum'
+        | 'refObject'
+        | 'refAlias'
+        | 'nestedObjectLiteral'
+        | 'union'
+        | 'intersection';
+
+    export type RefTypeLiteral = 'refObject' | 'refEnum' | 'refAlias';
+
+    export type PrimitiveTypeLiteral = Exclude<TypeStringLiteral, RefTypeLiteral | 'enum' | 'array' | 'void' | 'nestedObjectLiteral' | 'union' | 'intersection'>;
+
+    export type Type =
+        | PrimitiveType
+        | ObjectsNoPropsType
+        | EnumType
+        | ArrayType
+        | FileType
+        | DateTimeType
+        | DateType
+        | BinaryType
+        | BufferType
+        | ByteType
+        | AnyType
+        | RefEnumType
+        | RefObjectType
+        | RefAliasType
+        | NestedObjectLiteralType
+        | UnionType
+        | IntersectionType;
+
+    // -------------------------------------------
+
     export interface BaseType {
-        typeName: string;
+        typeName: TypeStringLiteral;
         typeArgument?: BaseType;
     }
 
     // -------------------------------------------
+    // Primitive Type(s)
+    // -------------------------------------------
 
-    export interface EnumerateType extends BaseType {
-        enumMembers: Array<string>;
-        typeName: 'enum';
+    export type PrimitiveType = StringType | BooleanType | DoubleType | FloatType | IntegerType | LongType | VoidType;
+
+    export interface StringType extends BaseType {
+        typeName: 'string';
     }
 
-    export function isEnumerateType(param: BaseType) : param is ReferenceType {
-        return param.typeName === 'enum';
+    export interface BooleanType extends BaseType {
+        typeName: 'boolean';
+    }
+
+    export interface DoubleType extends BaseType {
+        typeName: 'double';
+    }
+
+    export interface FloatType extends BaseType {
+        typeName: 'float';
+    }
+
+    export interface IntegerType extends BaseType {
+        typeName: 'integer';
+    }
+
+    export interface LongType extends BaseType {
+        typeName: 'long';
+    }
+
+    export interface VoidType extends BaseType {
+        typeName: 'void';
     }
 
     // -------------------------------------------
-
-    export interface IntersectionType extends BaseType {
-        typeName: 'intersection';
-        enumMembers: Array<any>;
-    }
-
-    export function isIntersectionType(param: BaseType) : param is ReferenceType {
-        return param.typeName === 'intersection';
-    }
-
+    // Simple Type(s)
     // -------------------------------------------
 
-    export interface ReferenceType extends BaseType {
-        description: string;
-        properties: Array<Property>;
-        additionalProperties?: Array<Property>;
+    export interface DateType extends BaseType {
+        typeName: 'date';
     }
 
-    export function isReferenceType(param: BaseType) : param is ReferenceType {
-        return !isIntersectionType(param) &&
-            !isArrayType(param) &&
-            !isObjectType(param) &&
-            !isEnumerateType(param);
+    export interface FileType extends BaseType {
+        typeName: 'file';
     }
 
-    // -------------------------------------------
+    export interface DateTimeType extends BaseType {
+        typeName: 'datetime';
+    }
 
-    export interface ObjectType extends BaseType {
-        properties: Array<Property>;
+    export interface BinaryType extends BaseType {
+        typeName: 'binary';
+    }
+
+    export interface BufferType extends BaseType {
+        typeName: 'buffer';
+    }
+
+    export interface ByteType extends BaseType {
+        typeName: 'byte';
+    }
+
+    export interface VoidType extends BaseType {
+        typeName: 'void';
+    }
+
+    export interface AnyType extends BaseType {
+        typeName: 'any';
+    }
+
+    export interface ObjectsNoPropsType extends BaseType {
         typeName: 'object';
     }
 
-    export function isObjectType(param: BaseType) : param is ObjectType {
-        return param.typeName === 'object';
+    // -------------------------------------------
+    // Complex Type(s)
+    // -------------------------------------------
+
+    export interface EnumType extends BaseType {
+        members: Array<string | number | boolean | null>;
+        typeName: 'enum';
+    }
+
+    export function isEnumerateType(param: BaseType) : param is EnumType {
+        return param.typeName === 'enum';
     }
 
     // -------------------------------------------
@@ -63,6 +152,65 @@ export namespace ResolverType {
 
     export function isArrayType(param: BaseType) : param is ArrayType {
         return param.typeName === 'array';
+    }
+
+    // -------------------------------------------
+
+    export interface NestedObjectLiteralType extends BaseType {
+        typeName: 'nestedObjectLiteral';
+        properties: Array<Property>;
+        additionalProperties?: Type;
+    }
+
+    // -------------------------------------------
+
+    export interface IntersectionType extends BaseType {
+        typeName: 'intersection';
+        members: Array<Type>;
+    }
+
+    export function isIntersectionType(param: BaseType) : param is IntersectionType {
+        return param.typeName === 'intersection';
+    }
+
+    // -------------------------------------------
+
+    export interface UnionType extends BaseType {
+        typeName: 'union';
+        members: Array<Type>;
+    }
+
+    export function isUnionType(param: BaseType) : param is UnionType {
+        return param.typeName === 'union';
+    }
+
+    // -------------------------------------------
+    // Reference Type(s)
+    // -------------------------------------------
+
+    export type ReferenceType = RefEnumType | RefObjectType | RefAliasType;
+
+    export interface ReferenceTypeBase extends BaseType {
+        description?: string;
+        typeName: RefTypeLiteral;
+        refName: string;
+        example?: unknown;
+    }
+
+    export interface RefEnumType extends ReferenceTypeBase {
+        typeName: 'refEnum';
+        members: Array<unknown>;
+        memberNames?: Array<string>;
+    }
+
+    export interface RefObjectType extends ReferenceTypeBase {
+        typeName: 'refObject';
+        properties: Array<Property>;
+        additionalProperties?: Type;
+    }
+
+    export interface RefAliasType extends Omit<Property, 'name' | 'required'>, ReferenceTypeBase {
+        typeName: 'refAlias';
     }
 }
 

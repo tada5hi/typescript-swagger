@@ -350,8 +350,8 @@ export class SpecGenerator {
             return this.getSwaggerTypeForArrayType(arrayType);
         }
 
-        const enumType = type as ResolverType.EnumerateType;
-        if (enumType.enumMembers) {
+        const enumType = type as ResolverType.EnumType;
+        if (enumType.members) {
             return this.getSwaggerTypeForEnumType(enumType);
         }
 
@@ -394,7 +394,7 @@ export class SpecGenerator {
         return { type: 'array', items: this.getSwaggerType(arrayType.elementType) };
     }
 
-    private getSwaggerTypeForEnumType(enumType: ResolverType.EnumerateType): Swagger.Schema {
+    private getSwaggerTypeForEnumType(enumType: ResolverType.EnumType): Swagger.Schema {
         function getDerivedTypeFromValues(values: Array<any>): string {
             return values.reduce((derivedType: string, item: any) => {
                 const currentType = typeof item;
@@ -403,9 +403,9 @@ export class SpecGenerator {
             }, null);
         }
 
-        const enumValues = enumType.enumMembers.map(member => member as string) as [string];
+        const enumValues = enumType.members.map(member => member as string) as [string];
         return {
-            enum: enumType.enumMembers.map(member => member as string) as [string],
+            enum: enumType.members.map(member => member as string) as [string],
             type: getDerivedTypeFromValues(enumValues),
         };
     }

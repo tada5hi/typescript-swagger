@@ -23,6 +23,7 @@
     "no-console": false,
     "no-namespace": false,
     "no-empty-interface": false,
+    "object-literal-sort-keys": false,
     "semicolon": [
       true,
       "always"
