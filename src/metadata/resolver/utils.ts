@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
-import {ResolverType} from "./type";
+import {Resolver} from "./type";
 
-export function getInitializerValue(initializer?: ts.Expression, typeChecker?: ts.TypeChecker, type?: ResolverType.Type) : unknown {
+export function getInitializerValue(initializer?: ts.Expression, typeChecker?: ts.TypeChecker, type?: Resolver.Type) : unknown {
     if (!initializer || !typeChecker) {
         return;
     }

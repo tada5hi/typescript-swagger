@@ -1,6 +1,6 @@
 import {Property} from "../metadataGenerator";
 
-export namespace ResolverType {
+export namespace Resolver {
     export type TypeStringLiteral =
         | 'string'
         | 'boolean'

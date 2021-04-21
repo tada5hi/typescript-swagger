@@ -4,18 +4,21 @@ import {getDecorators, getDecoratorTextValue} from '../utils/decoratorUtils';
 import { getJSDocDescription, getJSDocTagComment, isExistJSDocTag } from '../utils/jsDocUtils';
 import { normalizePath } from '../utils/pathUtils';
 import { EndpointGenerator } from './endpointGenerator';
-import {Method, Parameter, ResponseData, ResponseType} from './metadataGenerator';
+import {MetadataGenerator, Method, Parameter, ResponseData, ResponseType} from './metadataGenerator';
 import { ParameterGenerator } from './parameterGenerator';
 import { resolveType } from './resolver';
-import {ResolverType} from "./resolver/type";
+import {Resolver} from "./resolver/type";
 
 export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private method: string;
     private path: string;
 
-    constructor(node: ts.MethodDeclaration,
+    constructor(
+        node: ts.MethodDeclaration,
+        current: MetadataGenerator,
         private readonly controllerPath: string,
-        private readonly genericTypeMap?: Map<String, ts.TypeNode>) {
+        private readonly genericTypeMap?: Map<String, ts.TypeNode>
+    ) {
         super(node, 'methods');
         this.processMethodDecorators();
     }
@@ -33,7 +36,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         if (!this.isValid()) { throw new Error('This isn\'t a valid controller method.'); }
 
         this.debugger('Generating Metadata for method %s', this.getCurrentLocation());
-        const identifier = this.node.name as ts.Identifier;
+
         const type = resolveType(this.node.type, this.genericTypeMap);
         const responses = this.mergeResponses(this.getResponses(this.genericTypeMap), this.getMethodSuccessResponse(type));
 
@@ -42,7 +45,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             deprecated: isExistJSDocTag(this.node, 'deprecated'),
             description: getJSDocDescription(this.node),
             method: this.method,
-            name: identifier.text,
+            name: (this.node.name as ts.Identifier).text,
             parameters: this.buildParameters(),
             path: this.path,
             produces: (this.getDecoratorValues('Produces') ? this.getDecoratorValues('Produces') : this.getDecoratorValues('Accept')),
@@ -120,7 +123,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         this.debugger('Mapping endpoint %s %s', this.method, this.path);
     }
 
-    private getMethodSuccessResponse(type:  ResolverType.BaseType): ResponseType {
+    private getMethodSuccessResponse(type:  Resolver.BaseType): ResponseType {
         const responseData = this.getMethodSuccessResponseData(type);
         return {
             description: type.typeName === 'void' ? 'No content' : 'Ok',
@@ -130,7 +133,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         };
     }
 
-    private getMethodSuccessResponseData(type:  ResolverType.BaseType): ResponseData {
+    private getMethodSuccessResponseData(type:  Resolver.BaseType): ResponseData {
         switch (type.typeName) {
             case 'void': return { status: '204', type: type };
             case 'NewResource': return { status: '201', type: type.typeArgument || type };

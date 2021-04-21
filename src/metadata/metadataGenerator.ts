@@ -14,17 +14,16 @@ import {
 import {useDebugger} from "../debug";
 import {isDecorator} from '../utils/decoratorUtils';
 import {ControllerGenerator} from './controllerGenerator';
-import {ResolverType} from "./resolver/type";
+import {Resolver} from "./resolver/type";
 
 const M = require("minimatch");
 
 export class MetadataGenerator {
-    public static current: MetadataGenerator;
     public readonly nodes = new Array<Node>();
     public readonly typeChecker: TypeChecker;
     private readonly program: Program;
-    private referenceTypes: { [typeName: string]: ResolverType.ReferenceType} = {};
-    private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: ResolverType.ReferenceType}) => void>();
+    private referenceTypes: { [typeName: string]: Resolver.ReferenceType} = {};
+    private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: Resolver.ReferenceType}) => void>();
     private debugger = useDebugger();
 
     constructor(entryFile: string | Array<string>, compilerOptions: CompilerOptions, private readonly  ignorePaths?: Array<string>) {
@@ -32,9 +31,9 @@ export class MetadataGenerator {
         this.debugger('Starting Metadata Generator');
         this.debugger('Source files: %j ', sourceFiles);
         this.debugger('Compiler Options: %j ', compilerOptions);
+
         this.program = createProgram(sourceFiles, compilerOptions);
         this.typeChecker = this.program.getTypeChecker();
-        MetadataGenerator.current = this;
     }
 
     public generate(): Metadata {
@@ -76,7 +75,7 @@ export class MetadataGenerator {
         return true;
     }
 
-    public addReferenceType(referenceType: ResolverType.ReferenceType) {
+    public addReferenceType(referenceType: Resolver.ReferenceType) {
         this.referenceTypes[referenceType.typeName] = referenceType;
     }
 
@@ -84,7 +83,7 @@ export class MetadataGenerator {
         return this.referenceTypes[typeName];
     }
 
-    public onFinish(callback: (referenceTypes: { [typeName: string]: ResolverType.ReferenceType}) => void) {
+    public onFinish(callback: (referenceTypes: { [typeName: string]: Resolver.ReferenceType}) => void) {
         this.circularDependencyResolvers.push(callback);
     }
 
@@ -132,7 +131,7 @@ export class MetadataGenerator {
             .filter(node => node.kind === SyntaxKind.ClassDeclaration)
             .filter(node => !isDecorator(node, decorator => 'Hidden' === decorator.text))
             .filter(node => isDecorator(node, decorator => decorator.text === 'Path' || decorator.text === 'Controller'))
-            .map((classDeclaration: ClassDeclaration) => new ControllerGenerator(classDeclaration))
+            .map((classDeclaration: ClassDeclaration) => new ControllerGenerator(classDeclaration, this))
             .filter(generator => generator.isValid())
             .map(generator => generator.generate());
     }
@@ -140,7 +139,7 @@ export class MetadataGenerator {
 
 export interface Metadata {
     controllers: Array<Controller>;
-    referenceTypes: { [typeName: string]: ResolverType.ReferenceType};
+    referenceTypes: { [typeName: string]: Resolver.ReferenceType};
 }
 
 export interface Controller {
@@ -162,7 +161,7 @@ export interface Method {
     name: string;
     parameters: Array<Parameter>;
     path: string;
-    type: ResolverType.BaseType;
+    type: Resolver.BaseType;
     tags: Array<string>;
     responses: Array<ResponseType>;
     security?: Array<Security>;
@@ -177,7 +176,7 @@ export interface Parameter {
     in: string;
     name: string;
     required: boolean;
-    type: ResolverType.BaseType;
+    type: Resolver.BaseType;
     collectionFormat?: boolean;
     allowEmptyValue?: boolean;
     default?: any;
@@ -193,7 +192,7 @@ export interface Security {
 export interface ResponseType {
     description: string;
     status: string;
-    schema?: ResolverType.BaseType;
+    schema?: Resolver.BaseType;
     examples?: any;
 }
 
@@ -204,11 +203,11 @@ export interface Property {
     validators: Record<string, { value?: any, message?: string }>;
     description?: string;
     name: string;
-    type: ResolverType.Type;
+    type: Resolver.Type;
     required: boolean;
 }
 
 export interface ResponseData {
     status: string;
-    type: ResolverType.BaseType;
+    type: Resolver.BaseType;
 }
