@@ -49,7 +49,7 @@ function getDecorator(node: Node, isMatching: (identifier: DecoratorData) => boo
     return decorators[0];
 }
 
-export function getDecoratorName(node: Node, isMatching: (identifier: DecoratorData) => boolean) {
+export function getDecoratorName(node: Node, isMatching: (identifier: DecoratorData) => boolean) : string | undefined {
     const decorator = getDecorator(node, isMatching);
     return decorator ? decorator.text : undefined;
 }

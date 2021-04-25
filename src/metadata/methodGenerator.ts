@@ -6,12 +6,14 @@ import { normalizePath } from '../utils/pathUtils';
 import { EndpointGenerator } from './endpointGenerator';
 import {MetadataGenerator, Method, Parameter, ResponseData, ResponseType} from './metadataGenerator';
 import { ParameterGenerator } from './parameterGenerator';
-import { resolveType } from './resolver';
+import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
 
 export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private method: string;
     private path: string;
+
+    // --------------------------------------------------------------------
 
     constructor(
         node: ts.MethodDeclaration,
@@ -19,9 +21,11 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         private readonly controllerPath: string,
         private readonly genericTypeMap?: Map<String, ts.TypeNode>
     ) {
-        super(node, 'methods');
+        super(node, current);
         this.processMethodDecorators();
     }
+
+    // --------------------------------------------------------------------
 
     public isValid() {
         return !!this.method;
@@ -37,10 +41,18 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
 
         this.debugger('Generating Metadata for method %s', this.getCurrentLocation());
 
-        const type = resolveType(this.node.type, this.genericTypeMap);
+        let nodeType = this.node.type;
+        if (!nodeType) {
+            const typeChecker = this.current.typeChecker;
+            const signature = typeChecker.getSignatureFromDeclaration(this.node);
+            const implicitType = typeChecker.getReturnTypeOfSignature(signature!);
+            nodeType = typeChecker.typeToTypeNode(implicitType, undefined, ts.NodeBuilderFlags.NoTruncation) as ts.TypeNode;
+        }
+
+        const type = new TypeNodeResolver(nodeType, this.current).resolve();
         const responses = this.mergeResponses(this.getResponses(this.genericTypeMap), this.getMethodSuccessResponse(type));
 
-        const methodMetadata = {
+        const methodMetadata : Method = {
             consumes: this.getDecoratorValues('Consumes'),
             deprecated: isExistJSDocTag(this.node, 'deprecated'),
             description: getJSDocDescription(this.node),
@@ -72,8 +84,9 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             try {
                 const path = pathUtil.posix.join('/', (this.controllerPath ? this.controllerPath : ''), this.path);
 
-                return new ParameterGenerator(p, this.method, path, this.genericTypeMap).generate();
+                return new ParameterGenerator(p, this.method, path, this.current).generate();
             } catch (e) {
+                console.log(e);
                 const methodId = this.node.name as ts.Identifier;
                 const controllerId = (this.node.parent as ts.ClassDeclaration).name as ts.Identifier;
                 const parameterId = p.name as ts.Identifier;
@@ -123,10 +136,10 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         this.debugger('Mapping endpoint %s %s', this.method, this.path);
     }
 
-    private getMethodSuccessResponse(type:  Resolver.BaseType): ResponseType {
+    private getMethodSuccessResponse(type: Resolver.BaseType): ResponseType {
         const responseData = this.getMethodSuccessResponseData(type);
         return {
-            description: type.typeName === 'void' ? 'No content' : 'Ok',
+            description: Resolver.isVoidType(type) ? 'No content' : 'Ok',
             examples: this.getMethodSuccessExamples(),
             schema: responseData.type,
             status: responseData.status
@@ -136,12 +149,6 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private getMethodSuccessResponseData(type:  Resolver.BaseType): ResponseData {
         switch (type.typeName) {
             case 'void': return { status: '204', type: type };
-            case 'NewResource': return { status: '201', type: type.typeArgument || type };
-            case 'RequestAccepted': return { status: '202', type: type.typeArgument || type };
-            case 'MovedPermanently': return { status: '301', type: type.typeArgument || type };
-            case 'MovedTemporarily': return { status: '302', type: type.typeArgument || type };
-            case 'DownloadResource':
-            case 'DownloadBinaryData': return { status: '200', type: { typeName: 'buffer' } };
             default: return { status: '200', type: type };
         }
     }

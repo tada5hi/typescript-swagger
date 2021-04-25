@@ -6,7 +6,10 @@ import {
     createProgram,
     forEachChild,
     InterfaceDeclaration,
+    isModuleBlock,
+    isModuleDeclaration,
     Node,
+    NodeFlags,
     Program,
     SyntaxKind,
     TypeChecker
@@ -14,6 +17,7 @@ import {
 import {useDebugger} from "../debug";
 import {isDecorator} from '../utils/decoratorUtils';
 import {ControllerGenerator} from './controllerGenerator';
+import {TypeNodeResolver} from "./resolver";
 import {Resolver} from "./resolver/type";
 
 const M = require("minimatch");
@@ -23,10 +27,12 @@ export class MetadataGenerator {
     public readonly typeChecker: TypeChecker;
     private readonly program: Program;
     private referenceTypes: { [typeName: string]: Resolver.ReferenceType} = {};
-    private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: Resolver.ReferenceType}) => void>();
+    private circularDependencyResolvers = new Array<(referenceTypes: { [refName: string]: Resolver.ReferenceType}) => void>();
     private debugger = useDebugger();
 
     constructor(entryFile: string | Array<string>, compilerOptions: CompilerOptions, private readonly  ignorePaths?: Array<string>) {
+        TypeNodeResolver.clearCache();
+
         const sourceFiles = this.getSourceFiles(entryFile);
         this.debugger('Starting Metadata Generator');
         this.debugger('Source files: %j ', sourceFiles);
@@ -41,8 +47,8 @@ export class MetadataGenerator {
             if (this.ignorePaths && this.ignorePaths.length) {
                 for (const path of this.ignorePaths) {
                     if(
-                        !sf.fileName.includes('node_modules/typescript-rest/') &&
-                        !sf.fileName.includes('node_modules/@decorators/express') &&
+                        // sf.fileName.includes('node_modules/typescript-rest/') ||
+                        // sf.fileName.includes('node_modules/@decorators/express') ||
                         M(sf.fileName, path)
                     ) {
                         return;
@@ -51,6 +57,23 @@ export class MetadataGenerator {
             }
 
             forEachChild(sf, (node: any) => {
+
+                if (isModuleDeclaration(node)) {
+                    /**
+                     * For some reason unknown to me, TS resolves both `declare module` and `namespace` to
+                     * the same kind (`ModuleDeclaration`). In order to figure out whether it's one or the other,
+                     * we check the node flags. They tell us whether it is a namespace or not.
+                     */
+                    // tslint:disable-next-line:no-bitwise
+                    if ((node.flags & NodeFlags.Namespace) === 0 && node.body && isModuleBlock(node.body)) {
+                        node.body.statements.forEach(statement => {
+                            this.nodes.push(statement);
+                        });
+                        return;
+                    }
+                }
+
+
                 this.nodes.push(node);
             });
         });
@@ -67,23 +90,23 @@ export class MetadataGenerator {
         };
     }
 
-    public TypeChecker() {
-        return this.typeChecker;
-    }
-
     public isExportedNode(node: Node) {
         return true;
     }
 
     public addReferenceType(referenceType: Resolver.ReferenceType) {
-        this.referenceTypes[referenceType.typeName] = referenceType;
+        if (!referenceType.refName) {
+            return;
+        }
+
+        this.referenceTypes[referenceType.refName] = referenceType;
     }
 
-    public getReferenceType(typeName: string) {
-        return this.referenceTypes[typeName];
+    public getReferenceType(refName: string) {
+        return this.referenceTypes[refName];
     }
 
-    public onFinish(callback: (referenceTypes: { [typeName: string]: Resolver.ReferenceType}) => void) {
+    public onFinish(callback: (referenceTypes: { [refName: string]: Resolver.ReferenceType}) => void) {
         this.circularDependencyResolvers.push(callback);
     }
 

@@ -1,4 +1,5 @@
 import {Identifier, isJSDocParameterTag, JSDoc, JSDocTag, Node, SyntaxKind} from 'typescript';
+import {ResolverError} from "../metadata/resolver/error";
 
 // -----------------------------------------
 // Description
@@ -19,7 +20,7 @@ export function getMatchingJSDocTags(node: Node, isMatching: (t: JSDocTag) => bo
     if (!jsDocs || !jsDocs.length) { return undefined; }
 
     const jsDoc = jsDocs[0];
-    if (!jsDoc.tags) { return undefined; }
+    if (!jsDoc.tags) { return []; }
 
     return jsDoc.tags.filter(isMatching);
 }
@@ -64,14 +65,15 @@ export function getJSDocTagComment(node: Node, tagName: ((tag: JSDocTag) => bool
 // -----------------------------------------
 
 export function getJSDocTagNames(node: Node, requireTagName = false) : Array<string> {
-    let tags: Array<JSDocTag>;
+    let tags: Array<JSDocTag> = [];
+
     if (node.kind === SyntaxKind.Parameter) {
         const parameterName = ((node as any).name as Identifier).text;
         tags = getMatchingJSDocTags(node.parent as any, tag => {
             if (isJSDocParameterTag(tag)) {
                 return false;
             } else if (tag.comment === undefined) {
-                throw new GenerateMetadataError(`Orphan tag: @${String(tag.tagName.text || tag.tagName.escapedText)} should have a parameter name follows with.`);
+                throw new ResolverError(`Orphan tag: @${String(tag.tagName.text || tag.tagName.escapedText)} should have a parameter name follows with.`);
             }
             return tag.comment.startsWith(parameterName);
         });
@@ -80,6 +82,11 @@ export function getJSDocTagNames(node: Node, requireTagName = false) : Array<str
             return requireTagName ? tag.comment !== undefined : true;
         });
     }
+
+    if(typeof tags === 'undefined') {
+        return [];
+    }
+
     return tags.map(tag => {
         return tag.tagName.text;
     });

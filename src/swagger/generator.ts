@@ -1,19 +1,16 @@
 import {Debugger} from "debug";
-import { promises, writeFile }from 'fs';
+import {promises, writeFile} from 'fs';
 import {castArray, union} from 'lodash';
 import {posix} from 'path';
 import {CompilerOptions} from "typescript";
 import {stringify} from 'yamljs';
-import { Specification, SwaggerConfig } from '../config';
+import {Specification, SwaggerConfig} from '../config';
 import {useDebugger} from "../debug";
 
-import {
-    Metadata, MetadataGenerator, Method, Parameter,
-    Property, ResponseType
-} from '../metadata/metadataGenerator';
+import {Metadata, MetadataGenerator, Method, Parameter, Property, ResponseType} from '../metadata/metadataGenerator';
 import {Resolver} from "../metadata/resolver/type";
 
-import { Swagger } from './index';
+import {Swagger} from './index';
 
 export async function generateDocumentation(swaggerConfig: SwaggerConfig, tsConfig: CompilerOptions) : Promise<string> {
     const metadata = new MetadataGenerator(swaggerConfig.entryFile, tsConfig, swaggerConfig.ignore).generate();
@@ -113,22 +110,66 @@ export class SpecGenerator {
     private buildDefinitions() {
         const definitions: { [definitionsName: string]: Swagger.Schema } = {};
         Object.keys(this.metadata.referenceTypes).map(typeName => {
-            this.debugger('Generating definition for type: %s', typeName);
             const referenceType = this.metadata.referenceTypes[typeName];
-            this.debugger('Metadata for referenced Type: %j', referenceType);
-            definitions[referenceType.typeName] = {
-                description: referenceType.description,
-                properties: this.buildProperties(referenceType.properties),
-                type: 'object'
-            };
-            const requiredFields = referenceType.properties.filter(p => p.required).map(p => p.name);
-            if (requiredFields && requiredFields.length) {
-                definitions[referenceType.typeName].required = requiredFields;
+            // const key : string = referenceType.typeName.replace('_', '');
+
+            if (referenceType.typeName === 'refObject') {
+                const required = referenceType.properties.filter(p => p.required).map(p => p.name);
+                definitions[referenceType.refName] = {
+                    description: referenceType.description,
+                    properties: this.buildProperties(referenceType.properties),
+                    required: required && required.length > 0 ? Array.from(new Set(required)) : undefined,
+                    type: 'object',
+                };
+
+                if (referenceType.additionalProperties) {
+                    definitions[referenceType.refName].additionalProperties = true;
+                } else {
+                    // Since additionalProperties was not explicitly set in the TypeScript interface for this model
+                    //      ...we need to make a decision
+                    definitions[referenceType.refName].additionalProperties = true;
+                }
+
+                if (referenceType.example) {
+                    // @ts-ignore
+                    definitions[referenceType.refName].example = referenceType.example;
+                }
+            } else if (Resolver.isRefEnumType(referenceType)) {
+                definitions[referenceType.refName] = {
+                    description: referenceType.description,
+                    enum: referenceType.members,
+                    type: this.decideEnumType(referenceType.members, referenceType.refName),
+                };
+
+                if (referenceType.memberNames !== undefined && referenceType.members.length === referenceType.memberNames.length) {
+                    // @ts-ignore
+                    definitions[referenceType.refName]['x-enum-varnames'] = referenceType.memberNames;
+                }
+            } else if (referenceType.typeName === 'refAlias') {
+                const swaggerType = this.getSwaggerType(referenceType.type);
+                const format = referenceType.format;
+                const validators = Object.keys(referenceType.validators)
+                    .filter(key => {
+                        return !key.startsWith('is') && key !== 'minDate' && key !== 'maxDate';
+                    })
+                    .reduce((acc, key) => {
+                        return {
+                            ...acc,
+                            [key]: referenceType.validators[key].value,
+                        };
+                    }, {});
+
+                definitions[referenceType.refName] = {
+                    ...(swaggerType as Swagger.Schema),
+                    default: referenceType.default || swaggerType.default,
+                    example: referenceType.example as {[p: string]: Swagger.Example},
+                    format: format || swaggerType.format,
+                    description: referenceType.description,
+                    ...validators,
+                };
+            } else {
+                console.log(referenceType);
             }
-            if (referenceType.additionalProperties) {
-                definitions[referenceType.typeName].additionalProperties = this.buildAdditionalProperties(referenceType.additionalProperties);
-            }
-            this.debugger('Generated Definition for type %s: %j', typeName, definitions[referenceType.typeName]);
         });
 
         return definitions;
@@ -275,17 +316,26 @@ export class SpecGenerator {
         return swaggerProperties;
     }
 
-    private buildAdditionalProperties(properties: Array<Property>) {
-        const swaggerAdditionalProperties: { [ref: string]: string } = {};
+    private decideEnumType(anEnum: Array<string | number>, nameOfEnum: string): 'string' | 'number' {
+        const typesUsedInEnum = this.determineTypesUsedInEnum(anEnum);
 
-        properties.forEach(property => {
-            const swaggerType = this.getSwaggerType(property.type);
-            if (swaggerType.$ref) {
-                swaggerAdditionalProperties['$ref'] = swaggerType.$ref;
-            }
-        });
+        const badEnumErrorMessage = () => {
+            const valuesDelimited = Array.from(typesUsedInEnum).join(',');
+            return `Enums can only have string or number values, but enum ${nameOfEnum} had ${valuesDelimited}`;
+        };
 
-        return swaggerAdditionalProperties;
+        let enumTypeForSwagger: 'string' | 'number' = 'string';
+        if (typesUsedInEnum.has('string') && typesUsedInEnum.size === 1) {
+            enumTypeForSwagger = 'string';
+        } else if (typesUsedInEnum.has('number') && typesUsedInEnum.size === 1) {
+            enumTypeForSwagger = 'number';
+        } else if(typesUsedInEnum.size === 2 && typesUsedInEnum.has('number') && typesUsedInEnum.has('string')) {
+            enumTypeForSwagger = 'string';
+        } else {
+            throw new Error(badEnumErrorMessage());
+        }
+
+        return enumTypeForSwagger;
     }
 
     private buildOperation(controllerName: string, method: Method) {
@@ -339,37 +389,95 @@ export class SpecGenerator {
         return `${controllerNameWithoutSuffix}${methodName.charAt(0).toUpperCase() + methodName.substr(1)}`;
     }
 
-    private getSwaggerType(type: Resolver.BaseType) {
-        const swaggerType = this.getSwaggerTypeForPrimitiveType(type);
-        if (swaggerType) {
-            return swaggerType;
+    private getSwaggerType(type: Resolver.BaseType) : Swagger.BaseSchema | Swagger.Schema {
+        if (Resolver.isVoidType(type)) {
+            return {} as Swagger.BaseSchema;
+        } else if (Resolver.isReferenceType(type)) {
+            return this.getSwaggerTypeForReferenceType(type);
+        } else if (
+            type.typeName === 'any' ||
+            type.typeName === 'binary' ||
+            type.typeName === 'boolean' ||
+            type.typeName === 'buffer' ||
+            type.typeName === 'byte' ||
+            type.typeName === 'date' ||
+            type.typeName === 'datetime' ||
+            type.typeName === 'double' ||
+            type.typeName === 'float' ||
+            type.typeName === 'file' ||
+            type.typeName === 'integer' ||
+            type.typeName === 'long' ||
+            type.typeName === 'object' ||
+            type.typeName === 'string'
+        ) {
+            return this.getSwaggerTypeForPrimitiveType(type.typeName);
+        } else if (Resolver.isArrayType(type)) {
+            return this.getSwaggerTypeForArrayType(type);
+        } else if (Resolver.isEnumType(type)) {
+            return this.getSwaggerTypeForEnumType(type);
+        } else if (Resolver.isUnionType(type)) {
+            return this.getSwaggerTypeForUnionType(type);
+        } else if (Resolver.isIntersectionType(type)) {
+            return this.getSwaggerTypeForIntersectionType(type);
+        } else if (Resolver.isNestedObjectLiteralType(type)) {
+            return this.getSwaggerTypeForObjectLiteral(type);
         }
 
-        const arrayType = type as Resolver.ArrayType;
-        if (arrayType.elementType) {
-            return this.getSwaggerTypeForArrayType(arrayType);
-        }
-
-        const enumType = type as Resolver.EnumType;
-        if (enumType.members) {
-            return this.getSwaggerTypeForEnumType(enumType);
-        }
-
-        const refType = type as Resolver.ReferenceType;
-        if (refType.properties && refType.description !== undefined) {
-            return this.getSwaggerTypeForReferenceType(type as Resolver.ReferenceType);
-        }
-
-        const objectType = type as Resolver.ObjectType;
-        return this.getSwaggerTypeForObjectType(objectType);
+        return {} as Swagger.BaseSchema;
     }
 
-    private getSwaggerTypeForPrimitiveType(type: Resolver.BaseType) {
-        const typeMap: { [name: string]: Swagger.Schema } = {
+    protected isNull(type: Resolver.Type) {
+        return Resolver.isEnumType(type) && type.members.length === 1 && type.members[0] === null;
+    }
+
+    protected getSwaggerTypeForUnionType(type: Resolver.UnionType) {
+        if (type.members.every(subType => subType.typeName === 'enum')) {
+            const mergedEnum: Resolver.EnumType = { typeName: 'enum', members: [] };
+            type.members.forEach(t => {
+                mergedEnum.members = [...mergedEnum.members, ...(t as Resolver.EnumType).members];
+            });
+            return this.getSwaggerTypeForEnumType(mergedEnum);
+        } else if (type.members.length === 2 && type.members.find(typeInUnion => typeInUnion.typeName === 'enum' && typeInUnion.members.includes(null))) {
+            // Backwards compatible representation of dataType or null, $ref does not allow any sibling attributes, so we have to bail out
+            const nullEnumIndex = type.members.findIndex(a => a.typeName === 'enum' && a.members.includes(null));
+            const typeIndex = nullEnumIndex === 1 ? 0 : 1;
+            const swaggerType = this.getSwaggerType(type.members[typeIndex]);
+            const isRef = !!swaggerType.$ref;
+
+            console.log(isRef);
+
+            if (isRef) {
+                return { type: 'object' };
+            } else {
+                // @ts-ignore
+                swaggerType['x-nullable'] = true;
+                return swaggerType;
+            }
+        }
+
+        if(type.members.length === 2) {
+            const index = type.members.findIndex(member => Resolver.isArrayType(member));
+            if(index !== -1) {
+                const otherIndex = index === 0 ? 1 : 0;
+
+                if((type.members[index] as Resolver.ArrayType).elementType.typeName === type.members[otherIndex].typeName) {
+                    return this.getSwaggerType(type.members[otherIndex]);
+                }
+            }
+        }
+
+        return { type: 'object' };
+    }
+
+    private getSwaggerTypeForPrimitiveType(type: Resolver.PrimitiveTypeLiteral) {
+        const map: Record<Resolver.PrimitiveTypeLiteral, Swagger.Schema> = {
+            any: {
+                // While the any type is discouraged, it does explicitly allows anything, so it should always allow additionalProperties
+                additionalProperties: true,
+            },
             binary: { type: 'string', format: 'binary' },
             boolean: { type: 'boolean' },
-            buffer: { type: 'file' },
-            //            buffer: { type: 'string', format: 'base64' },
+            buffer: { type: 'string', format: 'byte' },
             byte: { type: 'string', format: 'byte' },
             date: { type: 'string', format: 'date' },
             datetime: { type: 'string', format: 'date-time' },
@@ -378,39 +486,63 @@ export class SpecGenerator {
             float: { type: 'number', format: 'float' },
             integer: { type: 'integer', format: 'int32' },
             long: { type: 'integer', format: 'int64' },
-            object: { type: 'object' },
+            object: {
+                additionalProperties: true,
+                type: 'object',
+            },
             string: { type: 'string' },
-            void: { type: 'void' },
         };
 
-        return typeMap[type.typeName];
-    }
-
-    private getSwaggerTypeForObjectType(objectType: Resolver.ObjectType): Swagger.Schema {
-        return { type: 'object', properties: this.buildProperties(objectType.properties) };
+        return map[type];
     }
 
     private getSwaggerTypeForArrayType(arrayType: Resolver.ArrayType): Swagger.Schema {
         return { type: 'array', items: this.getSwaggerType(arrayType.elementType) };
     }
 
-    private getSwaggerTypeForEnumType(enumType: Resolver.EnumType): Swagger.Schema {
-        function getDerivedTypeFromValues(values: Array<any>): string {
-            return values.reduce((derivedType: string, item: any) => {
-                const currentType = typeof item;
-                derivedType = derivedType && derivedType !== currentType ? 'string' : currentType;
-                return derivedType;
-            }, null);
-        }
+    protected getSwaggerTypeForIntersectionType(type: Resolver.IntersectionType) : Swagger.Schema {
+        return { allOf: type.members.map(x => this.getSwaggerType(x)) };
+    }
 
-        const enumValues = enumType.members.map(member => member as string) as [string];
+    protected getSwaggerTypeForEnumType(enumType: Resolver.EnumType) : Swagger.Schema2 | Swagger.Schema3 {
+        const types = this.determineTypesUsedInEnum(enumType.members);
+
+        if (types.size === 1) {
+            const type = types.values().next().value;
+            const nullable = !!enumType.members.includes(null);
+            return { type: type, enum: enumType.members.map(member => (member === null ? null : String(member))), nullable: nullable };
+        } else {
+            const valuesDelimited = Array.from(types).join(',');
+            throw new Error(`Enums can only have string or number values, but enum had ${valuesDelimited}`);
+        }
+    }
+
+    public getSwaggerTypeForObjectLiteral(objectLiteral: Resolver.NestedObjectLiteralType) : Swagger.Schema {
+        const properties = this.buildProperties(objectLiteral.properties);
+
+        const additionalProperties = objectLiteral.additionalProperties && this.getSwaggerType(objectLiteral.additionalProperties);
+
+        const required = objectLiteral.properties.filter(prop => prop.required).map(prop => prop.name);
+
+        // An empty list required: [] is not valid.
+        // If all properties are optional, do not specify the required keyword.
         return {
-            enum: enumType.members.map(member => member as string) as [string],
-            type: getDerivedTypeFromValues(enumValues),
+            properties: properties,
+            ...(additionalProperties && { additionalProperties: additionalProperties }),
+            ...(required && required.length && { required: required }),
+            type: 'object',
         };
     }
 
     private getSwaggerTypeForReferenceType(referenceType: Resolver.ReferenceType): Swagger.Schema {
-        return { $ref: `#/definitions/${referenceType.typeName}` };
+        return { $ref: `#/definitions/${referenceType.refName}` };
+    }
+
+    protected determineTypesUsedInEnum(anEnum: Array<string | number | boolean | null>) {
+        return anEnum.reduce((theSet, curr) => {
+            const typeUsed = curr === null ? 'number' : typeof curr;
+            theSet.add(typeUsed);
+            return theSet;
+        }, new Set<'string' | 'number' | 'bigint' | 'boolean' | 'symbol' | 'undefined' | 'object' | 'function'>());
     }
 }

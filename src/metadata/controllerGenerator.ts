@@ -9,11 +9,15 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     private path: string | undefined;
     private genMethods: Set<string> = new Set<string>();
 
-    constructor(node: ClassDeclaration, private readonly current: MetadataGenerator) {
-        super(node, 'controllers');
+    // --------------------------------------------------------------------
+
+    constructor(node: ClassDeclaration, current: MetadataGenerator) {
+        super(node, current);
 
         this.generatePath();
     }
+
+    // --------------------------------------------------------------------
 
     private generatePath() {
         const values : Array<string> = [
@@ -51,6 +55,7 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
             security: this.getSecurity(),
             tags: this.getDecoratorValues('Tags'),
         };
+
         this.debugger('Generated Metadata for controller %s: %j', this.getCurrentLocation(), controllerMetadata);
         return controllerMetadata;
     }

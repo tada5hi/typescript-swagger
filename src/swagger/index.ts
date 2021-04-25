@@ -114,10 +114,12 @@ export namespace Swagger {
     }
 
     export interface BaseSchema {
+        type?: string;
         format?: string;
+        $ref?: string;
         title?: string;
         description?: string;
-        default?: string | boolean | number | Object;
+        default?: string | boolean | number | any;
         multipleOf?: number;
         maximum?: number;
         exclusiveMaximum?: number;
@@ -131,22 +133,33 @@ export namespace Swagger {
         uniqueItems?: boolean;
         maxProperties?: number;
         minProperties?: number;
-        enum?: [string];
-        type?: string;
+        enum?: Array<string | number>;
+        'x-enum-varnames'?: Array<string>;
         items?: Schema | [Schema];
     }
 
     export interface Schema extends BaseSchema {
         $ref?: string;
-        allOf?: [Schema];
-        additionalProperties?: boolean | { [ref: string]: string };
+        allOf?: Array<BaseSchema>;
+        additionalProperties?: boolean | { [ref: string]: string } | BaseSchema;
         properties?: { [propertyName: string]: Schema };
         discriminator?: string;
         readOnly?: boolean;
         xml?: XML;
         externalDocs?: ExternalDocs;
-        example?: { [exampleName: string]: Example };
+        example?: { [exampleName: string]: Example } | unknown;
         required?: Array<string>;
+    }
+
+    export interface Schema2 extends Schema {
+        ['x-nullable']?: boolean;
+    }
+
+    export interface Schema3 extends Omit<Schema, 'type'> {
+        type?: string;
+        nullable?: boolean;
+        anyOf?: Array<BaseSchema>;
+        allOf?: Array<BaseSchema>;
     }
 
     export interface XML {

@@ -4,13 +4,13 @@ import {castArray} from 'lodash';
 import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, TypeNode} from 'typescript';
 import {useDebugger} from "../debug";
 import { getDecorators } from '../utils/decoratorUtils';
-import { ResponseType } from './metadataGenerator';
-import { resolveType } from './resolver';
+import {MetadataGenerator, ResponseType} from './metadataGenerator';
+import {TypeNodeResolver} from './resolver';
 
 export abstract class EndpointGenerator<T extends Node> {
     protected node: T;
 
-    protected constructor(node: T, name: string) {
+    protected constructor(node: T, protected current: MetadataGenerator) {
         this.node = node;
     }
 
@@ -115,7 +115,7 @@ export abstract class EndpointGenerator<T extends Node> {
                 description: description,
                 examples: examples,
                 schema: (decorator.typeArguments && decorator.typeArguments.length > 0)
-                    ? resolveType(decorator.typeArguments[0], genericTypeMap)
+                    ? new TypeNodeResolver(decorator.typeArguments[0], this.current).resolve()
                     : undefined,
                 status: status
             };

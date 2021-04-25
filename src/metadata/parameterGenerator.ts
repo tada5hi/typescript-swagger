@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from '../utils/decoratorUtils';
 import { MetadataGenerator, Parameter} from './metadataGenerator';
-import { resolveType } from './resolver';
+import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
 import {getInitializerValue} from "./resolver/utils";
 
@@ -10,7 +10,7 @@ export class ParameterGenerator {
         private readonly parameter: ts.ParameterDeclaration,
         private readonly method: string,
         private readonly path: string,
-        private readonly genericTypeMap?: Map<String, ts.TypeNode>
+        private readonly current: MetadataGenerator
     ) { }
 
     public generate(): Parameter {
@@ -209,17 +209,17 @@ export class ParameterGenerator {
                 throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a query parameter in '${this.getCurrentLocation()}'.`);
             }
              */
-            throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a query parameter in '${this.getCurrentLocation()}'.`);
+            // throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a query parameter in '${this.getCurrentLocation()}'.`);
         }
 
         return {
-            // allowEmptyValue: parameterOptions.allowEmptyValue,
+            allowEmptyValue: parameterOptions.allowEmptyValue,
             collectionFormat: parameterOptions.collectionFormat,
-            default: getInitializerValue(parameter.initializer, MetadataGenerator.current.typeChecker),
+            default: getInitializerValue(parameter.initializer, this.current.typeChecker, type),
             description: this.getParameterDescription(parameter),
             in: 'query',
-            // maxItems: parameterOptions.maxItems,
-            // minItems: parameterOptions.minItems,
+            maxItems: parameterOptions.maxItems,
+            minItems: parameterOptions.minItems,
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'QueryParam' ||ident.text === 'Query') || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
@@ -250,10 +250,10 @@ export class ParameterGenerator {
     }
 
     private getParameterDescription(node: ts.ParameterDeclaration) {
-        const symbol = MetadataGenerator.current.typeChecker.getSymbolAtLocation(node.name);
+        const symbol = this.current.typeChecker.getSymbolAtLocation(node.name);
 
         if (symbol) {
-            const comments = symbol.getDocumentationComment(MetadataGenerator.current.typeChecker);
+            const comments = symbol.getDocumentationComment(this.current.typeChecker);
             if (comments.length) { return ts.displayPartsToString(comments); }
         }
 
@@ -286,10 +286,12 @@ export class ParameterGenerator {
     }
 
     private getValidatedType(parameter: ts.ParameterDeclaration) {
-        if (!parameter.type) {
-            throw new Error(`Parameter ${parameter.name} doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`);
+        let typeNode = parameter.type;
+        if (!typeNode) {
+            const type = this.current.typeChecker.getTypeAtLocation(parameter);
+            typeNode = this.current.typeChecker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.NoTruncation) as ts.TypeNode;
         }
-        return resolveType(parameter.type, this.genericTypeMap);
+        return new TypeNodeResolver(typeNode, this.current, parameter).resolve();
     }
 }
 

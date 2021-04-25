@@ -90,6 +90,10 @@ export namespace Resolver {
         typeName: 'void';
     }
 
+    export function isVoidType(param: BaseType) : param is VoidType {
+        return param.typeName === 'void';
+    }
+
     // -------------------------------------------
     // Simple Type(s)
     // -------------------------------------------
@@ -118,10 +122,6 @@ export namespace Resolver {
         typeName: 'byte';
     }
 
-    export interface VoidType extends BaseType {
-        typeName: 'void';
-    }
-
     export interface AnyType extends BaseType {
         typeName: 'any';
     }
@@ -139,7 +139,7 @@ export namespace Resolver {
         typeName: 'enum';
     }
 
-    export function isEnumerateType(param: BaseType) : param is EnumType {
+    export function isEnumType(param: BaseType) : param is EnumType {
         return param.typeName === 'enum';
     }
 
@@ -160,6 +160,10 @@ export namespace Resolver {
         typeName: 'nestedObjectLiteral';
         properties: Array<Property>;
         additionalProperties?: Type;
+    }
+
+    export function isNestedObjectLiteralType(param: BaseType) : param is NestedObjectLiteralType {
+        return param.typeName === 'nestedObjectLiteral';
     }
 
     // -------------------------------------------
@@ -199,8 +203,12 @@ export namespace Resolver {
 
     export interface RefEnumType extends ReferenceTypeBase {
         typeName: 'refEnum';
-        members: Array<unknown>;
+        members: Array<string | number>;
         memberNames?: Array<string>;
+    }
+
+    export function isRefEnumType(param: BaseType) : param is RefEnumType {
+        return param.typeName === 'refEnum';
     }
 
     export interface RefObjectType extends ReferenceTypeBase {
@@ -211,6 +219,10 @@ export namespace Resolver {
 
     export interface RefAliasType extends Omit<Property, 'name' | 'required'>, ReferenceTypeBase {
         typeName: 'refAlias';
+    }
+
+    export function isReferenceType(param: BaseType) : param is ReferenceType {
+        return param.typeName === 'refEnum' || param.typeName === 'refAlias' || param.typeName === 'refObject';
     }
 }
 

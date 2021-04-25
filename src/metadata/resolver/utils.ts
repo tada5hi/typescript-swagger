@@ -52,6 +52,6 @@ export function getInitializerValue(initializer?: ts.Expression, typeChecker?: t
             const extractedInitializer = symbol && symbol.valueDeclaration && hasInitializer(symbol.valueDeclaration) && (symbol.valueDeclaration.initializer as ts.Expression);
             return extractedInitializer ? getInitializerValue(extractedInitializer, typeChecker) : undefined;
     }
-};
+}
 
 const hasInitializer = (node: ts.Node): node is ts.HasInitializer => node.hasOwnProperty('initializer');
