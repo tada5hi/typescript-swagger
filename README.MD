@@ -12,6 +12,7 @@ This is a tool to generate swagger files from the following projects:
   - [CLI](#cli)
   - [Runtime](#runtime)
 - [Usage](#usage)
+  - [Limitations](#limitations)
   - [Swagger Decorators](#swagger-decorators)
     - [@Response](#response)
     - [@Example](#example)
