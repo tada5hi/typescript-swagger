@@ -444,8 +444,6 @@ export class SpecGenerator {
             const swaggerType = this.getSwaggerType(type.members[typeIndex]);
             const isRef = !!swaggerType.$ref;
 
-            console.log(isRef);
-
             if (isRef) {
                 return { type: 'object' };
             } else {

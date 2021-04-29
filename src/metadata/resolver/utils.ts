@@ -1,6 +1,11 @@
 import * as ts from 'typescript';
 import {Resolver} from "./type";
 
+
+export function hasOwnProperty<X extends {}, Y extends PropertyKey>(obj: X, prop: Y): obj is X & Record<Y, unknown> {
+    return obj.hasOwnProperty(prop);
+}
+
 export function getInitializerValue(initializer?: ts.Expression, typeChecker?: ts.TypeChecker, type?: Resolver.Type) : unknown {
     if (!initializer || !typeChecker) {
         return;

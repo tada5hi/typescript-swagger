@@ -91,7 +91,7 @@ export namespace Resolver {
     }
 
     export function isVoidType(param: BaseType) : param is VoidType {
-        return param.typeName === 'void';
+        return typeof param === 'undefined' || param.typeName === 'void';
     }
 
     // -------------------------------------------
@@ -226,6 +226,10 @@ export namespace Resolver {
     }
 }
 
+export type PickUtilityType = 'Pick';
+export type OmitUtilityType = 'Omit';
+export type RequiredUtilityType = 'Required';
+export type PartialUtilityType = 'Partial';
+export type ReadonlyUtilityType = 'Readonly';
 
-
-
+export type UtilityType = PickUtilityType | OmitUtilityType | PartialUtilityType | RequiredUtilityType | ReadonlyUtilityType;

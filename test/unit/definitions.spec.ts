@@ -350,7 +350,7 @@ describe('Definition generation', () => {
       let expression = jsonata('definitions.ResponseBodystringArray');
       expect(expression.evaluate(spec)).toBeUndefined;
       expression = jsonata('paths."/primitives/arrayNative".get.responses."200".schema."$ref"');
-      expect(expression.evaluate(spec)).toEqual('#/definitions/ResponseBodystringArray');
+      expect(expression.evaluate(spec)).toEqual('#/definitions/ResponseBodystringarray');
       expression = jsonata('paths."/primitives/array".get.responses."200".schema."$ref"');
       expect(expression.evaluate(spec)).toEqual('#/definitions/ResponseBodyArraystring');
     });

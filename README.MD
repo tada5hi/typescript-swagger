@@ -97,6 +97,11 @@ export async function generateSwaggerDocumentation(): Promise<void> {
 
 ## Usage
 
+### Limitations
+
+You can use pretty any type you have declared, but module types are not supported.
+As well only the following union types are supported: Omit, Partial, Readonly, Required, Pick
+
 ### Swagger Decorators
 
 The documentation will be generated consulting all [typescript-rest](https://github.com/thiagobustamante/typescript-rest) as well
