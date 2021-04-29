@@ -100,7 +100,7 @@ export async function generateSwaggerDocumentation(): Promise<void> {
 ### Limitations
 
 You can use pretty any type you have declared, but module types are not supported.
-As well only the following union types are supported: Omit, Partial, Readonly, Required, Pick
+As well only the following utility types are supported: Omit, Partial, Readonly, Required, Pick
 
 ### Swagger Decorators
 
