@@ -82,7 +82,7 @@ export const swaggerConfig: SwaggerConfig = {
   yaml: true,
   name: 'API - Documentation',
   description: packageJson.description,
-  basePath: '',
+  basePath: '/',
   version: packageJson.version,
   outputDirectory: 'public',
   entryFile: path.join('src', 'controllers', '**', '*.ts'),
@@ -100,13 +100,23 @@ export async function generateSwaggerDocumentation(): Promise<void> {
 
 ### Limitations
 
-You can use pretty any type you have declared, but module types are not supported.
-As well only the following utility types are supported: Omit, Partial, Readonly, Required, Pick
+You can use pretty any type you have declared in your code. The only restriction are types form third party modules.
+
+Also the following built in typescript utility types are also supported: 
+* NonNullable
+* Omit
+* Partial
+* Readonly
+* Record
+* Required
+* Pick
 
 ### Swagger Decorators
 
-The documentation will be generated consulting all [typescript-rest](https://github.com/thiagobustamante/typescript-rest) as well
-[@decorators/express](https://github.com/serhiisol/node-decorators) decorators present on your code.
+The documentation will be generated consulting all decorators of the following libraries present on your code:
+* [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
+* [@decorators/express](https://github.com/serhiisol/node-decorators)
+
 However, there are some additional informations that can be provided, only with documentation purposes, through some other decorators present into this library.
 
 Some examples:
@@ -114,6 +124,13 @@ Some examples:
 ```typescript
 import {Path, Accept, GET} from 'typescript-rest';
 import {Tags} from 'typescript-swagger';
+
+interface Person {
+    id: number;
+    name: string;
+    avatar: string;
+    password: string;
+}
 
 @Path('mypath')
 export class MyService {
@@ -126,7 +143,7 @@ export class MyService {
 
     @GET
     @Path('secondpath')
-    test2( @QueryParam('testParam')test?: string ): Person {
+    test2( @QueryParam('testParam')test?: string ): Pick<Person, 'name' | 'avatar'> {
         return {name: 'OK'};
     }
 }

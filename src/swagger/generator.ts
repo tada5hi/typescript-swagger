@@ -110,11 +110,11 @@ export class SpecGenerator {
     private buildDefinitions() {
         const definitions: { [definitionsName: string]: Swagger.Schema } = {};
         Object.keys(this.metadata.referenceTypes).map(typeName => {
-            const referenceType = this.metadata.referenceTypes[typeName];
+            const referenceType : Resolver.ReferenceType = this.metadata.referenceTypes[typeName];
             // const key : string = referenceType.typeName.replace('_', '');
 
-            if (referenceType.typeName === 'refObject') {
-                const required = referenceType.properties.filter(p => p.required).map(p => p.name);
+            if (Resolver.isRefObjectType(referenceType)) {
+                const required = referenceType.properties.filter((p: Property) => p.required).map((p: Property) => p.name);
                 definitions[referenceType.refName] = {
                     description: referenceType.description,
                     properties: this.buildProperties(referenceType.properties),
@@ -135,6 +135,7 @@ export class SpecGenerator {
                     definitions[referenceType.refName].example = referenceType.example;
                 }
             } else if (Resolver.isRefEnumType(referenceType)) {
+
                 definitions[referenceType.refName] = {
                     description: referenceType.description,
                     enum: referenceType.members,
@@ -145,7 +146,7 @@ export class SpecGenerator {
                     // @ts-ignore
                     definitions[referenceType.refName]['x-enum-varnames'] = referenceType.memberNames;
                 }
-            } else if (referenceType.typeName === 'refAlias') {
+            } else if (Resolver.isRefAliasType(referenceType)) {
                 const swaggerType = this.getSwaggerType(referenceType.type);
                 const format = referenceType.format;
                 const validators = Object.keys(referenceType.validators)
@@ -421,6 +422,8 @@ export class SpecGenerator {
             return this.getSwaggerTypeForIntersectionType(type);
         } else if (Resolver.isNestedObjectLiteralType(type)) {
             return this.getSwaggerTypeForObjectLiteral(type);
+        } else {
+            console.log(type);
         }
 
         return {} as Swagger.BaseSchema;
@@ -431,15 +434,15 @@ export class SpecGenerator {
     }
 
     protected getSwaggerTypeForUnionType(type: Resolver.UnionType) {
-        if (type.members.every(subType => subType.typeName === 'enum')) {
+        if (type.members.every((subType: Resolver.Type) => subType.typeName === 'enum')) {
             const mergedEnum: Resolver.EnumType = { typeName: 'enum', members: [] };
-            type.members.forEach(t => {
+            type.members.forEach((t: Resolver.Type) => {
                 mergedEnum.members = [...mergedEnum.members, ...(t as Resolver.EnumType).members];
             });
             return this.getSwaggerTypeForEnumType(mergedEnum);
-        } else if (type.members.length === 2 && type.members.find(typeInUnion => typeInUnion.typeName === 'enum' && typeInUnion.members.includes(null))) {
+        } else if (type.members.length === 2 && type.members.find((typeInUnion: Resolver.Type) => typeInUnion.typeName === 'enum' && typeInUnion.members.includes(null))) {
             // Backwards compatible representation of dataType or null, $ref does not allow any sibling attributes, so we have to bail out
-            const nullEnumIndex = type.members.findIndex(a => a.typeName === 'enum' && a.members.includes(null));
+            const nullEnumIndex = type.members.findIndex((a: Resolver.Type) => Resolver.isEnumType(a) && a.members.includes(null));
             const typeIndex = nullEnumIndex === 1 ? 0 : 1;
             const swaggerType = this.getSwaggerType(type.members[typeIndex]);
             const isRef = !!swaggerType.$ref;
@@ -454,7 +457,7 @@ export class SpecGenerator {
         }
 
         if(type.members.length === 2) {
-            const index = type.members.findIndex(member => Resolver.isArrayType(member));
+            const index = type.members.findIndex((member: Resolver.Type) => Resolver.isArrayType(member));
             if(index !== -1) {
                 const otherIndex = index === 0 ? 1 : 0;
 
@@ -499,7 +502,7 @@ export class SpecGenerator {
     }
 
     protected getSwaggerTypeForIntersectionType(type: Resolver.IntersectionType) : Swagger.Schema {
-        return { allOf: type.members.map(x => this.getSwaggerType(x)) };
+        return { allOf: type.members.map((x: Resolver.Type) => this.getSwaggerType(x)) };
     }
 
     protected getSwaggerTypeForEnumType(enumType: Resolver.EnumType) : Swagger.Schema2 | Swagger.Schema3 {
@@ -508,7 +511,7 @@ export class SpecGenerator {
         if (types.size === 1) {
             const type = types.values().next().value;
             const nullable = !!enumType.members.includes(null);
-            return { type: type, enum: enumType.members.map(member => (member === null ? null : String(member))), nullable: nullable };
+            return { type: type, enum: enumType.members.map((member: string | number | boolean | null) => (member === null ? null : String(member))), nullable: nullable };
         } else {
             const valuesDelimited = Array.from(types).join(',');
             throw new Error(`Enums can only have string or number values, but enum had ${valuesDelimited}`);
@@ -520,7 +523,7 @@ export class SpecGenerator {
 
         const additionalProperties = objectLiteral.additionalProperties && this.getSwaggerType(objectLiteral.additionalProperties);
 
-        const required = objectLiteral.properties.filter(prop => prop.required).map(prop => prop.name);
+        const required = objectLiteral.properties.filter((prop: Property) => prop.required).map((prop: Property) => prop.name);
 
         // An empty list required: [] is not valid.
         // If all properties are optional, do not specify the required keyword.

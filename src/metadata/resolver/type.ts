@@ -217,8 +217,16 @@ export namespace Resolver {
         additionalProperties?: Type;
     }
 
+    export function isRefObjectType(param: BaseType) : param is RefObjectType {
+        return param.typeName === 'refObject';
+    }
+
     export interface RefAliasType extends Omit<Property, 'name' | 'required'>, ReferenceTypeBase {
         typeName: 'refAlias';
+    }
+
+    export function isRefAliasType(param: BaseType) : param is RefAliasType {
+        return param.typeName === 'refAlias';
     }
 
     export function isReferenceType(param: BaseType) : param is ReferenceType {

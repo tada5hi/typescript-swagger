@@ -28,9 +28,9 @@ function getPropertyValidators(property: ts.PropertyDeclaration | ts.TypeAliasDe
     return {};
 }
 
-type UtilityType = | 'Omit' | 'Partial' | 'Readonly' | 'Required' | 'Pick';
+type UtilityType = 'NonNullable' | 'Omit' | 'Partial' | 'Readonly' | 'Record' | 'Required' | 'Pick';
 interface UtilityOptions {
-    arguments: Array<string | number | boolean>;
+    keys: Array<string | number | boolean>;
 }
 
 export class TypeNodeResolver {
@@ -316,6 +316,15 @@ export class TypeNodeResolver {
         const typeReference = this.typeNode as ts.TypeReferenceNode;
 
         if (typeReference.typeName.kind === ts.SyntaxKind.Identifier) {
+            // Special Utility Type
+            if(typeReference.typeName.text === 'Record') {
+                return {
+                    additionalProperties: new TypeNodeResolver(typeReference.typeArguments[1], this.current, this.parentNode, this.context).resolve(),
+                    typeName: 'nestedObjectLiteral',
+                    properties: [],
+                } as Resolver.NestedObjectLiteralType;
+            }
+
             const specialReference = TypeNodeResolver.resolveSpecialReference(typeReference.typeName);
             if(typeof specialReference !== 'undefined') {
                 return specialReference;
@@ -355,14 +364,17 @@ export class TypeNodeResolver {
         return referenceType;
     }
 
+    // ------------------------------------------------------------------------
+    // Utility Type(s)
+    // ------------------------------------------------------------------------
     private static isSupportedUtilityType(typeName: string | ts.Identifier | undefined) : typeName is UtilityType {
         if(typeof typeName === 'undefined') { return false; }
-        return ['Pick','Omit', 'Required', 'Partial', 'Readonly'].indexOf(typeof typeName !== 'string' ? typeName.text : typeName) !== -1;
+        return ['NonNullable', 'Pick', 'Omit', 'Partial', 'Readonly', 'Record', 'Required'].indexOf(typeof typeName !== 'string' ? typeName.text : typeName) !== -1;
     }
 
     private static getUtilityTypeOptions(typeArguments: ts.NodeArray<ts.TypeNode>) {
         const utilityOptions : UtilityOptions = {
-            arguments: []
+            keys: []
         };
 
         if(typeArguments.length >= 2) {
@@ -370,13 +382,13 @@ export class TypeNodeResolver {
                 const args : ts.NodeArray<ts.TypeNode> = (typeArguments[1] as ts.UnionTypeNode).types;
                 for(let i=0; i<args.length; i++) {
                     if (ts.isLiteralTypeNode(args[i])) {
-                        utilityOptions['arguments'].push(TypeNodeResolver.getLiteralValue(args[i] as ts.LiteralTypeNode));
+                        utilityOptions['keys'].push(TypeNodeResolver.getLiteralValue(args[i] as ts.LiteralTypeNode));
                     }
                 }
             }
 
             if (ts.isLiteralTypeNode(typeArguments[1])) {
-                utilityOptions['arguments'].push(TypeNodeResolver.getLiteralValue(typeArguments[1] as ts.LiteralTypeNode));
+                utilityOptions['keys'].push(TypeNodeResolver.getLiteralValue(typeArguments[1] as ts.LiteralTypeNode));
             }
         }
 
@@ -394,9 +406,9 @@ export class TypeNodeResolver {
 
                 switch (utilityType) {
                     case 'Pick':
-                        return utilityOptions.arguments.indexOf(name) !== -1;
+                        return utilityOptions.keys.indexOf(name) !== -1;
                     case 'Omit':
-                        return utilityOptions.arguments.indexOf(name) === -1;
+                        return utilityOptions.keys.indexOf(name) === -1;
                 }
 
                 return true;
@@ -408,6 +420,7 @@ export class TypeNodeResolver {
                                 property.required = false;
                                 break;
                             case 'Required':
+                            case 'NonNullable':
                                 property.required = true;
                                 break;
                         }
@@ -600,14 +613,16 @@ export class TypeNodeResolver {
         let resolvableName = node.pos !== -1 ? node.getText() : (type as ts.Identifier).text;
         if (node.pos === -1 && 'typeArguments' in node && Array.isArray(node.typeArguments)) {
             // Add typeArguments for Synthetic nodes (e.g. Record<> in TestClassModel.indexedResponse)
-            const argumentsString = node.typeArguments.map(arg => {
-                if (ts.isLiteralTypeNode(arg)) {
-                    return `'${String(TypeNodeResolver.getLiteralValue(arg))}'`;
-                }
-                const resolvedType = this.attemptToResolveKindToPrimitive(arg.kind);
-                if (typeof resolvedType === 'undefined') { return 'any'; }
-                return resolvedType;
-            });
+            const argumentsString = node.typeArguments
+                .map(arg => {
+                    if (ts.isLiteralTypeNode(arg)) {
+                        return `'${String(TypeNodeResolver.getLiteralValue(arg))}'`;
+                    }
+                    const resolvedType = this.attemptToResolveKindToPrimitive(arg.kind);
+                    if (typeof resolvedType === 'undefined') { return 'any'; }
+                    return resolvedType;
+                });
+
             resolvableName += `<${argumentsString.join(', ')}>`;
         }
 
@@ -615,10 +630,13 @@ export class TypeNodeResolver {
 
         // Handle Utility Types
         const identifierName = (type as ts.Identifier).text;
-        const utilityType : UtilityType | undefined = TypeNodeResolver.isSupportedUtilityType(identifierName) ? identifierName: undefined;
-        let utilityOptions : UtilityOptions | undefined;
+        const utilityTypeSupported : boolean = TypeNodeResolver.isSupportedUtilityType(identifierName);
+        const utilityType : UtilityType | undefined = utilityTypeSupported ? identifierName as UtilityType : undefined;
+        let utilityOptions : UtilityOptions = {
+            keys: []
+        };
 
-        if(TypeNodeResolver.isSupportedUtilityType(identifierName)) {
+        if(utilityTypeSupported) {
             const typeArguments : ts.NodeArray<ts.TypeNode> = (type.parent as ts.TypeReferenceNode).typeArguments;
             if (ts.isTypeReferenceNode(typeArguments[0])) {
                 type = (typeArguments[0] as ts.TypeReferenceNode).typeName;
@@ -659,7 +677,7 @@ export class TypeNodeResolver {
             } else if (ts.isEnumMember(declaration)) {
                 referenceType = {
                     typeName: 'refEnum',
-                    refName: TypeNodeResolver.getRefTypeName(name),
+                    refName: TypeNodeResolver.getRefTypeName(name, utilityType),
                     members: [this.current.typeChecker.getConstantValue(declaration)!],
                     // @ts-ignore
                     memberNames: [declaration.name.getText()],
@@ -679,15 +697,30 @@ export class TypeNodeResolver {
     }
 
     private getTypeAliasReference(declaration: ts.TypeAliasDeclaration, name: string, referencer: ts.TypeReferenceType): Resolver.ReferenceType {
+        const refName = TypeNodeResolver.getRefTypeName(name);
+
+        let type : Resolver.Type | undefined;
+
+        if(declaration.type.kind === ts.SyntaxKind.TypeReference) {
+            const referenceType = this.getReferenceType(declaration.type as ts.TypeReferenceNode);
+            if(referenceType.refName === refName) {
+                return referenceType;
+            }
+        }
+
+        if(typeof type === 'undefined') {
+            type = new TypeNodeResolver(declaration.type, this.current, declaration, this.context, this.referencer || referencer).resolve();
+        }
+
         const example = TypeNodeResolver.getNodeExample(declaration);
 
         return {
             typeName: 'refAlias',
             default: getJSDocTagComment(declaration, 'default'),
             description: this.getNodeDescription(declaration),
-            refName: TypeNodeResolver.getRefTypeName(name),
+            refName: refName,
             format: TypeNodeResolver.getNodeFormat(declaration),
-            type: new TypeNodeResolver(declaration.type, this.current, declaration, this.context, this.referencer || referencer).resolve(),
+            type: type,
             validators: getPropertyValidators
             (declaration) || {},
             ...(example && { example: example }),
@@ -711,8 +744,9 @@ export class TypeNodeResolver {
                 const implicitType = this.current.typeChecker.getReturnTypeOfSignature(signature!);
                 nodeType = this.current.typeChecker.typeToTypeNode(implicitType, undefined, ts.NodeBuilderFlags.NoTruncation) as ts.TypeNode;
             }
+
             return {
-                refName: TypeNodeResolver.getRefTypeName(name),
+                refName: TypeNodeResolver.getRefTypeName(name, utilityType)+'Alias',
                 typeName: 'refAlias',
                 description: description,
                 type: new TypeNodeResolver(nodeType, this.current).resolve(),
@@ -730,7 +764,7 @@ export class TypeNodeResolver {
             typeName: 'refObject',
             description: description,
             properties: this.filterUtilityProperties(inheritedProperties, utilityType, utilityOptions),
-            refName: TypeNodeResolver.getRefTypeName(name),
+            refName: TypeNodeResolver.getRefTypeName(name, utilityType),
             ...(example && { example: example }),
         };
 
@@ -739,7 +773,7 @@ export class TypeNodeResolver {
         return referenceType;
     }
 
-    private static getRefTypeName(name: string): string {
+    private static getRefTypeName(name: string, utilityType?: UtilityType): string {
         return encodeURIComponent(
             name
                 .replace(/<|>/g, '_')
@@ -747,8 +781,8 @@ export class TypeNodeResolver {
                 .replace(/,/g, '.')
                 .replace(/\'([^']*)\'/g, '$1')
                 .replace(/\"([^"]*)\"/g, '$1')
-                .replace(/&/g, '-and-')
-                .replace(/\|/g, '-or-')
+                .replace(/&/g, typeof utilityType !== 'undefined' ? '--' : '-and-')
+                .replace(/\|/g, typeof utilityType !== 'undefined' ? '--' : '-or-')
                 .replace(/\[\]/g, '-array')
                 .replace(/{|}/g, '_') // SuccessResponse_{indexesCreated-number}_ -> SuccessResponse__indexesCreated-number__
                 .replace(/([a-z]+):([a-z]+)/gi, '$1-$2') // SuccessResponse_indexesCreated:number_ -> SuccessResponse_indexesCreated-number_
