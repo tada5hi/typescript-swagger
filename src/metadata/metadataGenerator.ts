@@ -15,6 +15,7 @@ import {
     TypeChecker
 } from 'typescript';
 import {useDebugger} from "../debug";
+import {Decorator} from "../decorator/type";
 import {isDecorator} from '../utils/decoratorUtils';
 import {ControllerGenerator} from './controllerGenerator';
 import {TypeNodeResolver} from "./resolver";
@@ -30,7 +31,12 @@ export class MetadataGenerator {
     private circularDependencyResolvers = new Array<(referenceTypes: { [refName: string]: Resolver.ReferenceType}) => void>();
     private debugger = useDebugger();
 
-    constructor(entryFile: string | Array<string>, compilerOptions: CompilerOptions, private readonly  ignorePaths?: Array<string>) {
+    constructor(
+        entryFile: string | Array<string>,
+        compilerOptions: CompilerOptions,
+        private readonly  ignorePaths?: Array<string>,
+        public decoratorMap?: Decorator.Representation
+    ) {
         TypeNodeResolver.clearCache();
 
         const sourceFiles = this.getSourceFiles(entryFile);
@@ -150,10 +156,13 @@ export class MetadataGenerator {
     }
 
     private buildControllers() {
+        const hiddenDecoratorKey : Array<string> = Decorator.getKeyRepresentations('HIDDEN', this.decoratorMap);
+        const pathDecoratorKey : Array<string> = Decorator.getKeyRepresentations('CLASS_PATH', this.decoratorMap);
+
         return this.nodes
             .filter(node => node.kind === SyntaxKind.ClassDeclaration)
-            .filter(node => !isDecorator(node, decorator => 'Hidden' === decorator.text))
-            .filter(node => isDecorator(node, decorator => decorator.text === 'Path' || decorator.text === 'Controller'))
+            .filter(node => !isDecorator(node, decorator => hiddenDecoratorKey.indexOf(decorator.text) !== -1))
+            .filter(node => isDecorator(node, decorator => pathDecoratorKey.indexOf(decorator.text) !== -1))
             .map((classDeclaration: ClassDeclaration) => new ControllerGenerator(classDeclaration, this))
             .filter(generator => generator.isValid())
             .map(generator => generator.generate());

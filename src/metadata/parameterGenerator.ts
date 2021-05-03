@@ -1,9 +1,23 @@
+import {union} from 'lodash';
 import * as ts from 'typescript';
+import {Decorator} from "../decorator/type";
 import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from '../utils/decoratorUtils';
 import { MetadataGenerator, Parameter} from './metadataGenerator';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
 import {getInitializerValue} from "./resolver/utils";
+
+const supportedParameterKeys : Array<Decorator.ParameterServerKey> = [
+    'SERVER_CONTEXT',
+    'SERVER_PARAMS',
+    'SERVER_QUERY',
+    'SERVER_FORM',
+    'SERVER_BODY',
+    'SERVER_HEADERS',
+    'SERVER_COOKIES',
+    'SERVER_PATH_PARAMS',
+    'SERVER_FILES_PARAM'
+];
 
 export class ParameterGenerator {
     constructor(
@@ -16,40 +30,42 @@ export class ParameterGenerator {
     public generate(): Parameter {
         const decoratorName = getDecoratorName(this.parameter, identifier => this.supportParameterDecorator(identifier.text));
 
-        switch (decoratorName) {
-            case 'Param':
-                return this.getRequestParameter(this.parameter);
-            case 'CookieParam':
-            case 'Cookies':
-                return this.getCookieParameter(this.parameter);
-            case 'FormParam':
-                return this.getFormParameter(this.parameter);
-            case 'HeaderParam':
-            case 'Headers':
-                return this.getHeaderParameter(this.parameter);
-            case 'QueryParam':
-            case 'Query':
-                return this.getQueryParameter(this.parameter);
-            case 'PathParam':
-            case 'Params':
-                return this.getPathParameter(this.parameter);
-            case 'FileParam':
-                return this.getFileParameter(this.parameter);
-            case 'FilesParam':
-                return this.getFilesParameter(this.parameter);
-            case 'Context':
-            case 'ContextRequest':
-            case 'ContextResponse':
-            case 'ContextNext':
-            case 'ContextLanguage':
-            case 'ContextAccept':
-            case 'Request':
-            case 'Response':
-            case 'Next':
-                return this.getContextParameter(this.parameter);
-            default:
-                return this.getBodyParameter(this.parameter);
+        if(typeof decoratorName === 'undefined') {
+            return this.getBodyParameter(this.parameter);
         }
+
+        for(let i=0; i<supportedParameterKeys.length; i++) {
+            const representations : Array<string> = Decorator.getKeyRepresentations(supportedParameterKeys[i], this.current.decoratorMap);
+
+            if(representations.indexOf(decoratorName) === -1) {
+                continue;
+            }
+
+            switch (supportedParameterKeys[i]) {
+                case 'SERVER_CONTEXT':
+                    return this.getContextParameter(this.parameter);
+                case 'SERVER_PARAMS':
+                    return this.getRequestParameter(this.parameter);
+                case 'SERVER_FORM':
+                    return this.getFormParameter(this.parameter);
+                case 'SERVER_QUERY':
+                    return this.getQueryParameter(this.parameter);
+                case 'SERVER_BODY':
+                    return this.getBodyParameter(this.parameter);
+                case 'SERVER_HEADERS':
+                    return this.getHeaderParameter(this.parameter);
+                case 'SERVER_COOKIES':
+                    return this.getCookieParameter(this.parameter);
+                case 'SERVER_PATH_PARAMS':
+                    return this.getPathParameter(this.parameter);
+                case 'SERVER_FILE_PARAM':
+                    return this.getFileParameter(this.parameter);
+                case 'SERVER_FILES_PARAM':
+                    return this.getFileParameter(this.parameter, true);
+            }
+        }
+
+        throw new Error('The decorator ' + decoratorName + ' of parameter ' + (this.parameter.name as ts.Identifier).text + ' could not be resolved.');
     }
 
     private getCurrentLocation() {
@@ -66,10 +82,12 @@ export class ParameterGenerator {
             throw new Error(`Param can't support '${this.getCurrentLocation()}' method.`);
         }
 
+        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_PARAMS', this.current.decoratorMap);
+
         return {
             description: this.getParameterDescription(parameter),
             in: 'param',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'Param' || ident.text === 'Params') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken,
             type: type
@@ -89,6 +107,7 @@ export class ParameterGenerator {
         };
     }
 
+    /*
     private getFileParameter(parameter: ts.ParameterDeclaration): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
 
@@ -105,21 +124,32 @@ export class ParameterGenerator {
             type: { typeName: 'file' }
         };
     }
+     */
 
-    private getFilesParameter(parameter: ts.ParameterDeclaration): Parameter {
+    private getFileParameter(parameter: ts.ParameterDeclaration, isArray?: boolean): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
 
         if (!this.supportsBodyParameters(this.method)) {
-            throw new Error(`FilesParam can't support '${this.getCurrentLocation()}' method.`);
+            throw new Error(`File(s)Param can't support '${this.getCurrentLocation()}' method.`);
+        }
+
+        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations(isArray ? 'SERVER_FILES_PARAM' : 'SERVER_FILE_PARAM', this.current.decoratorMap);
+
+        const elementType: Resolver.Type = { typeName: 'file' };
+        let type: Resolver.Type;
+        if (isArray) {
+            type = { typeName: 'array', elementType: elementType };
+        } else {
+            type = elementType;
         }
 
         return {
             description: this.getParameterDescription(parameter),
             in: 'formData',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'FilesParam') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
-            type: { typeName: 'file' }
+            required: !parameter.questionToken && !parameter.initializer,
+            type: type
         };
     }
 
@@ -131,10 +161,12 @@ export class ParameterGenerator {
             throw new Error(`Form can't support '${this.getCurrentLocation()}' method.`);
         }
 
+        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_FORM', this.current.decoratorMap);
+
         return {
             description: this.getParameterDescription(parameter),
             in: 'formData',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'FormParam') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: type
@@ -149,10 +181,12 @@ export class ParameterGenerator {
            throw new Error(`Cookie can't support '${this.getCurrentLocation()}' method.`);
         }
 
+        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_COOKIES', this.current.decoratorMap);
+
         return {
             description: this.getParameterDescription(parameter),
             in: 'cookie',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'CookieParam' || ident.text === 'Cookies') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: type
@@ -167,10 +201,12 @@ export class ParameterGenerator {
             throw new Error(`Body can't support ${this.method} method`);
         }
 
+        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_BODY', this.current.decoratorMap);
+
         return {
             description: this.getParameterDescription(parameter),
             in: 'body',
-            name: parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: type
@@ -185,10 +221,12 @@ export class ParameterGenerator {
             throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a header parameter in '${this.getCurrentLocation()}'.`);
         }
 
+        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_HEADERS', this.current.decoratorMap);
+
         return {
             description: this.getParameterDescription(parameter),
             in: 'header',
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'HeaderParam' || ident.text === 'Headers') || parameterName,
+            name: getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: type
@@ -211,6 +249,14 @@ export class ParameterGenerator {
              */
             // throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a query parameter in '${this.getCurrentLocation()}'.`);
         }
+        let name : string;
+
+        try {
+            const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_QUERY', this.current.decoratorMap);
+            name = getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1);
+        } catch (e) {
+            name = parameterName;
+        }
 
         return {
             allowEmptyValue: parameterOptions.allowEmptyValue,
@@ -220,7 +266,7 @@ export class ParameterGenerator {
             in: 'query',
             maxItems: parameterOptions.maxItems,
             minItems: parameterOptions.minItems,
-            name: getDecoratorTextValue(this.parameter, ident => ident.text === 'QueryParam' ||ident.text === 'Query') || parameterName,
+            name: name,
             parameterName: parameterName,
             required: !parameter.questionToken && !parameter.initializer,
             type: type
@@ -230,11 +276,13 @@ export class ParameterGenerator {
     private getPathParameter(parameter: ts.ParameterDeclaration): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
         const type = this.getValidatedType(parameter);
-        const pathName = getDecoratorTextValue(this.parameter, ident => ident.text === 'PathParam' || ident.text === 'Params') || parameterName;
+        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_PATH_PARAMS', this.current.decoratorMap);
+        const pathName = getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName;
 
         if (!this.supportPathDataType(type)) {
             throw new InvalidParameterException(`Parameter '${parameterName}:${type}' can't be passed as a path parameter in '${this.getCurrentLocation()}'.`);
         }
+
         if ((!this.path.includes(`{${pathName}}`)) && (!this.path.includes(`:${pathName}`))) {
             throw new Error(`Parameter '${parameterName}' can't match in path: '${this.path}'`);
         }
@@ -265,14 +313,11 @@ export class ParameterGenerator {
     }
 
     private supportParameterDecorator(decoratorName: string) {
-        return [
-            'HeaderParam', 'QueryParam', 'Param', 'FileParam',
-            'PathParam', 'FilesParam', 'FormParam', 'CookieParam',
-            'Context', 'ContextRequest', 'ContextResponse', 'ContextNext',
-            'ContextLanguage', 'ContextAccept',
-            // decorators/express
-            'Params', 'Response', 'Request', 'Next', 'Body'
-        ].some(d => d === decoratorName);
+        const representations : Array<string> = supportedParameterKeys
+            .map(parameter => Decorator.getKeyRepresentations(parameter, this.current.decoratorMap))
+            .reduce((accumulator, currentValue) => union(accumulator, currentValue));
+
+        return representations.some(d => d === decoratorName);
     }
 
     private supportPathDataType(parameterType:  Resolver.BaseType) {

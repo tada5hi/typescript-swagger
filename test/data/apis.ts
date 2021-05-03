@@ -7,7 +7,7 @@ import {
     Security
 } from 'typescript-rest';
 
-import * as swagger from '../../src/decorators';
+import * as swagger from '../../src/decorator';
 import { TestInterface } from './TestInterface'; // to test compilerOptions.paths
 
 export interface MytypeWithUnion {
@@ -50,9 +50,9 @@ enum TestMixedEnum {
 @Path('mypath')
 @swagger.Tags('My Services')
 export class MyService {
-    @swagger.Response<string>('default', 'Error')
-    @swagger.Response<string>(400, 'The request format was incorrect.')
-    @swagger.Response<string>(500, 'There was an unexpected error.')
+    @swagger.ResponseDescription<string>('default', 'Error')
+    @swagger.ResponseDescription<string>(400, 'The request format was incorrect.')
+    @swagger.ResponseDescription<string>(500, 'There was an unexpected error.')
     @GET
     @Accept('text/html')
     public test(): string {
@@ -65,10 +65,10 @@ export class MyService {
      */
     @GET
     @Path('secondpath')
-    @swagger.Example<Person>({
+    @swagger.ResponseExample<Person>({
         name: 'Joe'
     })
-    @swagger.Response<Person>(200, 'The success test.')
+    @swagger.ResponseDescription<Person>(200, 'The success test.')
     public test2(
         @QueryParam('testRequired') test: string,
         @QueryParam('testDefault') test2: string = 'value',
@@ -81,7 +81,7 @@ export class MyService {
     }
 
     @POST
-    @swagger.Example<Array<Person>>([{
+    @swagger.ResponseExample<Array<Person>>([{
         name: 'Joe'
     }])
     public testPostString(body: string): Array<Person> {
@@ -144,7 +144,7 @@ export class PromiseService extends BaseService {
      * Esta eh a da classe
      * @param test Esta eh a description do param teste
      */
-    @swagger.Response<string>(401, 'Unauthorized')
+    @swagger.ResponseDescription<string>(401, 'Unauthorized')
     @GET
     public test(@QueryParam('testParam') test?: string): Promise<Person> {
         return new Promise<Person>((resolve, reject) => {
@@ -152,9 +152,9 @@ export class PromiseService extends BaseService {
         });
     }
 
-    @swagger.Response<Person>(200, 'All Good')
-    @swagger.Response<string>(401, 'Unauthorized')
-    @swagger.Example<Person>({ name: 'Test Person' })
+    @swagger.ResponseDescription<Person>(200, 'All Good')
+    @swagger.ResponseDescription<string>(401, 'Unauthorized')
+    @swagger.ResponseExample<Person>({ name: 'Test Person' })
     @GET
     @Path(':id')
     public testGetSingle(@PathParam('id') id: string): Promise<Person> {
@@ -163,9 +163,9 @@ export class PromiseService extends BaseService {
         });
     }
 
-    @swagger.Response<Person>(201, 'Person Created', { name: 'Test Person' })
-    @swagger.Response<string>(401, 'Unauthorized')
-    @swagger.Example<Person>({ name: 'Example Person' }) // NOTE: this is here to test that it doesn't overwrite the example in the @Response above
+    @swagger.ResponseDescription<Person>(201, 'Person Created', { name: 'Test Person' })
+    @swagger.ResponseDescription<string>(401, 'Unauthorized')
+    @swagger.ResponseExample<Person>({ name: 'Example Person' }) // NOTE: this is here to test that it doesn't overwrite the example in the @Response above
     @POST
     public testPost(obj: Person): Promise<Return.NewResource<Person>> {
         return new Promise<Return.NewResource<Person>>((resolve, reject) => {
@@ -448,16 +448,16 @@ export class SuperSecureEndpoint {
 }
 
 @Path('response')
-@swagger.Response<string>(400, 'The request format was incorrect.')
-@swagger.Response<string>(500, 'There was an unexpected error.')
+@swagger.ResponseDescription<string>(400, 'The request format was incorrect.')
+@swagger.ResponseDescription<string>(500, 'There was an unexpected error.')
 export class ResponseController {
     @GET
     public get(): string {
         return '42';
     }
 
-    @swagger.Response<string>(401, 'Unauthorized.')
-    @swagger.Response<string>(502, 'Internal server error.')
+    @swagger.ResponseDescription<string>(401, 'Unauthorized.')
+    @swagger.ResponseDescription<string>(502, 'Internal server error.')
     @GET
     @Path('/test')
     public test(): string {

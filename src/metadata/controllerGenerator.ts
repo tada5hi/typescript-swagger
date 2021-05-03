@@ -1,12 +1,11 @@
 import {ClassDeclaration, MethodDeclaration, SyntaxKind} from 'typescript';
-import { getDecoratorTextValue, isDecorator } from '../utils/decoratorUtils';
-import { normalizePath } from '../utils/pathUtils';
+import {Decorator} from "../decorator/type";
+import {isDecorator} from '../utils/decoratorUtils';
 import { EndpointGenerator } from './endpointGenerator';
 import {Controller, MetadataGenerator, Method} from './metadataGenerator';
 import { MethodGenerator } from './methodGenerator';
 
 export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
-    private path: string | undefined;
     private genMethods: Set<string> = new Set<string>();
 
     // --------------------------------------------------------------------
@@ -14,24 +13,8 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     constructor(node: ClassDeclaration, current: MetadataGenerator) {
         super(node, current);
 
-        this.generatePath();
+        this.generatePath('CLASS_PATH');
     }
-
-    // --------------------------------------------------------------------
-
-    private generatePath() {
-        const values : Array<string> = [
-            getDecoratorTextValue(this.node, decorator => decorator.text === 'Path' || decorator.text === 'Controller')
-        ];
-
-        const httpMethod : string | undefined = getDecoratorTextValue(this.node, decorator => ['Get','Post','Put','All','Delete','Patch','Options','Head'].indexOf(decorator.text) !== -1);
-        if(typeof httpMethod !== 'undefined') {
-            values.push(httpMethod);
-        }
-
-        this.path = normalizePath(values.join('/'));
-    }
-
     public isValid() {
         return !!this.path || this.path === '';
     }
@@ -50,7 +33,7 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
             methods: this.buildMethods(),
             name: this.getCurrentLocation(),
             path: this.path || '',
-            produces: (this.getDecoratorValues('Produces') ? this.getDecoratorValues('Produces') : this.getDecoratorValues('Accept')),
+            produces: this.getProduces(),
             responses: this.getResponses(),
             security: this.getSecurity(),
             tags: this.getDecoratorValues('Tags'),
@@ -65,9 +48,11 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     }
 
     private buildMethods() : Array<Method> {
+        const hiddenDecoratorKey : Array<string> = Decorator.getKeyRepresentations('HIDDEN', this.current.decoratorMap);
+
         return this.node.members
             .filter((method: { kind: unknown; }) => (method.kind === SyntaxKind.MethodDeclaration))
-            .filter((method: MethodDeclaration) => !isDecorator(method, decorator => 'Hidden' === decorator.text))
+            .filter((method: MethodDeclaration) => !isDecorator(method, decorator => hiddenDecoratorKey.indexOf(decorator.text) !== -1))
             .map((method: MethodDeclaration) => new MethodGenerator(method, this.current,this.path || ''))
             .filter((generator: MethodGenerator) => {
                 if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {

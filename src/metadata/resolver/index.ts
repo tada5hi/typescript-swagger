@@ -133,7 +133,7 @@ export class TypeNodeResolver {
                 const indexSignatureDeclaration = indexMember as ts.IndexSignatureDeclaration;
                 const indexType = new TypeNodeResolver(indexSignatureDeclaration.parameters[0].type as ts.TypeNode, this.current, this.parentNode, this.context).resolve();
                 if (indexType.typeName !== 'string') {
-                    throw new ResolverError(`Only string indexers are supported.`, this.typeNode);
+                    throw new ResolverError(`Only string indexes are supported.`, this.typeNode);
                 }
 
                 additionalType = new TypeNodeResolver(indexSignatureDeclaration.type, this.current, this.parentNode, this.context).resolve();

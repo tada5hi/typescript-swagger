@@ -9,8 +9,8 @@
  * }
  * @ Path('people')
  * class PeopleService {
- *   @ Response<string>(200, 'Retrieve a list of people.')
- *   @ Response<MyError>(401, 'The user is unauthorized.', {message: 'The user is not authorized to access this operation.'})
+ *   @ ResponseDescription<string>(200, 'Retrieve a list of people.')
+ *   @ ResponseDescription<MyError>(401, 'The user is unauthorized.', {message: 'The user is not authorized to access this operation.'})
  *   @ GET
  *   getPeople(@ Param('name') name: string) {
  *      // ...
@@ -23,7 +23,7 @@
  * @param description A description for this response
  * @param example An optional example of response to be added to method documentation.
  */
-export function Response<T>(name: string | number, description?: string, example?: T): any {
+export function ResponseDescription<T>(name: string | number, description?: string, example?: T): any {
   return () => { return; };
 }
 
@@ -33,7 +33,7 @@ export function Response<T>(name: string | number, description?: string, example
  * ```typescript
  * @ Path('people')
  * class PeopleService {
- *   @ Example<Array<Person>>([{
+ *   @ ResponseExample<Array<Person>>([{
  *     name: 'Joe'
  *   }])
  *   @ GET
@@ -44,7 +44,7 @@ export function Response<T>(name: string | number, description?: string, example
  * ```
  * @param example The example returned object
  */
-export function Example<T>(example: T): any {
+export function ResponseExample<T>(example: T): any {
   return () => { return; };
 }
 

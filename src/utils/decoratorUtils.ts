@@ -17,6 +17,7 @@ export function getDecorators(node: Node, isMatching: (identifier: DecoratorData
                 typeArguments: []
             };
             let x: any = d.expression;
+
             if (isCallExpression(x)) {
                 if (x.arguments) {
                     result.arguments = x.arguments.map((argument: any) => {
@@ -54,7 +55,7 @@ export function getDecoratorName(node: Node, isMatching: (identifier: DecoratorD
     return decorator ? decorator.text : undefined;
 }
 
-export function getDecoratorTextValue(node: Node, isMatching: (identifier: DecoratorData) => boolean) {
+export function getDecoratorTextValue(node: Node, isMatching: (identifier: DecoratorData) => boolean) : string | undefined {
     const decorator = getDecorator(node, isMatching);
     return decorator && typeof decorator.arguments[0] === 'string' ? decorator.arguments[0] as string : undefined;
 }

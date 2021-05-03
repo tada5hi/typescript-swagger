@@ -1,5 +1,7 @@
 'use strict';
 
+import {Decorator} from "./decorator/type";
+
 export interface Config {
     /**
      * Swagger generation configuration object
@@ -27,6 +29,11 @@ export interface SwaggerConfig {
      * The entry point to your API
      */
     entryFile: string | Array<string>;
+
+    /**
+     * Decorator Key Representation provided by third party or by buildIn.
+     */
+    decoratorRepresentation?: Decorator.Representation;
 
     /**
      * Inform if the generated spec will be in swagger 2.0 format or i open api 3.0

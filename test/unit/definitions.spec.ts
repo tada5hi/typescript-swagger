@@ -1,5 +1,5 @@
+import { SpecGenerator } from '../../src';
 import { MetadataGenerator } from '../../src/metadata/metadataGenerator';
-import { SpecGenerator } from '../../src/swagger/generator';
 import { getDefaultOptions } from '../data/defaultOptions';
 
 // tslint:disable: no-unused-expression
@@ -12,7 +12,15 @@ describe('Definition generation', () => {
       '@/*': ['test/data/*'],
     },
   };
-  const metadata = new MetadataGenerator(['./test/data/ap*.ts'], compilerOptions).generate();
+  const metadata = new MetadataGenerator(
+      ['./test/data/ap*.ts'],
+      compilerOptions,
+      undefined,
+      {
+          useBuildIn: true,
+          useLibrary: "typescript-rest"
+      }
+  ).generate();
   const spec = new SpecGenerator(metadata, getDefaultOptions()).getSwaggerSpec();
 
   describe('MyService', () => {

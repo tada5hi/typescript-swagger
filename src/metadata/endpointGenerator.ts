@@ -1,22 +1,49 @@
 'use strict';
 
-import {castArray} from 'lodash';
-import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, TypeNode} from 'typescript';
+import {castArray, union} from 'lodash';
+import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind} from 'typescript';
 import {useDebugger} from "../debug";
+import {Decorator} from "../decorator/type";
 import { getDecorators } from '../utils/decoratorUtils';
+import {normalizePath} from "../utils/pathUtils";
 import {MetadataGenerator, ResponseType} from './metadataGenerator';
 import {TypeNodeResolver} from './resolver';
 
 export abstract class EndpointGenerator<T extends Node> {
+    protected path: string | undefined;
     protected node: T;
+
+    protected debugger = useDebugger();
+
+    // -------------------------------------------
 
     protected constructor(node: T, protected current: MetadataGenerator) {
         this.node = node;
     }
 
-    protected debugger = useDebugger();
+    // -------------------------------------------
 
-    protected getDecoratorValues(decoratorName: string, acceptMultiple: boolean = false) {
+    // --------------------------------------------------------------------
+
+    protected generatePath(key: Decorator.Key) {
+        const values : Array<string> = [];
+
+        const pathDecoratorKeys : Array<string> = Decorator.getKeyRepresentations(key, this.current.decoratorMap);
+        if(pathDecoratorKeys.length > 0) {
+            const decorators = getDecorators(this.node, decorator => pathDecoratorKeys.indexOf(decorator.text) !== -1);
+            for(let i=0; i<decorators.length; i++) {
+                if(typeof decorators[i].arguments[0] === 'string') {
+                    values.push(decorators[i].arguments[0]);
+                }
+            }
+        }
+
+        this.path = normalizePath(values.join('/'));
+    }
+
+    // --------------------------------------------------------------------
+
+    protected getDecoratorValues(decoratorName: string, acceptMultiple: boolean = false) : Array<any> {
         const decorators = getDecorators(this.node, decorator => decorator.text === decoratorName);
         if (!decorators || !decorators.length) { return []; }
         if (!acceptMultiple && decorators.length > 1) {
@@ -32,6 +59,8 @@ export abstract class EndpointGenerator<T extends Node> {
         this.debugger('Arguments of decorator %s: %j', decoratorName, result);
         return result;
     }
+
+    // -------------------------------------------
 
     protected getSecurity() {
         const securities = this.getDecoratorValues('Security', true);
@@ -51,6 +80,8 @@ export abstract class EndpointGenerator<T extends Node> {
             return argument;
         }
     }
+
+    // -------------------------------------------
 
     protected getExamplesValue(argument: any) {
         let example: any = {};
@@ -92,13 +123,17 @@ export abstract class EndpointGenerator<T extends Node> {
         }
     }
 
-    protected getResponses(genericTypeMap?: Map<String, TypeNode>): Array<ResponseType> {
-        const decorators = getDecorators(this.node, decorator => decorator.text === 'Response');
+    // -------------------------------------------
+
+    protected getResponses(): Array<ResponseType> {
+        const responseKeys : Array<string> = Decorator.getKeyRepresentations('RESPONSE_DESCRIPTION', this.current.decoratorMap);
+        const decorators = getDecorators(this.node, decorator => responseKeys.indexOf(decorator.text) !== -1);
+
         if (!decorators || !decorators.length) { return []; }
         this.debugger('Generating Responses for %s', this.getCurrentLocation());
 
         return decorators.map(decorator => {
-            let description = '';
+            let description = 'Ok';
             let status = '200';
             let examples;
             if (decorator.arguments.length > 0 && decorator.arguments[0]) {
@@ -111,6 +146,7 @@ export abstract class EndpointGenerator<T extends Node> {
                 const argument = decorator.arguments[2] as any;
                 examples = this.getExamplesValue(argument);
             }
+
             const responses = {
                 description: description,
                 examples: examples,
@@ -119,12 +155,27 @@ export abstract class EndpointGenerator<T extends Node> {
                     : undefined,
                 status: status
             };
+
             this.debugger('Generated Responses for %s: %j', this.getCurrentLocation(), responses);
 
             return responses;
         });
     }
 
+    // -------------------------------------------
+
+    public getProduces() {
+        let produces : Array<any> = union(...Decorator.getKeyRepresentations('PRODUCES', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
+        if(typeof produces === 'undefined' || produces.length === 0) {
+            produces = union(...Decorator.getKeyRepresentations('REQUEST_ACCEPT', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
+        }
+
+        return produces;
+    }
+
+    // -------------------------------------------
 
     protected abstract getCurrentLocation(): string;
+
+    // -------------------------------------------
 }

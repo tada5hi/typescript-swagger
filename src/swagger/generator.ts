@@ -13,7 +13,7 @@ import {Resolver} from "../metadata/resolver/type";
 import {Swagger} from './index';
 
 export async function generateDocumentation(swaggerConfig: SwaggerConfig, tsConfig: CompilerOptions) : Promise<string> {
-    const metadata = new MetadataGenerator(swaggerConfig.entryFile, tsConfig, swaggerConfig.ignore).generate();
+    const metadata = new MetadataGenerator(swaggerConfig.entryFile, tsConfig, swaggerConfig.ignore, swaggerConfig.decoratorRepresentation).generate();
     await new SpecGenerator(metadata, swaggerConfig).generate();
 
     return Array.isArray(swaggerConfig.outputDirectory) ? swaggerConfig.outputDirectory.join('/') : swaggerConfig.outputDirectory;
@@ -115,6 +115,7 @@ export class SpecGenerator {
 
             if (Resolver.isRefObjectType(referenceType)) {
                 const required = referenceType.properties.filter((p: Property) => p.required).map((p: Property) => p.name);
+
                 definitions[referenceType.refName] = {
                     description: referenceType.description,
                     properties: this.buildProperties(referenceType.properties),

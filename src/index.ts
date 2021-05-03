@@ -1,5 +1,5 @@
 export * from './config';
 export * from './swagger/index';
-export * from './decorators';
+export * from './decorator';
 export * from './swagger/generator';
 
