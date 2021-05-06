@@ -1,18 +1,18 @@
 import {Decorator} from "../../type";
 
 export namespace DecoratorExpressLibrary {
-    export const DecoratorRepresentations : Decorator.RepresentationItem = {
+    export const DecoratorRepresentations : Decorator.Representation = {
         // Class
-        TAGS: undefined,
+        SWAGGER_TAGS: undefined,
         CLASS_PATH: 'Controller',
 
         // Class + Method
         REQUEST_ACCEPT: undefined,
         RESPONSE_EXAMPLE: undefined,
         RESPONSE_DESCRIPTION: undefined,
-        CONSUMES: undefined,
-        PRODUCES: undefined,
-        HIDDEN: undefined,
+        REQUEST_CONSUMES: undefined,
+        RESPONSE_PRODUCES: undefined,
+        SWAGGER_HIDDEN: undefined,
 
         // Method
         ALL: 'All',

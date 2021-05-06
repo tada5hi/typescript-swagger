@@ -1,18 +1,18 @@
 import {Decorator} from "../type";
 
 export namespace TypescriptRestLibrary {
-    export const DecoratorRepresentations : Decorator.RepresentationItem = {
+    export const DecoratorRepresentations : Decorator.Representation = {
         // Class
-        TAGS: undefined,
+        SWAGGER_TAGS: undefined,
         CLASS_PATH: 'Path',
 
         // Class + Method
         REQUEST_ACCEPT: undefined,
         RESPONSE_EXAMPLE: 'Example',
         RESPONSE_DESCRIPTION: 'Response',
-        CONSUMES: undefined,
-        PRODUCES: undefined,
-        HIDDEN: undefined,
+        REQUEST_CONSUMES: undefined,
+        RESPONSE_PRODUCES: undefined,
+        SWAGGER_HIDDEN: undefined,
 
         // Method
         ALL: 'ALL',

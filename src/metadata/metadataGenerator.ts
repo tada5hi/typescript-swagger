@@ -35,7 +35,7 @@ export class MetadataGenerator {
         entryFile: string | Array<string>,
         compilerOptions: CompilerOptions,
         private readonly  ignorePaths?: Array<string>,
-        public decoratorMap?: Decorator.Representation
+        public decoratorMap?: Decorator.Config
     ) {
         TypeNodeResolver.clearCache();
 
@@ -156,8 +156,8 @@ export class MetadataGenerator {
     }
 
     private buildControllers() {
-        const hiddenDecoratorKey : Array<string> = Decorator.getKeyRepresentations('HIDDEN', this.decoratorMap);
-        const pathDecoratorKey : Array<string> = Decorator.getKeyRepresentations('CLASS_PATH', this.decoratorMap);
+        const hiddenDecoratorKey : Array<string> = Decorator.getIDRepresentations('SWAGGER_HIDDEN', this.decoratorMap);
+        const pathDecoratorKey : Array<string> = Decorator.getIDRepresentations('CLASS_PATH', this.decoratorMap);
 
         return this.nodes
             .filter(node => node.kind === SyntaxKind.ClassDeclaration)

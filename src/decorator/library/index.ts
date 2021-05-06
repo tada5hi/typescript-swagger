@@ -5,7 +5,7 @@ import {TypescriptRestLibrary} from "./typescript-rest";
 
 export type Library = 'typescript-rest' | '@decorators/express';
 
-export function isLibraryIncluded(library: Library, map?: Decorator.Representation) : boolean {
+export function isLibraryIncluded(library: Library, map?: Decorator.Config) : boolean {
     if(typeof map === 'undefined') {
         return false;
     }
@@ -29,7 +29,7 @@ export function isLibraryIncluded(library: Library, map?: Decorator.Representati
     return false;
 }
 
-export function findLibraryKeyRepresentation(library: Library , key: Decorator.Key, map?: Decorator.Representation) : Array<string> | string | undefined {
+export function findLibraryIDRepresentation(library: Library , key: Decorator.ID, map?: Decorator.Config) : Array<string> | string | undefined {
     if(typeof map === 'undefined') {
         return findRepresentationInConfig(library,key);
     }
@@ -58,7 +58,7 @@ export function findLibraryKeyRepresentation(library: Library , key: Decorator.K
                         // just allow specific keys of library.
                         return (item as Array<string>).indexOf(key) !== -1 ? findRepresentationInConfig(library, key) : undefined;
                     case '[object Object]':
-                        return hasOwnProperty((item as Record<Decorator.Key, string>), key) ? (item as Record<Decorator.Key, string>)[key]  : undefined;
+                        return hasOwnProperty((item as Record<Decorator.ID, string>), key) ? (item as Record<Decorator.ID, string>)[key]  : undefined;
                 }
             }
 
@@ -68,7 +68,7 @@ export function findLibraryKeyRepresentation(library: Library , key: Decorator.K
     return undefined;
 }
 
-function findRepresentationInConfig(library: Library, key: Decorator.Key) : Array<string> | string | undefined  {
+function findRepresentationInConfig(library: Library, key: Decorator.ID) : Array<string> | string | undefined  {
     switch (library) {
         case "typescript-rest":
             if(hasOwnProperty(TypescriptRestLibrary.DecoratorRepresentations, key)) {

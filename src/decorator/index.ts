@@ -53,7 +53,7 @@ export function ResponseExample<T>(example: T): any {
  * ```typescript
  * @ Path('people')
  * class PeopleService {
- *   @ Tags('adiministrative', 'department1')
+ *   @ SwaggerTags('adiministrative', 'department1')
  *   @ GET
  *   getPeople(@ Param('name') name: string) {
  *      // ...
@@ -62,28 +62,28 @@ export function ResponseExample<T>(example: T): any {
  * ```
  * @param values a list of tags
  */
-export function Tags(...values: Array<string>): any {
+export function SwaggerTags(...values: Array<string>): any {
   return () => { return; };
 }
 
 /**
  * Document the method or class comsumes property in generated swagger docs
  */
-export function Consumes(...values: Array<string>): any {
+export function RequestConsumes(...values: Array<string>): any {
   return () => { return; };
 }
 
 /**
  * Document the method or class produces property in generated swagger docs
  */
-export function Produces(...values: Array<string>): any {
+export function ResponseProduces(...values: Array<string>): any {
   return () => { return; };
 }
 
 /**
  * Document the method or class produces property in generated swagger docs
  */
-export function Hidden(): any {
+export function SwaggerHidden(): any {
   return () => { return; };
 }
 

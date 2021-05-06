@@ -7,7 +7,7 @@ import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
 import {getInitializerValue} from "./resolver/utils";
 
-const supportedParameterKeys : Array<Decorator.ParameterServerKey> = [
+const supportedParameterKeys : Array<Decorator.ParameterServerID> = [
     'SERVER_CONTEXT',
     'SERVER_PARAMS',
     'SERVER_QUERY',
@@ -35,7 +35,7 @@ export class ParameterGenerator {
         }
 
         for(let i=0; i<supportedParameterKeys.length; i++) {
-            const representations : Array<string> = Decorator.getKeyRepresentations(supportedParameterKeys[i], this.current.decoratorMap);
+            const representations : Array<string> = Decorator.getIDRepresentations(supportedParameterKeys[i], this.current.decoratorMap);
 
             if(representations.indexOf(decoratorName) === -1) {
                 continue;
@@ -82,7 +82,7 @@ export class ParameterGenerator {
             throw new Error(`Param can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_PARAMS', this.current.decoratorMap);
+        const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations('SERVER_PARAMS', this.current.decoratorMap);
 
         return {
             description: this.getParameterDescription(parameter),
@@ -133,7 +133,7 @@ export class ParameterGenerator {
             throw new Error(`File(s)Param can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations(isArray ? 'SERVER_FILES_PARAM' : 'SERVER_FILE_PARAM', this.current.decoratorMap);
+        const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations(isArray ? 'SERVER_FILES_PARAM' : 'SERVER_FILE_PARAM', this.current.decoratorMap);
 
         const elementType: Resolver.Type = { typeName: 'file' };
         let type: Resolver.Type;
@@ -161,7 +161,7 @@ export class ParameterGenerator {
             throw new Error(`Form can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_FORM', this.current.decoratorMap);
+        const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations('SERVER_FORM', this.current.decoratorMap);
 
         return {
             description: this.getParameterDescription(parameter),
@@ -181,7 +181,7 @@ export class ParameterGenerator {
            throw new Error(`Cookie can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_COOKIES', this.current.decoratorMap);
+        const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations('SERVER_COOKIES', this.current.decoratorMap);
 
         return {
             description: this.getParameterDescription(parameter),
@@ -201,7 +201,7 @@ export class ParameterGenerator {
             throw new Error(`Body can't support ${this.method} method`);
         }
 
-        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_BODY', this.current.decoratorMap);
+        const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations('SERVER_BODY', this.current.decoratorMap);
 
         return {
             description: this.getParameterDescription(parameter),
@@ -221,7 +221,7 @@ export class ParameterGenerator {
             throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a header parameter in '${this.getCurrentLocation()}'.`);
         }
 
-        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_HEADERS', this.current.decoratorMap);
+        const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations('SERVER_HEADERS', this.current.decoratorMap);
 
         return {
             description: this.getParameterDescription(parameter),
@@ -252,7 +252,7 @@ export class ParameterGenerator {
         let name : string;
 
         try {
-            const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_QUERY', this.current.decoratorMap);
+            const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations('SERVER_QUERY', this.current.decoratorMap);
             name = getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1);
         } catch (e) {
             name = parameterName;
@@ -276,7 +276,7 @@ export class ParameterGenerator {
     private getPathParameter(parameter: ts.ParameterDeclaration): Parameter {
         const parameterName = (parameter.name as ts.Identifier).text;
         const type = this.getValidatedType(parameter);
-        const decoratorRepresentation: Array<string> = Decorator.getKeyRepresentations('SERVER_PATH_PARAMS', this.current.decoratorMap);
+        const decoratorRepresentation: Array<string> = Decorator.getIDRepresentations('SERVER_PATH_PARAMS', this.current.decoratorMap);
         const pathName = getDecoratorTextValue(this.parameter, ident => decoratorRepresentation.indexOf(ident.text) !== -1) || parameterName;
 
         if (!this.supportPathDataType(type)) {
@@ -314,7 +314,7 @@ export class ParameterGenerator {
 
     private supportParameterDecorator(decoratorName: string) {
         const representations : Array<string> = supportedParameterKeys
-            .map(parameter => Decorator.getKeyRepresentations(parameter, this.current.decoratorMap))
+            .map(parameter => Decorator.getIDRepresentations(parameter, this.current.decoratorMap))
             .reduce((accumulator, currentValue) => union(accumulator, currentValue));
 
         return representations.some(d => d === decoratorName);

@@ -25,10 +25,10 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // --------------------------------------------------------------------
 
-    protected generatePath(key: Decorator.Key) {
+    protected generatePath(key: Decorator.ID) {
         const values : Array<string> = [];
 
-        const pathDecoratorKeys : Array<string> = Decorator.getKeyRepresentations(key, this.current.decoratorMap);
+        const pathDecoratorKeys : Array<string> = Decorator.getIDRepresentations(key, this.current.decoratorMap);
         if(pathDecoratorKeys.length > 0) {
             const decorators = getDecorators(this.node, decorator => pathDecoratorKeys.indexOf(decorator.text) !== -1);
             for(let i=0; i<decorators.length; i++) {
@@ -126,7 +126,7 @@ export abstract class EndpointGenerator<T extends Node> {
     // -------------------------------------------
 
     protected getResponses(): Array<ResponseType> {
-        const responseKeys : Array<string> = Decorator.getKeyRepresentations('RESPONSE_DESCRIPTION', this.current.decoratorMap);
+        const responseKeys : Array<string> = Decorator.getIDRepresentations('RESPONSE_DESCRIPTION', this.current.decoratorMap);
         const decorators = getDecorators(this.node, decorator => responseKeys.indexOf(decorator.text) !== -1);
 
         if (!decorators || !decorators.length) { return []; }
@@ -165,9 +165,9 @@ export abstract class EndpointGenerator<T extends Node> {
     // -------------------------------------------
 
     public getProduces() {
-        let produces : Array<any> = union(...Decorator.getKeyRepresentations('PRODUCES', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
+        let produces : Array<any> = union(...Decorator.getIDRepresentations('RESPONSE_PRODUCES', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
         if(typeof produces === 'undefined' || produces.length === 0) {
-            produces = union(...Decorator.getKeyRepresentations('REQUEST_ACCEPT', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
+            produces = union(...Decorator.getIDRepresentations('REQUEST_ACCEPT', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
         }
 
         return produces;

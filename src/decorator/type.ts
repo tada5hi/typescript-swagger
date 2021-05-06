@@ -1,24 +1,24 @@
 import {hasOwnProperty} from "../metadata/resolver/utils";
-import {findBuildInKeyRepresentation, isBuildInIncluded} from "./build-in";
-import {findLibraryKeyRepresentation, isLibraryIncluded, Library} from "./library";
+import {findBuildInIDRepresentation, isBuildInIncluded} from "./build-in";
+import {findLibraryIDRepresentation, isLibraryIncluded, Library} from "./library";
 
 export namespace Decorator {
-    export type ClassKey =
-        'TAGS' |
+    export type ClassID =
+        'SWAGGER_TAGS' |
         'CLASS_PATH' |
-        MethodAndCLassKey
+        MethodAndCLassID
         ;
 
-    export type MethodAndCLassKey =
+    export type MethodAndCLassID =
         'REQUEST_ACCEPT' |
         'RESPONSE_EXAMPLE' |
         'RESPONSE_DESCRIPTION' |
-        'CONSUMES' |
-        'PRODUCES' |
-        'HIDDEN'
+        'REQUEST_CONSUMES' |
+        'RESPONSE_PRODUCES' |
+        'SWAGGER_HIDDEN'
         ;
 
-    export type MethodHttpVerbKey =
+    export type MethodHttpVerbID =
         'ALL' |
         'GET' |
         'POST' |
@@ -28,21 +28,21 @@ export namespace Decorator {
         'OPTIONS' |
         'HEAD';
 
-    export type MethodKey =
+    export type MethodID =
         'METHOD_PATH' |
-        MethodHttpVerbKey |
-        MethodAndCLassKey
+        MethodHttpVerbID |
+        MethodAndCLassID
         ;
 
-    export type ParameterKey =
-        ParameterServerKey |
+    export type ParameterID =
+        ParameterServerID |
         'IS_INT' |
         'IS_LONG' |
         'IS_FlOAT' |
         'IS_DOUBLE'
         ;
 
-    export type ParameterServerKey =
+    export type ParameterServerID =
         'SERVER_CONTEXT' |
         'SERVER_PARAMS' |
         'SERVER_QUERY' |
@@ -54,47 +54,47 @@ export namespace Decorator {
         'SERVER_FILE_PARAM' |
         'SERVER_FILES_PARAM';
 
-    export type Key = ClassKey | MethodKey | ParameterKey;
+    export type ID = ClassID | MethodID | ParameterID;
 
     // -------------------------------------------
 
-    export type RepresentationItem = Record<Key, string | Array<string>>;
+    export type Representation = Record<ID, string | Array<string>>;
 
-    export interface Representation {
-        useLibrary?: Library | Array<Library> | Record<Library, Key> | Record<Library, RepresentationItem>;
-        useBuildIn?: boolean | Array<Key> | Key;
-        override?: RepresentationItem;
+    export interface Config {
+        useLibrary?: Library | Array<Library> | Record<Library, ID> | Record<Library, Representation>;
+        useBuildIn?: boolean | Array<ID> | ID;
+        override?: Representation;
     }
 
     // -------------------------------------------
     
 
     
-    const keyValueCache : Partial<Record<Key, Array<string>>> = {};
+    const idRepresentationCache : Partial<Record<ID, Array<string>>> = {};
 
     function toManyRepresentation(representation: string | Array<string>) : Array<string> {
         return Array.isArray(representation) ? representation : [representation];
     }
 
-    export function getKeyRepresentation(key: Key, map?: Representation) : string {
-        const keys = getKeyRepresentations(key, map);
+    export function getIDRepresentation(id: ID, map?: Config) : string {
+        const values = getIDRepresentations(id, map);
 
-        if(keys.length === 0) {
-            throw new Error('The key '+key+' is not valid identifier for a supported decorator.');
+        if(values.length === 0) {
+            throw new Error('The ID '+id+' is not valid identifier for a supported decorator.');
         }
 
         // Return first found representation
-        return keys[0];
+        return values[0];
     }
 
-    export function getKeyRepresentations(key: Key, map?: Representation) : Array<string> {
+    export function getIDRepresentations(id: ID, map?: Config) : Array<string> {
         let value : Array<string> = [];
         
-        if(hasOwnProperty(keyValueCache, key)) {
-            return keyValueCache[key];
+        if(hasOwnProperty(idRepresentationCache, id)) {
+            return idRepresentationCache[id];
         }
         
-        if(typeof map === 'undefined' || typeof map.override === 'undefined' || !hasOwnProperty(map.override, key)) {
+        if(typeof map === 'undefined' || typeof map.override === 'undefined' || !hasOwnProperty(map.override, id)) {
             const libraries : Array<Library> = [
                 "@decorators/express", 
                 "typescript-rest"
@@ -105,25 +105,25 @@ export namespace Decorator {
                     continue; 
                 }
 
-                const currentValue = findLibraryKeyRepresentation(libraries[i], key, map);
+                const currentValue = findLibraryIDRepresentation(libraries[i], id, map);
 
                 if(typeof currentValue !== 'undefined') {
                     value = [...value, ...toManyRepresentation(currentValue)];
                 }
             }
 
-            if(isBuildInIncluded(map, key)) {
-                const buildInValue = findBuildInKeyRepresentation(key);
+            if(isBuildInIncluded(map, id)) {
+                const buildInValue = findBuildInIDRepresentation(id);
                 if(typeof buildInValue !== 'undefined') {
                     value = [...value, ...toManyRepresentation(buildInValue)];
                 }
             }
 
-            keyValueCache[key] = value;
+            idRepresentationCache[id] = value;
             
             return value;
         }
 
-        return toManyRepresentation(map.override[key]);
+        return toManyRepresentation(map.override[id]);
     }
 }

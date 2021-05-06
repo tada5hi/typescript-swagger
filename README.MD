@@ -1,6 +1,6 @@
 [![npm version](https://badge.fury.io/js/typescript-swagger.svg)](https://badge.fury.io/js/typescript-swagger)
 
-# Swagger generation for decorator api 🚀
+# Swagger generation for decorator api(s) 🚀
 This is a tool to generate swagger files from the following projects:
 - [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
 - [@decorators/express](https://github.com/serhiisol/node-decorators)
@@ -8,20 +8,25 @@ This is a tool to generate swagger files from the following projects:
 **Table of Contents** 
 
 - [Installation](#installation)
+- [Limitations](#limitations)
 - [Build](#build)
   - [CLI](#cli)
   - [Runtime](#runtime)
+- [Decorator(s)](#decorators)
+  - [Representation](#representation)
+  - [Third-Party](#third-party)
+    
 - [Usage](#usage)
-  - [Limitations](#limitations)
-  - [Swagger Decorators](#swagger-decorators)
-    - [@Response](#response)
-    - [@Example](#example)
-    - [@Tags](#tags)
-    - [@Consumes](#consumes)
-    - [@Produces](#produces)
-    - [@Hidden](#hidden)
+  - [General](#general)
+  - [Build-In](#buildin)
+    - [@ResponseDescription](#responsedescription)
+    - [@ResponseExample](#responseexample)
+    - [@ResponseProduces](#responseproduces)
+    - [@RequestConsumes](#requestconsumes)
+    - [@SwaggerTags](#swaggertags)
+    - [@SwaggerHidden](#swaggerhidden)
     - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
-  - [SwaggerConfig.json](#swaggerconfigjson)
+  - [swagger-config.json](#swaggerconfigjson)
 - [Credits](#credits)
 
 ## Installation
@@ -29,6 +34,20 @@ This is a tool to generate swagger files from the following projects:
 ```bash
 npm install typescript-swagger -g
 ```
+
+
+### Limitations
+
+You can use pretty any type you have declared in your code. The only restriction are types form third party modules.
+
+Also the following built in typescript utility types are supported:
+* NonNullable
+* Omit
+* Partial
+* Readonly
+* Record
+* Required
+* Pick
 
 ## Build
 
@@ -96,34 +115,97 @@ export async function generateSwaggerDocumentation(): Promise<void> {
 }
 ```
 
+## Decorator(s)
+
+The information which are required to generate fully featured swagger documentations are collected by consulting decorators
+present on your code.
+Some decorators are already provided by this library and can be extended or replaced by other libraries (f.e @decorators/express or typescript-rest) or by 
+own definitions.
+
+In the following sections, the information/function which can be acquired by a decorator is called: `Decorator.ID`.
+The decorator name/text itself is called: `Decorator.Representation`.
+Decorators must be declared and implemented according the requirements for the respectively `Decorator.ID`.
+
+### Representation
+
+The following snippet, shows how the mapping between all ID(s) (`Decorator.ID(s)`) and the respectively (`Decorator.Representation`) 
+representations are defined for the BuildIn decorators.
+
+```typescript
+return {
+    // Class
+    SWAGGER_TAGS: 'SwaggerTags',
+    CLASS_PATH: undefined,
+
+    // Class + Method
+    REQUEST_ACCEPT: 'RequestAccept',
+    RESPONSE_EXAMPLE: 'ResponseExample',
+    RESPONSE_DESCRIPTION: 'ResponseDescription',
+    REQUEST_CONSUMES: 'RequestConsumes',
+    RESPONSE_PRODUCES: 'ResponseProduces',
+    SWAGGER_HIDDEN: 'SwaggerHidden',
+
+    // Method
+    ALL: undefined,
+    GET: undefined,
+    POST: undefined,
+    PUT: undefined,
+    DELETE: undefined,
+    PATCH: undefined,
+    OPTIONS: undefined,
+    HEAD: undefined,
+    METHOD_PATH: undefined,
+
+    // Parameter
+    SERVER_CONTEXT: undefined,
+    SERVER_PARAMS: undefined,
+    SERVER_QUERY: undefined,
+    SERVER_FORM: undefined,
+    SERVER_BODY: 'ServerBody',
+    SERVER_HEADERS: undefined,
+    SERVER_COOKIES: undefined,
+    SERVER_PATH_PARAMS: undefined,
+    SERVER_FILES_PARAM: undefined,
+    SERVER_FILE_PARAM: undefined,
+
+    IS_INT: 'IsInt',
+    IS_LONG: 'IsLong',
+    IS_FlOAT: 'IsFloat',
+    IS_DOUBLE: 'IsDouble'
+}
+```
+According to this schema you can:
+- provide your own decorators used for route generation.
+- override representations for a third party library 
+  (f.e [typescript-rest](https://github.com/thiagobustamante/typescript-rest) 
+  or
+  [@decorators/express](https://github.com/serhiisol/node-decorators))
+  
+How to use the build-in decorators in your code, is described in the following section:
+[Build-In](#buildin)
+
 ## Usage
 
-### Limitations
+### General
 
-You can use pretty any type you have declared in your code. The only restriction are types form third party modules.
+The documentation will be generated consulting all decorators present on your code.
 
-Also the following built in typescript utility types are also supported: 
-* NonNullable
-* Omit
-* Partial
-* Readonly
-* Record
-* Required
-* Pick
+Which decorator will be used, depends on your [swagger-config.json](#swaggerconfigjson).
+However, there are some additional information that only can be provided, through some third party decorator or your own defined representations.
 
-### Swagger Decorators
-
-The documentation will be generated consulting all decorators of the following libraries present on your code:
+To cover all functions the following decorators packs are supported by default:
+* build-in
 * [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
 * [@decorators/express](https://github.com/serhiisol/node-decorators)
 
-However, there are some additional informations that can be provided, only with documentation purposes, through some other decorators present into this library.
+You can override the used decorator packs in you [swagger-config.json](#swaggerconfigjson).
 
-Some examples:
+In the following there are two specific examples in combination with the third party libraries: typescript-rest and @decorators/express.
 
+#### typescript-rest
 ```typescript
 import {Path, Accept, GET} from 'typescript-rest';
-import {Tags} from 'typescript-swagger';
+import {SwaggerTags} from 'typescript-swagger';
 
 interface Person {
     id: number;
@@ -135,7 +217,7 @@ interface Person {
 @Path('mypath')
 export class MyService {
     @GET
-    @Tags('adminMethod', 'otheTag')
+    @SwaggerTags('adminMethod', 'otherTag')
     @Accept('text/html')
     test( ): string {
         return 'OK';
@@ -145,6 +227,33 @@ export class MyService {
     @Path('secondpath')
     test2( @QueryParam('testParam')test?: string ): Pick<Person, 'name' | 'avatar'> {
         return {name: 'OK'};
+    }
+}
+```
+
+#### @decorators/express
+```typescript
+import {Controller, Get, Query} from '@decorators/express';
+import {SwaggerTags} from 'typescript-swagger';
+
+interface Person {
+    id: number;
+    name: string;
+    avatar: string;
+    password: string;
+}
+
+@Controller('mypath')
+export class MyService {
+    @Get('')
+    @SwaggerTags('adminMethod', 'otherTag')
+    test( ): string {
+        return res.send('Ok');
+    }
+
+    @Get('secondpath')
+    test2( @Query('testParam')test?: string ): Pick<Person, 'name' | 'avatar'> {
+        return res.json({name: 'OK'});
     }
 }
 ```
@@ -166,10 +275,11 @@ export class MyService {
     }
 }
 ```
+### BuildIn
 
 These are the available swagger decorators by this library:
 
-#### @Response
+#### @ResponseDescription
 
 A decorator to document the responses that a given service method can return. It is used to generate documentation for the REST service.
 
@@ -180,8 +290,8 @@ interface MyError {
 
 @Path('people')
 class PeopleService {
-  @Response<string>(200, 'Retrieve a list of people.')
-  @Response<MyError>(401, 'The user is unauthorized.', {message: 'The user is not authorized to access this operation.'})
+  @ResponseDescription<string>(200, 'Retrieve a list of people.')
+  @ResponseDescription<MyError>(401, 'The user is unauthorized.', {message: 'The user is not authorized to access this operation.'})
   @GET
   getPeople(@Param('name') name: string) {
      // ...
@@ -192,14 +302,14 @@ class PeopleService {
 A Default response is already created in swagger documentation from the method return analisys. So any response declared
 through this decorator is an additional response created.
 
-#### @Example
+#### @ResponseExample
 
 Used to provide an example of method return to be added into the method response section of the generated documentation for this method.
 
 ```typescript
 @Path('people')
 class PeopleService {
-  @Example<Array<Person>>([{
+  @ResponseExample<Array<Person>>([{
     name: 'Joe'
   }])
   @GET
@@ -209,14 +319,14 @@ class PeopleService {
 }
 ```
 
-#### @Tags
+#### @ResponseProduces
 
-Add tags for a given method on generated swagger documentation.
+Document the produces property in generated swagger docs
 
 ```typescript
 @Path('people')
+@ResponseProduces('text/html')
 class PeopleService {
-  @Tags('adiministrative', 'department1')
   @GET
   getPeople(@Param('name') name: string) {
      // ...
@@ -224,14 +334,16 @@ class PeopleService {
 }
 ```
 
+A Default produces is already created in swagger documentation from the method return analisys.
+You can use this decorator to override this default produces.
 
-#### @Consumes 
+#### @RequestConsumes 
 
 Document the consumes property in generated swagger docs
 
 ```typescript
 @Path('people')
-@Consumes('text/html')
+@RequestConsumes('text/html')
 class PeopleService {
   @PUT
   createPeople(@Param('name') name: string, people: People) {
@@ -240,14 +352,14 @@ class PeopleService {
 }
 ```
 
-#### @Produces 
+#### @SwaggerTags
 
-Document the produces property in generated swagger docs
+Add tags for a given method on generated swagger documentation.
 
 ```typescript
 @Path('people')
-@Produces('text/html')
 class PeopleService {
+  @SwaggerTags('adiministrative', 'department1')
   @GET
   getPeople(@Param('name') name: string) {
      // ...
@@ -255,17 +367,14 @@ class PeopleService {
 }
 ```
 
-A Default produces is already created in swagger documentation from the method return analisys. 
-You can use this decorator to override this default produces.
-
-#### @Hidden 
+#### @SwaggerHidden 
 
 Allow to hide some APIs from swagger docs (ex: test or dev APIs, etc ...).
 This decorator can be applied for the whole class or only a single method
 
 ```typescript
 @Path('people')
-@Hidden()
+@SwaggerHidden()
 class PeopleService {
   @GET
   getPeople(@Param('name') name: string) {

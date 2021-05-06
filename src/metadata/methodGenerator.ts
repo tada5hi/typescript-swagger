@@ -9,7 +9,7 @@ import {MetadataGenerator, Method, Parameter, ResponseData, ResponseType} from '
 import { ParameterGenerator } from './parameterGenerator';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
-import MethodHttpVerbKey = Decorator.MethodHttpVerbKey;
+import MethodHttpVerbKey = Decorator.MethodHttpVerbID;
 
 export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private method: string;
@@ -52,10 +52,10 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         const type = new TypeNodeResolver(nodeType, this.current).resolve();
         const responses = this.mergeResponses(this.getResponses(), this.getMethodSuccessResponse(type));
 
-        const tagsDecoratorKey : Array<string> = Decorator.getKeyRepresentations('TAGS', this.current.decoratorMap);
+        const tagsDecoratorKey : Array<string> = Decorator.getIDRepresentations('SWAGGER_TAGS', this.current.decoratorMap);
         const tags : Array<any> = union(...tagsDecoratorKey.map(key => this.getDecoratorValues(key)));
 
-        const consumesDecoratorKey : Array<string> = Decorator.getKeyRepresentations('CONSUMES', this.current.decoratorMap);
+        const consumesDecoratorKey : Array<string> = Decorator.getIDRepresentations('REQUEST_CONSUMES', this.current.decoratorMap);
         const consumes : Array<any> = union(...consumesDecoratorKey.map(key => this.getDecoratorValues(key)));
         
         const methodMetadata : Method = {
@@ -149,7 +149,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     }
 
     private getMethodSuccessExamples() {
-        const representations = Decorator.getKeyRepresentations('RESPONSE_EXAMPLE', this.current.decoratorMap);
+        const representations = Decorator.getIDRepresentations('RESPONSE_EXAMPLE', this.current.decoratorMap);
         const exampleDecorators = union(...representations.map(representation => getDecorators(this.node, decorator => decorator.text === representation)));
         if (!exampleDecorators || !exampleDecorators.length) { return undefined; }
         if (exampleDecorators.length > 1) {

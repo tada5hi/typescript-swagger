@@ -48,7 +48,7 @@ enum TestMixedEnum {
 
 @Accept('text/plain')
 @Path('mypath')
-@swagger.Tags('My Services')
+@swagger.SwaggerTags('My Services')
 export class MyService {
     @swagger.ResponseDescription<string>('default', 'Error')
     @swagger.ResponseDescription<string>(400, 'The request format was incorrect.')
@@ -175,7 +175,7 @@ export class PromiseService extends BaseService {
 
     @GET
     @Path('myFile')
-    @swagger.Produces('application/pdf')
+    @swagger.ResponseProduces('application/pdf')
     public testFile(@QueryParam('testParam') test?: string): Promise<Return.DownloadBinaryData> {
         return new Promise<Return.DownloadBinaryData>((resolve, reject) => {
             resolve(null);
