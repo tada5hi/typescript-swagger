@@ -62,7 +62,7 @@ export namespace Decorator {
 
     export interface Config {
         useLibrary?: Library | Array<Library> | Record<Library, ID> | Record<Library, Representation>;
-        useBuildIn?: boolean | Array<ID> | ID;
+        useBuildIn?: boolean | Array<ID> | Record<ID, boolean> | ID;
         override?: Representation;
     }
 

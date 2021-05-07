@@ -1,21 +1,21 @@
 [![npm version](https://badge.fury.io/js/typescript-swagger.svg)](https://badge.fury.io/js/typescript-swagger)
 
 # Swagger generation for decorator api(s) 🚀
-This is a tool to generate swagger files from the following projects:
-- [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
-- [@decorators/express](https://github.com/serhiisol/node-decorators)
+This is a tool to generate swagger files from a decorator library or your own definitions.
+
+Please read the `CHANGELOG.md` in the repository for breaking changes.
 
 **Table of Contents** 
 
 - [Installation](#installation)
-- [Limitations](#limitations)
+
 - [Build](#build)
   - [CLI](#cli)
   - [Runtime](#runtime)
+- [Limitations](#limitations)
 - [Decorator(s)](#decorators)
   - [Representation](#representation)
-  - [Third-Party](#third-party)
-    
+  - [Configuration](#configuration)
 - [Usage](#usage)
   - [General](#general)
   - [Build-In](#buildin)
@@ -34,20 +34,6 @@ This is a tool to generate swagger files from the following projects:
 ```bash
 npm install typescript-swagger -g
 ```
-
-
-### Limitations
-
-You can use pretty any type you have declared in your code. The only restriction are types form third party modules.
-
-Also the following built in typescript utility types are supported:
-* NonNullable
-* Omit
-* Partial
-* Readonly
-* Record
-* Required
-* Pick
 
 ## Build
 
@@ -72,19 +58,23 @@ In case of the above configuration, the library can understand relative imports 
 ### CLI
 
 ```bash
-swaggerGen -c ./swaggerConfig.json
-swaggerGen -c ./swaggerConfig.js #.js files are also allowed as config files
-swaggerGen -c ./swaggerConfig.json -t # load {cwd}/tsconfig.json
-swaggerGen -c ./swaggerConfig.json -p ./tsconfig.json # load custom tsconfig.json
+swagger-generate -c ./swagger-config.json
+swagger-generate -c ./swagger-config.js #.js files are also allowed as config files
+swagger-generate -c ./swagger-config.json -t # load {cwd}/tsconfig.json
+swagger-generate -c ./swagger-config.json -p ./tsconfig.json # load custom tsconfig.json
 ```
 
-Where the [swaggerConfig.json](#swaggerconfigjson) file, contains settings about the swagger generation. For example:
+Where the [swagger-config.json](#swaggerconfigjson) file, contains settings about the swagger generation. For example:
 
 ```json
 {
     "swagger": {
         "outputDirectory": "./dist",
-        "entryFile": "./tests/data/apis.ts"
+        "entryFile": "./tests/data/apis.ts",
+        "decoratorConfig": {
+            "useBuildIn": true,
+            "useLibrary": ["typescript-rest", "@decorators/express"]
+        }
     }
 }
 ```
@@ -105,6 +95,10 @@ export const swaggerConfig: SwaggerConfig = {
   version: packageJson.version,
   outputDirectory: 'public',
   entryFile: path.join('src', 'controllers', '**', '*.ts'),
+  decoratorConfig: {
+     useBuildIn: true,
+     useLibrary: ["typescript-rest", "@decorators/express"],
+  },
   ignore: ['**/node_modules/**'],
   consumes: ['application/json'],
   produces: ['application/json']
@@ -115,12 +109,26 @@ export async function generateSwaggerDocumentation(): Promise<void> {
 }
 ```
 
+### Limitations
+
+You can use pretty any type you have declared in your code. The only restriction are types form third party modules.
+
+Also the following built in typescript utility types are supported:
+* NonNullable
+* Omit
+* Partial
+* Readonly
+* Record
+* Required
+* Pick
+
 ## Decorator(s)
 
 The information which are required to generate fully featured swagger documentations are collected by consulting decorators
 present on your code.
-Some decorators are already provided by this library and can be extended or replaced by other libraries (f.e @decorators/express or typescript-rest) or by 
-own definitions.
+Few decorator representations are already provided by this library and can also be disabled. 
+Decorator representation by third party libraries (f.e @decorators/express or typescript-rest) can be  extended/replaced as well.
+You can also deposit your own decorator as a representation.
 
 In the following sections, the information/function which can be acquired by a decorator is called: `Decorator.ID`.
 The decorator name/text itself is called: `Decorator.Representation`.
@@ -132,7 +140,9 @@ The following snippet, shows how the mapping between all ID(s) (`Decorator.ID(s)
 representations are defined for the BuildIn decorators.
 
 ```typescript
-return {
+import {Decorator} from 'typescript-swagger';
+
+const representation: Decorator.Representation = {
     // Class
     SWAGGER_TAGS: 'SwaggerTags',
     CLASS_PATH: undefined,
@@ -172,7 +182,9 @@ return {
     IS_LONG: 'IsLong',
     IS_FlOAT: 'IsFloat',
     IS_DOUBLE: 'IsDouble'
-}
+};
+
+export default representation;
 ```
 According to this schema you can:
 - provide your own decorators used for route generation.
@@ -183,6 +195,8 @@ According to this schema you can:
   
 How to use the build-in decorators in your code, is described in the following section:
 [Build-In](#buildin)
+
+### Configuration
 
 ## Usage
 
@@ -258,7 +272,7 @@ export class MyService {
 }
 ```
 
-It is also important to observe that all JsDoc provided on your methods, classes, and parameters is outputed into the generated swagger file:
+It is also important to notice that all JsDoc (Comments, Tags, ...) provided on your methods, classes, and parameters have influence on the generated swagger file:
 
 ```typescript
 @Accept('text/plain')
@@ -416,7 +430,7 @@ interface Person {
 ```
 
 
-### SwaggerConfig.json 
+### Swagger-config.json 
 
 The swagger config file supports the following properties: 
 
@@ -437,8 +451,9 @@ yaml | boolean | Generates the output also as an yaml file
 spec | any | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here
 securityDefinitions | *SecurityDefinition | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme.
 collectionFormat | string | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
+decoratorConfig | *DecoratorConfig | Configuration for own and third-party decorator representations.
 
-
+#### SecurityDefinition
 Where the SecurityDefinition contract is defined as:
 ```typescript 
 {
@@ -454,12 +469,91 @@ Where the SecurityDefinition contract is defined as:
 }
 ```
 
+#### DecoratorConfig
+The decorator contact is defined as:
+```typescript 
+import {Decorator} from 'typescript-swagger';
+
+{
+    useLibrary?: Decorator.Library | Array<Decorator.Library> | Record<Library, ID> | Record<Decorator.Library, Decorator.Representation>;
+    useBuildIn?: boolean | Array<Decorator.ID> | Record<Decorator.ID, boolean> | Decorator.ID;
+    override?: Decorator.Representation;
+}
+```
+
+The referenced type(s) in the `Decorator` namespace are defined as follows:
+
+```typescript 
+export type Library = 'typescript-rest' | '@decorators/express';
+export type Representation = Record<ID, string | Array<string>>;
+
+export type ID = ClassID | MethodID | ParameterID;
+
+export type ClassID =
+    'SWAGGER_TAGS' |
+    'CLASS_PATH' |
+    MethodAndCLassID
+    ;
+
+export type MethodAndCLassID =
+    'REQUEST_ACCEPT' |
+    'RESPONSE_EXAMPLE' |
+    'RESPONSE_DESCRIPTION' |
+    'REQUEST_CONSUMES' |
+    'RESPONSE_PRODUCES' |
+    'SWAGGER_HIDDEN'
+    ;
+
+export type MethodHttpVerbID =
+    'ALL' |
+    'GET' |
+    'POST' |
+    'PUT' |
+    'DELETE' |
+    'PATCH' |
+    'OPTIONS' |
+    'HEAD';
+
+export type MethodID =
+    'METHOD_PATH' |
+    MethodHttpVerbID |
+    MethodAndCLassID
+    ;
+
+export type ParameterID =
+    ParameterServerID |
+    'IS_INT' |
+    'IS_LONG' |
+    'IS_FlOAT' |
+    'IS_DOUBLE'
+    ;
+
+export type ParameterServerID =
+    'SERVER_CONTEXT' |
+    'SERVER_PARAMS' |
+    'SERVER_QUERY' |
+    'SERVER_FORM' |
+    'SERVER_BODY' |
+    'SERVER_HEADERS' |
+    'SERVER_COOKIES' |
+    'SERVER_PATH_PARAMS' |
+    'SERVER_FILE_PARAM' |
+    'SERVER_FILES_PARAM';
+```
+
+
+#### Example
+
 See an example:
 ```json
 {
     "swagger": {
         "outputDirectory": "./dist",
         "entryFile": "./controllers/*.ts",
+        "decoratorConfig": {
+            "useBuildIn": true,
+            "useLibrary": ["typescript-rest", "@decorators/express"]
+        },
         "outputFormat": "openapi_3",
         "host": "localhost:3000",
         "version": "1.0",
@@ -489,6 +583,11 @@ swagger:
   outputDirectory: ./dist
   entryFile: 
     - ./controllers/*.ts
+  decoratorConfig:
+    useBuildIn: true
+    useLibrary:
+      - @decorators/express
+      - typescript-rest
   outputFormat: openapi_3
   host: localhost:3000
   version: 1.0

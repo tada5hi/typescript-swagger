@@ -83,6 +83,8 @@ export function isBuildInIncluded(map?: Decorator.Config, id?: Decorator.ID) {
             return map.useBuildIn === id;
         case '[object Array]':
             return (map.useBuildIn as Array<Decorator.ID>).indexOf(id) !== -1;
+        case '[object Object]':
+            return hasOwnProperty((map.useBuildIn as Record<Decorator.ID, boolean>), id) && (map.useBuildIn as Record<Decorator.ID, boolean>)[id];
     }
 
     return true;
@@ -105,6 +107,20 @@ export function findBuildInIDRepresentation(id: Decorator.ID, map?: Decorator.Co
             return (map.useBuildIn as Decorator.ID) === id ? findRepresentationInBuildIn(id) : undefined;
         case '[object Array]':
             return (map.useBuildIn as Array<Decorator.ID>).indexOf(id) !== -1 ? findRepresentationInBuildIn(id) : undefined;
+        case '[object Object]':
+            // tslint:disable-next-line:forin
+            for(const recordKey in (map.useBuildIn as Record<Decorator.ID, boolean>)) {
+                if(!hasOwnProperty((map.useBuildIn as Record<Decorator.ID, boolean>), recordKey)) {
+                    continue;
+                }
+
+                const item : boolean = (map.useBuildIn as Record<Decorator.ID, boolean>)[recordKey as Decorator.ID];
+                if (!item) {
+                    continue;
+                }
+
+                return findRepresentationInBuildIn(recordKey as Decorator.ID);
+            }
     }
 
     return findRepresentationInBuildIn(id);

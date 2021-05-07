@@ -13,7 +13,7 @@ import {Resolver} from "../metadata/resolver/type";
 import {Swagger} from './index';
 
 export async function generateDocumentation(swaggerConfig: SwaggerConfig, tsConfig: CompilerOptions) : Promise<string> {
-    const metadata = new MetadataGenerator(swaggerConfig.entryFile, tsConfig, swaggerConfig.ignore, swaggerConfig.decoratorRepresentation).generate();
+    const metadata = new MetadataGenerator(swaggerConfig.entryFile, tsConfig, swaggerConfig.ignore, swaggerConfig.decoratorConfig).generate();
     await new SpecGenerator(metadata, swaggerConfig).generate();
 
     return Array.isArray(swaggerConfig.outputDirectory) ? swaggerConfig.outputDirectory.join('/') : swaggerConfig.outputDirectory;
