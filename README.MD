@@ -291,7 +291,7 @@ export class MyService {
 ```
 ### BuildIn
 
-These are the available swagger decorators by this library:
+The provided swagger decorator representations by this library, are listed in the following sections.
 
 #### @ResponseDescription
 
@@ -434,24 +434,25 @@ interface Person {
 
 The swagger config file supports the following properties: 
 
-Property | Type | Description
--------- | ---- | -----------
-basePath | string | Base API path; e.g. the 'v1' in https://myapi.com/v1
-consumes | [string] | Default consumes property for the entire API
-description | string | API description; defaults to npm package description
-entryFile | string or string[] | The entry point to your API (it is possible to use glob patters)
-outputFormat | 'Swagger_2' or 'OpenApi_3' | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
-host | string | The hostname to be informed in the generated swagger file
-license | string | API license number; defaults to npm package license
-name | string | API name; defaults to npm package name
-outputDirectory | string | Where to write the generated swagger file
-produces | [string] | Default produces property for the entire API
-version | string | API version number; defaults to npm package version
-yaml | boolean | Generates the output also as an yaml file 
-spec | any | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here
-securityDefinitions | *SecurityDefinition | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme.
-collectionFormat | string | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
-decoratorConfig | *DecoratorConfig | Configuration for own and third-party decorator representations.
+Property | Type | Default | Description
+-------- | ---- | ----- | -----------
+basePath | string | `'/'` | Base API path; e.g. the 'v1' in https://myapi.com/v1
+collectionFormat | string | `'csv'` | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
+consumes | [string] | `[]` | Default consumes property for the entire API
+decoratorConfig | *DecoratorConfig | `{ useBuildIn: true, useLibrary: ['typescript-rest', '@decorators/express'] }` | Configuration for own and third-party decorator representations.
+description | string |  | API description; defaults to npm package description
+entryFile | string or string[] | `[]` | The entry point to your API (it is possible to use glob patters)
+host | string | | The hostname to be informed in the generated swagger file
+license | string |  |  API license number; defaults to npm package license
+name | string |  |  API name; defaults to npm package name
+outputDirectory | string | | Where to write the generated swagger file
+outputFormat | 'Swagger_2' or 'OpenApi_3' | `'Swagger_2'` | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
+produces | [string] | | Default produces property for the entire API
+spec | any | | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here
+securityDefinitions | *SecurityDefinition | | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme.
+version | string | `0.0.1` | API version number; defaults to npm package version
+yaml | boolean | `true` | Generates the output also as a yaml file
+
 
 #### SecurityDefinition
 Where the SecurityDefinition contract is defined as:
