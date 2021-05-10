@@ -29,7 +29,7 @@ export function isLibraryIncluded(library: Library, map?: Decorator.Config) : bo
     return false;
 }
 
-export function findLibraryIDRepresentation(library: Library , key: Decorator.ID, map?: Decorator.Config) : Array<string> | string | undefined {
+export function findLibraryIDRepresentation(library: Library , key: Decorator.ID, map?: Decorator.Config) : Array<Decorator.RepresentationConfig> | Decorator.RepresentationConfig | undefined {
     if(typeof map === 'undefined') {
         return findRepresentationInConfig(library,key);
     }
@@ -58,17 +58,15 @@ export function findLibraryIDRepresentation(library: Library , key: Decorator.ID
                         // just allow specific keys of library.
                         return (item as Array<string>).indexOf(key) !== -1 ? findRepresentationInConfig(library, key) : undefined;
                     case '[object Object]':
-                        return hasOwnProperty((item as Record<Decorator.ID, string>), key) ? (item as Record<Decorator.ID, string>)[key]  : undefined;
+                        return hasOwnProperty((item as Record<Decorator.ID, boolean>), key) && (item as Record<Decorator.ID, Decorator.RepresentationConfig>)[key] ? findRepresentationInConfig(library, key) : undefined;
                 }
             }
-
-            return findRepresentationInConfig(library,key);
     }
 
     return undefined;
 }
 
-function findRepresentationInConfig(library: Library, key: Decorator.ID) : Array<string> | string | undefined  {
+function findRepresentationInConfig(library: Library, key: Decorator.ID) : Array<Decorator.RepresentationConfig> | Decorator.RepresentationConfig | undefined  {
     switch (library) {
         case "typescript-rest":
             if(hasOwnProperty(TypescriptRestLibrary.DecoratorRepresentations, key)) {

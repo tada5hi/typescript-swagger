@@ -61,6 +61,10 @@ export class SpecGenerator {
         });
     }
 
+    public getMetaData() {
+        return this.metadata;
+    }
+
     public getSwaggerSpec() {
         let spec: Swagger.Spec = {
             basePath: this.config.basePath,

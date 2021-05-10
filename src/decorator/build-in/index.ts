@@ -1,72 +1,59 @@
 import {hasOwnProperty} from "../../metadata/resolver/utils";
 import {Decorator} from "../type";
 
-export const BuildInMap : Decorator.Representation = {
+export const BuildInMap : Partial<Decorator.Representation> = {
     // Class
-    /**
-     * @SwaggerTags('abc', 'def', ...)
-     * class Entity {
-     *
-     * }
-     *
-     * Add the api endpoint to one or many swagger tag(s).
-     */
-    SWAGGER_TAGS: 'SwaggerTags',
-
-    /**
-     * @Path('/path')
-     * class Entity {
-     *
-     * }
-     *
-     * Define the base path for implemented methods.
-     */
-    CLASS_PATH: undefined,
+    SWAGGER_TAGS: {
+        name: 'SwaggerTags',
+        properties: [{amount: 'all', declaredAs: "argument"}]
+    },
 
     // Class + Method
-    REQUEST_ACCEPT: 'RequestAccept',
-    RESPONSE_EXAMPLE: 'ResponseExample',
-    RESPONSE_DESCRIPTION: 'ResponseDescription',
-    REQUEST_CONSUMES: 'RequestConsumes',
-    RESPONSE_PRODUCES: 'ResponseProduces',
-    SWAGGER_HIDDEN: 'SwaggerHidden',
+    RESPONSE_EXAMPLE: {
+        name: 'ResponseExample',
+        properties: [
+            {type: "TYPE", declaredAs: "typeArgument"},
+            {type: "PAYLOAD", declaredAs: "argument"}
+        ]
+    },
+    RESPONSE_DESCRIPTION: {
+        name: 'ResponseDescription',
+        properties: [
+            {type: "TYPE", declaredAs: "typeArgument"},
+            {type: "STATUS_CODE", declaredAs: "argument", position: 0},
+            {type: "DESCRIPTION", declaredAs: "argument", position: 1},
+            {type: "PAYLOAD", declaredAs: "argument", position: 2}
+        ]
+    },
+    REQUEST_CONSUMES: {
+        name: 'RequestConsumes',
+        properties: [{amount: 'all', declaredAs: "argument"}]
+    },
+    RESPONSE_PRODUCES: {
+        name: 'ResponseProduces',
+        properties: [{amount: 'all', declaredAs: "argument"}]
+    },
+    SWAGGER_HIDDEN: {
+        name: 'SwaggerHidden',
+        properties: []
+    },
 
-    // Method
-    ALL: undefined,
-    GET: undefined,
-    POST: undefined,
-    PUT: undefined,
-    DELETE: undefined,
-    PATCH: undefined,
-    OPTIONS: undefined,
-    HEAD: undefined,
-
-    /**
-     * @Path('/path')
-     * getMany() {
-     *     return [];
-     * }
-     *
-     * Define the method path (in addition to the base path provided by the class).
-     */
-    METHOD_PATH: undefined,
-
-    // Parameter
-    SERVER_CONTEXT: undefined,
-    SERVER_PARAMS: undefined,
-    SERVER_QUERY: undefined,
-    SERVER_FORM: undefined,
-    SERVER_BODY: 'ServerBody',
-    SERVER_HEADERS: undefined,
-    SERVER_COOKIES: undefined,
-    SERVER_PATH_PARAMS: undefined,
-    SERVER_FILES_PARAM: undefined,
-    SERVER_FILE_PARAM: undefined,
-
-    IS_INT: 'IsInt',
-    IS_LONG: 'IsLong',
-    IS_FlOAT: 'IsFloat',
-    IS_DOUBLE: 'IsDouble'
+    IS_INT: {
+        name: 'IsInt',
+        properties: []
+    },
+    IS_LONG: {
+        name: 'IsLong',
+        properties: []
+    },
+    IS_FlOAT: {
+        name: 'IsFloat',
+        properties: []
+    },
+    IS_DOUBLE: {
+        name: 'IsDouble',
+        properties: []
+    }
 };
 
 export function isBuildInIncluded(map?: Decorator.Config, id?: Decorator.ID) {
@@ -90,7 +77,7 @@ export function isBuildInIncluded(map?: Decorator.Config, id?: Decorator.ID) {
     return true;
 }
 
-export function findBuildInIDRepresentation(id: Decorator.ID, map?: Decorator.Config) : string | Array<string> | undefined {
+export function findBuildInIDRepresentation(id: Decorator.ID, map?: Decorator.Config) : Decorator.RepresentationConfig | Array<Decorator.RepresentationConfig> | undefined {
     if(typeof map === 'undefined') {
         return findRepresentationInBuildIn(id);
     }
@@ -126,7 +113,7 @@ export function findBuildInIDRepresentation(id: Decorator.ID, map?: Decorator.Co
     return findRepresentationInBuildIn(id);
 }
 
-export function findRepresentationInBuildIn(key: Decorator.ID) : string | Array<string> | undefined {
+export function findRepresentationInBuildIn(key: Decorator.ID) : Decorator.RepresentationConfig | Array<Decorator.RepresentationConfig> | undefined {
 
     if(hasOwnProperty(BuildInMap, key)) {
         return BuildInMap[key];

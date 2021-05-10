@@ -1,7 +1,5 @@
-import {union} from "lodash";
 import {ClassDeclaration, MethodDeclaration, SyntaxKind} from 'typescript';
 import {Decorator} from "../decorator/type";
-import {isDecorator} from '../utils/decoratorUtils';
 import { EndpointGenerator } from './endpointGenerator';
 import {Controller, MetadataGenerator, Method} from './metadataGenerator';
 import { MethodGenerator } from './methodGenerator';
@@ -28,11 +26,8 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
         this.debugger('Generating Metadata for controller %s', this.getCurrentLocation());
         this.debugger('Controller path: %s', this.path);
 
-        const consumes : Array<any> = union(...Decorator.getIDRepresentations('REQUEST_CONSUMES', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
-        const tags : Array<any> = union(...Decorator.getIDRepresentations('SWAGGER_TAGS', this.current.decoratorMap).map(key => this.getDecoratorValues(key)));
-
-        const controllerMetadata = {
-            consumes: consumes,
+        const controllerMetadata : Controller = {
+            consumes: this.getConsumes(),
             location: sourceFile.fileName,
             methods: this.buildMethods(),
             name: this.getCurrentLocation(),
@@ -40,7 +35,7 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
             produces: this.getProduces(),
             responses: this.getResponses(),
             security: this.getSecurity(),
-            tags: tags,
+            tags: this.getTags(),
         };
 
         this.debugger('Generated Metadata for controller %s: %j', this.getCurrentLocation(), controllerMetadata);
@@ -52,11 +47,11 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     }
 
     private buildMethods() : Array<Method> {
-        const hiddenDecoratorKey : Array<string> = Decorator.getIDRepresentations('SWAGGER_HIDDEN', this.current.decoratorMap);
+        const handler = Decorator.getRepresentationHandler('SWAGGER_HIDDEN', this.current.decoratorMap);
 
         return this.node.members
             .filter((method: { kind: unknown; }) => (method.kind === SyntaxKind.MethodDeclaration))
-            .filter((method: MethodDeclaration) => !isDecorator(method, decorator => hiddenDecoratorKey.indexOf(decorator.text) !== -1))
+            .filter((method: MethodDeclaration) => !handler.isPresentOnNode(method))
             .map((method: MethodDeclaration) => new MethodGenerator(method, this.current,this.path || ''))
             .filter((generator: MethodGenerator) => {
                 if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {

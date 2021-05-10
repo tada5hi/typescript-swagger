@@ -15,7 +15,7 @@ Please read the `CHANGELOG.md` in the repository for breaking changes.
 - [Limitations](#limitations)
 - [Decorator(s)](#decorators)
   - [Representation](#representation)
-  - [Configuration](#configuration)
+  - [Specification](#sepecification)
 - [Usage](#usage)
   - [General](#general)
   - [Build-In](#buildin)
@@ -26,7 +26,9 @@ Please read the `CHANGELOG.md` in the repository for breaking changes.
     - [@SwaggerTags](#swaggertags)
     - [@SwaggerHidden](#swaggerhidden)
     - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
-  - [swagger-config.json](#swaggerconfigjson)
+  - [SwaggerConfig (swagger-config.json)](#swagger-configjson)
+    - [DecoratorConfig](#decoratorconfig)
+    - [SecurityDefinition](#securitydefinition)
 - [Credits](#credits)
 
 ## Installation
@@ -64,7 +66,7 @@ swagger-generate -c ./swagger-config.json -t # load {cwd}/tsconfig.json
 swagger-generate -c ./swagger-config.json -p ./tsconfig.json # load custom tsconfig.json
 ```
 
-Where the [swagger-config.json](#swaggerconfigjson) file, contains settings about the swagger generation. For example:
+Where the [swagger-config.json](#swagger-configjson) file, contains settings about the swagger generation. For example:
 
 ```json
 {
@@ -132,7 +134,7 @@ You can also deposit your own decorator as a representation.
 
 In the following sections, the information/function which can be acquired by a decorator is called: `Decorator.ID`.
 The decorator name/text itself is called: `Decorator.Representation`.
-Decorators must be declared and implemented according the requirements for the respectively `Decorator.ID`.
+Decorators must be declared and implemented according the requirements ([Specification](#specification)) for the respectively `Decorator.ID`.
 
 ### Representation
 
@@ -196,7 +198,10 @@ According to this schema you can:
 How to use the build-in decorators in your code, is described in the following section:
 [Build-In](#buildin)
 
-### Configuration
+### Specification
+
+The specification how the decorator(s) mus be designed, is described in the following:
+
 
 ## Usage
 
@@ -204,7 +209,7 @@ How to use the build-in decorators in your code, is described in the following s
 
 The documentation will be generated consulting all decorators present on your code.
 
-Which decorator will be used, depends on your [swagger-config.json](#swaggerconfigjson).
+Which decorator will be used, depends on your [swagger-config.json](#swagger-configjson).
 However, there are some additional information that only can be provided, through some third party decorator or your own defined representations.
 
 To cover all functions the following decorators packs are supported by default:
@@ -212,7 +217,7 @@ To cover all functions the following decorators packs are supported by default:
 * [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
 * [@decorators/express](https://github.com/serhiisol/node-decorators)
 
-You can override the used decorator packs in you [swagger-config.json](#swaggerconfigjson).
+You can override the used decorator packs in you [swagger-config.json](#swagger-configjson).
 
 In the following there are two specific examples in combination with the third party libraries: typescript-rest and @decorators/express.
 
@@ -436,17 +441,17 @@ The swagger config file supports the following properties:
 
 Property | Type | Default | Description
 -------- | ---- | ----- | -----------
-basePath | string | `'/'` | Base API path; e.g. the 'v1' in https://myapi.com/v1
-collectionFormat | string | `'csv'` | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
+basePath | string | `"/"` | Base API path; e.g. the 'v1' in https://myapi.com/v1
+collectionFormat | string | `"csv"` | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
 consumes | [string] | `[]` | Default consumes property for the entire API
-decoratorConfig | *DecoratorConfig | `{ useBuildIn: true, useLibrary: ['typescript-rest', '@decorators/express'] }` | Configuration for own and third-party decorator representations.
+decoratorConfig | *DecoratorConfig | `{ "useBuildIn": true, "useLibrary": ["typescript-rest", "@decorators/express"] }` | Configuration for own and third-party decorator representations.
 description | string |  | API description; defaults to npm package description
 entryFile | string or string[] | `[]` | The entry point to your API (it is possible to use glob patters)
 host | string | | The hostname to be informed in the generated swagger file
 license | string |  |  API license number; defaults to npm package license
 name | string |  |  API name; defaults to npm package name
 outputDirectory | string | | Where to write the generated swagger file
-outputFormat | 'Swagger_2' or 'OpenApi_3' | `'Swagger_2'` | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
+outputFormat | 'Swagger_2' or 'OpenApi_3' | `"Swagger_2"` | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
 produces | [string] | | Default produces property for the entire API
 spec | any | | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here
 securityDefinitions | *SecurityDefinition | | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme.

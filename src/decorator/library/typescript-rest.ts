@@ -1,55 +1,124 @@
 import {Decorator} from "../type";
 
 export namespace TypescriptRestLibrary {
-    export const DecoratorRepresentations : Decorator.Representation = {
+    export const DecoratorRepresentations : Partial<Decorator.Representation> = {
         // Class
-        SWAGGER_TAGS: undefined,
-        CLASS_PATH: 'Path',
+        CLASS_PATH: {
+            name: 'Path',
+            properties: [{amount: 'one', declaredAs: "argument"}]
+        },
 
         // Class + Method
         REQUEST_ACCEPT: undefined,
-        RESPONSE_EXAMPLE: 'Example',
-        RESPONSE_DESCRIPTION: 'Response',
-        REQUEST_CONSUMES: undefined,
-        RESPONSE_PRODUCES: undefined,
-        SWAGGER_HIDDEN: undefined,
+        RESPONSE_EXAMPLE: {
+            name: 'Example',
+            properties: [
+                {type: "TYPE", declaredAs: "typeArgument"},
+                {type: "PAYLOAD", declaredAs: "argument"}
+            ]
+        },
+        RESPONSE_DESCRIPTION: {
+            name: 'Response',
+            properties: [
+                {type: "TYPE", declaredAs: "typeArgument"},
+                {type: "STATUS_CODE", declaredAs: "argument", position: 0},
+                {type: "DESCRIPTION", declaredAs: "argument", position: 1},
+                {type: "PAYLOAD", declaredAs: "argument", position: 2}
+            ]
+        },
 
         // Method
-        ALL: 'ALL',
-        GET: 'GET',
-        POST: 'POST',
-        PUT: 'PUT',
-        DELETE: 'DELETE',
-        PATCH: 'PATCH',
-        OPTIONS: 'OPTIONS',
-        HEAD: 'HEAD',
+        ALL: {
+            name: 'ALL',
+            properties: []
+        },
+        GET: {
+            name: 'GET',
+            properties: []
+        },
+        POST: {
+            name: 'POST',
+            properties: []
+        },
+        PUT: {
+            name: 'PUT',
+            properties: []
+        },
+        DELETE: {
+            name: 'DELETE',
+            properties: []
+        },
+        PATCH: {
+            name: 'PATCH',
+            properties: []
+        },
+        OPTIONS: {
+            name: 'OPTIONS',
+            properties: []
+        },
+        HEAD: {
+            name: 'HEAD',
+            properties: []
+        },
 
-        METHOD_PATH: 'Path',
+        METHOD_PATH: {
+            name: 'Path',
+            properties: [{amount: 'one', declaredAs: "argument"}]
+        },
 
         // Parameter
         SERVER_CONTEXT: [
-            'Context',
-            'ContextRequest',
-            'ContextResponse',
-            'ContextNext',
-            'ContextLanguage',
-            'ContextAccept'
+            {
+                name: 'Context',
+            },
+            {
+                name: 'ContextRequest',
+            },
+            {
+                name: 'ContextResponse',
+            },
+            {
+                name: 'ContextNext',
+            },
+            {
+                name: 'ContextLanguage',
+            },
+            {
+                name: 'ContextAccept',
+            }
         ],
-        SERVER_PARAMS: [
-            'Param'
-        ],
-        SERVER_QUERY: 'QueryParam',
-        SERVER_FORM: 'FormParam',
+        SERVER_PARAMS: {
+            name: 'Param',
+            properties: [{}]
+        },
+        SERVER_QUERY: {
+            name: 'QueryParam',
+            properties: [{}]
+        },
+        SERVER_FORM: {
+            name: 'FormParam',
+            properties: [{}]
+        },
         SERVER_BODY: undefined,
-        SERVER_HEADERS: 'HeaderParam',
-        SERVER_COOKIES: 'CookieParam',
-        SERVER_PATH_PARAMS: 'PathParam',
-        SERVER_FILES_PARAM: 'FilesParam',
-        SERVER_FILE_PARAM: 'FileParam',
-
-        IS_INT: 'IsInt',
-        IS_LONG: 'IsLong',
-        IS_FlOAT: 'IsFloat',
-        IS_DOUBLE: 'IsDouble'
+        SERVER_HEADERS: {
+            name: 'HeaderParam',
+            properties: [{}]
+        },
+        SERVER_COOKIES: {
+            name: 'CookieParam',
+            properties: [{}]
+        },
+        SERVER_PATH_PARAMS: {
+            name: 'PathParam',
+            properties: [{}]
+        },
+        SERVER_FILES_PARAM: {
+            name: 'FilesParam',
+            properties: [{}]
+        },
+        SERVER_FILE_PARAM: {
+            name: 'FileParam',
+            properties: [{}]
+        },
     };
 }

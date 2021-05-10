@@ -7,8 +7,8 @@ import {
     Security
 } from 'typescript-rest';
 
-import * as swagger from '../../src/decorator';
-import { TestInterface } from './TestInterface'; // to test compilerOptions.paths
+import * as swagger from '../../../src/decorator';
+import { TestInterface } from '../../data/TestInterface'; // to test compilerOptions.paths
 
 export interface MytypeWithUnion {
     property: 'value1' | 'value2';

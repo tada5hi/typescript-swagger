@@ -1,59 +1,84 @@
 import {Decorator} from "../../type";
 
 export namespace DecoratorExpressLibrary {
-    export const DecoratorRepresentations : Decorator.Representation = {
+    export const DecoratorRepresentations : Partial<Decorator.Representation> = {
         // Class
-        SWAGGER_TAGS: undefined,
-        CLASS_PATH: 'Controller',
-
-        // Class + Method
-        REQUEST_ACCEPT: undefined,
-        RESPONSE_EXAMPLE: undefined,
-        RESPONSE_DESCRIPTION: undefined,
-        REQUEST_CONSUMES: undefined,
-        RESPONSE_PRODUCES: undefined,
-        SWAGGER_HIDDEN: undefined,
+        CLASS_PATH: {
+            name: 'Controller',
+            properties: [{}]
+        },
 
         // Method
-        ALL: 'All',
-        GET: 'Get',
-        POST: 'Post',
-        PUT: 'Put',
-        DELETE: 'Delete',
-        PATCH: 'Patch',
-        OPTIONS: 'Options',
-        HEAD: 'Head',
-
         METHOD_PATH: [
-            'All',
-            'Get',
-            'Post',
-            'Put',
-            'Delete',
-            'Patch',
-            'OPTIONS',
-            'Head'
+            {
+                name: 'All',
+                properties: [{}]
+            },
+            {
+                name: 'Get',
+                properties: [{}]
+            },
+            {
+                name: 'Post',
+                properties: [{}]
+            },
+            {
+                name: 'Put',
+                properties: [{}]
+            },
+            {
+                name: 'Delete',
+                properties: [{}]
+            },
+            {
+                name: 'Patch',
+                properties: [{}]
+            },
+            {
+                name: 'Options',
+                properties: [{}]
+            },
+            {
+                name: 'Head',
+                properties: [{}]
+            }
         ],
 
         // Parameter
         SERVER_CONTEXT: [
-            'Request',
-            'Response',
-            'Next'
+            {
+                name: 'Request',
+                properties: []
+            },
+            {
+                name: 'Response',
+                properties: []
+            },
+            {
+                name: 'Next',
+                properties: []
+            },
         ],
-        SERVER_PARAMS: undefined,
-        SERVER_QUERY: 'Query',
+        SERVER_QUERY: {
+            name: 'Query',
+            properties: [{}]
+        },
         SERVER_FORM: undefined,
-        SERVER_BODY: 'Body',
-        SERVER_HEADERS: 'Headers',
-        SERVER_COOKIES: 'Cookies',
-        SERVER_PATH_PARAMS: 'Params',
-        SERVER_FILES_PARAM: undefined,
-        SERVER_FILE_PARAM: undefined,
-
-        IS_INT: undefined,
-        IS_LONG: undefined,
-        IS_FlOAT: undefined,
-        IS_DOUBLE: undefined
+        SERVER_BODY: {
+            name: 'Body',
+            properties: [{}]
+        },
+        SERVER_HEADERS: {
+            name: 'Headers',
+            properties: [{}]
+        },
+        SERVER_COOKIES: {
+            name: 'Cookies',
+            properties: [{}]
+        },
+        SERVER_PATH_PARAMS: {
+            name: 'Params',
+            properties: [{}]
+        }
     };
 }

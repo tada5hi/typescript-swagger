@@ -6,11 +6,11 @@ import {isCallExpression, isNumericLiteral, isStringLiteral, Node} from 'typescr
  * @param node
  * @param isMatching
  */
-export function getDecorators(node: Node, isMatching: (identifier: DecoratorData) => boolean): Array<DecoratorData> {
+export function getDecorators(node: Node, isMatching?: (identifier: DecoratorData) => boolean): Array<DecoratorData> {
     const decorators = node.decorators;
     if (!decorators || !decorators.length) { return []; }
 
-    return decorators
+    const items = decorators
         .map(d => {
             const result: any = {
                 arguments: [],
@@ -39,8 +39,9 @@ export function getDecorators(node: Node, isMatching: (identifier: DecoratorData
             result.text = x.text || x.name.text;
 
             return result as DecoratorData;
-        })
-        .filter(isMatching);
+        });
+
+    return typeof isMatching === 'undefined' ? items : items.filter(isMatching);
 }
 
 function getDecorator(node: Node, isMatching: (identifier: DecoratorData) => boolean) {

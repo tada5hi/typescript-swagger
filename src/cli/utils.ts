@@ -5,13 +5,22 @@ import {CompilerOptions, convertCompilerOptionsFromJson} from "typescript";
 import {load} from "yamljs";
 import {Config, Specification, SwaggerConfig} from "../config";
 
+let projectPackageJsonpath : string | undefined;
 let projectPackageJson : Record<string, any> | undefined;
 
 export function getPackageJsonStringValue(workingDir: string, key: string, defaultValue: string = ''): string {
+    const path = join(workingDir, 'package.json');
+
     try {
-        if (typeof projectPackageJson === 'undefined') {
-            projectPackageJson = require(`${workingDir}/package.json`);
+        if (
+            typeof projectPackageJson === 'undefined' ||
+            typeof projectPackageJsonpath === 'undefined' ||
+            projectPackageJsonpath !== path
+        ) {
+            projectPackageJson = require(path);
         }
+
+        projectPackageJsonpath = path;
 
         return projectPackageJson[key] || defaultValue;
     } catch (e) {
@@ -32,11 +41,11 @@ export function getSwaggerConfig(workingDir: string, configPath = 'swagger.json'
 
 export function validateSwaggerConfig(workingDir: string, conf: SwaggerConfig): SwaggerConfig {
     if (!conf.outputDirectory) {
-        throw new Error('Missing outputDirectory: onfiguration most contain output directory');
+        throw new Error('Missing outputDirectory: configuration most contain output directory');
     }
 
     if (!conf.entryFile) {
-        throw new Error('Missing entryFile: Configuration must contain an entry point file.');
+        throw new Error('Missing entryFile: Configuration must contain an entry point file or directory.');
     }
 
     conf.version = conf.version || getPackageJsonStringValue(workingDir, 'version', '0.0.1');

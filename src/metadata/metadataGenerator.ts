@@ -16,7 +16,6 @@ import {
 } from 'typescript';
 import {useDebugger} from "../debug";
 import {Decorator} from "../decorator/type";
-import {isDecorator} from '../utils/decoratorUtils';
 import {ControllerGenerator} from './controllerGenerator';
 import {TypeNodeResolver} from "./resolver";
 import {Resolver} from "./resolver/type";
@@ -156,13 +155,13 @@ export class MetadataGenerator {
     }
 
     private buildControllers() {
-        const hiddenDecoratorKey : Array<string> = Decorator.getIDRepresentations('SWAGGER_HIDDEN', this.decoratorMap);
-        const pathDecoratorKey : Array<string> = Decorator.getIDRepresentations('CLASS_PATH', this.decoratorMap);
+        const hiddenHandler = Decorator.getRepresentationHandler('SWAGGER_HIDDEN', this.decoratorMap);
+        const pathHandler = Decorator.getRepresentationHandler('CLASS_PATH', this.decoratorMap);
 
         return this.nodes
             .filter(node => node.kind === SyntaxKind.ClassDeclaration)
-            .filter(node => !isDecorator(node, decorator => hiddenDecoratorKey.indexOf(decorator.text) !== -1))
-            .filter(node => isDecorator(node, decorator => pathDecoratorKey.indexOf(decorator.text) !== -1))
+            .filter(node => !hiddenHandler.isPresentOnNode(node))
+            .filter(node => pathHandler.isPresentOnNode(node))
             .map((classDeclaration: ClassDeclaration) => new ControllerGenerator(classDeclaration, this))
             .filter(generator => generator.isValid())
             .map(generator => generator.generate());
@@ -232,7 +231,7 @@ export interface Property {
     default?: any;
     format?: string;
     example?: unknown;
-    validators: Record<string, { value?: any, message?: string }>;
+    validators?: Record<string, { value?: any, message?: string }>;
     description?: string;
     name: string;
     type: Resolver.Type;

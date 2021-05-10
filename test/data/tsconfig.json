@@ -1,0 +1,11 @@
+{
+  "baseUrl": ".",
+  "paths": {
+    "@/*": [
+      "test/data/*"
+    ]
+  },
+  "compilerOptions": {
+   "allowJs": true
+  }
+}

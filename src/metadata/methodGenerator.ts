@@ -1,4 +1,3 @@
-import {union} from 'lodash';
 import * as pathUtil from 'path';
 import * as ts from 'typescript';
 import {Decorator} from "../decorator/type";
@@ -52,14 +51,8 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         const type = new TypeNodeResolver(nodeType, this.current).resolve();
         const responses = this.mergeResponses(this.getResponses(), this.getMethodSuccessResponse(type));
 
-        const tagsDecoratorKey : Array<string> = Decorator.getIDRepresentations('SWAGGER_TAGS', this.current.decoratorMap);
-        const tags : Array<any> = union(...tagsDecoratorKey.map(key => this.getDecoratorValues(key)));
-
-        const consumesDecoratorKey : Array<string> = Decorator.getIDRepresentations('REQUEST_CONSUMES', this.current.decoratorMap);
-        const consumes : Array<any> = union(...consumesDecoratorKey.map(key => this.getDecoratorValues(key)));
-        
         const methodMetadata : Method = {
-            consumes: consumes,
+            consumes: this.getConsumes(),
             // todo: rework deprecated
             deprecated: isExistJSDocTag(this.node, 'deprecated'),
             description: getJSDocDescription(this.node),
@@ -70,8 +63,9 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             produces: this.getProduces(),
             responses: responses,
             security: this.getSecurity(),
+            // todo: rework summary
             summary: getJSDocTagComment(this.node, 'summary'),
-            tags: tags,
+            tags: this.getTags(),
             type: type
         };
 
@@ -93,6 +87,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
 
                 return new ParameterGenerator(p, this.method, path, this.current).generate();
             } catch (e) {
+                console.log(e);
                 const methodId = this.node.name as ts.Identifier;
                 const controllerId = (this.node.parent as ts.ClassDeclaration).name as ts.Identifier;
                 const parameterId = p.name as ts.Identifier;
@@ -149,17 +144,13 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     }
 
     private getMethodSuccessExamples() {
-        const representations = Decorator.getIDRepresentations('RESPONSE_EXAMPLE', this.current.decoratorMap);
-        const exampleDecorators = union(...representations.map(representation => getDecorators(this.node, decorator => decorator.text === representation)));
-        if (!exampleDecorators || !exampleDecorators.length) { return undefined; }
-        if (exampleDecorators.length > 1) {
-            throw new Error(`Only one Example decorator allowed in '${this.getCurrentLocation}' method.`);
-        }
+        const handler = Decorator.getRepresentationHandler('RESPONSE_EXAMPLE', this.current.decoratorMap);
+        const config = handler.buildRepresentationConfigFromNode(this.node);
+        const property = handler.getPropertiesByTypes(config.name, ['TYPE', 'PAYLOAD']);
 
-        const d = exampleDecorators[0];
-        const argument = d.arguments[0];
+        const example = handler.getDecoratorPropertyValueAsItem(config.decorator, property['PAYLOAD']);
 
-        return this.getExamplesValue(argument);
+        return this.getExamplesValue(example);
     }
 
     private mergeResponses(responses: Array<ResponseType>, defaultResponse: ResponseType) {

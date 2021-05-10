@@ -1,4 +1,6 @@
+import {Node} from "typescript";
 import {hasOwnProperty} from "../metadata/resolver/utils";
+import {DecoratorData, getDecorators} from "../utils/decoratorUtils";
 import {findBuildInIDRepresentation, isBuildInIncluded} from "./build-in";
 import {findLibraryIDRepresentation, isLibraryIncluded, Library} from "./library";
 
@@ -56,12 +58,206 @@ export namespace Decorator {
 
     export type ID = ClassID | MethodID | ParameterID;
 
+    export class RepresentationResolver {
+        protected representationConfig: Array<RepresentationConfig> = [];
+
+        constructor(protected id: ID, representationConfig: RepresentationConfig | Array<RepresentationConfig>) {
+            this.representationConfig = Array.isArray(representationConfig) ? representationConfig : [representationConfig];
+        }
+
+        // -------------------------------------------
+
+        public getNames() {
+            return this.representationConfig.map(config => config.name);
+        }
+
+        // -------------------------------------------
+
+        public isPresentOnNode(node: Node) {
+            const representationConfig = this.buildRepresentationConfigFromNode(node);
+
+            return typeof representationConfig.decorator !== 'undefined';
+        }
+
+        // -------------------------------------------
+
+        public getDecoratorPropertyValueAsArray(decorator: DecoratorData, property?: Property) : undefined | Array<any> {
+            if(typeof property === 'undefined') {
+                return undefined;
+            }
+
+            const value = this.getDecoratorPropertyValue(decorator, property);
+            if(typeof value === 'undefined') {
+                return [];
+            }
+
+            return property.amount === 'all' ? value : [value];
+        }
+
+        public getDecoratorPropertyValueAsItem(decorator: DecoratorData, property?: Property) : undefined | any {
+            if(typeof property === 'undefined') {
+                return undefined;
+            }
+
+            const value = this.getDecoratorPropertyValue(decorator, property);
+
+            if(property.amount === 'all') {
+                if(Array.isArray(value) && value.length > 0) {
+                    return value[0];
+                }
+            }
+
+            return value;
+        }
+
+        public getDecoratorPropertyValue(decorator: DecoratorData, property: Property) : any | Array<any> | undefined {
+            if(typeof property === 'undefined') {
+                return undefined;
+            }
+
+            switch (property.amount) {
+                case "all":
+                    switch (property.declaredAs) {
+                        case 'typeArgument':
+                            return  decorator.typeArguments;
+                        case 'argument':
+                            return decorator.arguments;
+                    }
+                    break;
+                case "one":
+                    switch (property.declaredAs) {
+                        case 'typeArgument':
+                            if (decorator.typeArguments.length > property.position) {
+                                return decorator.typeArguments[property.position];
+                            }
+                            break;
+                        case 'argument':
+                            if (decorator.arguments.length > property.position) {
+                                return decorator.arguments[property.position];
+                            }
+                            break;
+                    }
+                    break;
+            }
+
+            return undefined;
+        }
+
+        // -------------------------------------------
+
+        public getPropertyByType(representationName: string, type: PropertyType = 'SIMPLE') : Property | undefined {
+            const args = this.getPropertiesByTypes(representationName, [type]);
+            return args[type] || undefined;
+        }
+
+        public getPropertiesByTypes(representationName: string, types: Array<PropertyType>) : Record<PropertyType, Property> {
+            const properties : Record<PropertyType | string, Property> = {};
+
+            types.map(type => properties[type] = undefined);
+
+            const index = this.representationConfig.findIndex(config => config.name === representationName);
+            if(index === -1) {
+                return properties;
+            }
+
+            const representation : RepresentationConfig = this.representationConfig[index];
+
+            const args : Array<Property> = representation.properties.filter((arg: Property) => typeof arg.type === 'undefined' || types.indexOf(arg.type) !== -1);
+            for(let j=0; j<args.length; j++) {
+                const property = Decorator.RepresentationResolver.fillProperty(args[j]);
+                properties[property.type] = property;
+            }
+
+            return properties;
+        }
+
+        // -------------------------------------------
+
+        public buildRepresentationConfigFromNode(node: Node) : RepresentationConfig {
+            const decorators = getDecorators(node);
+            const decoratorNames = decorators.map(decorator => decorator.text);
+
+            for(let i=0; i<this.representationConfig.length; i++) {
+                const index = decoratorNames.indexOf(this.representationConfig[i].name);
+                if(index !== -1) {
+                    return {
+                        decorator: decorators[index] || undefined,
+                        decorators: decorators.filter(decorator => decorator.text === decorators[index].text),
+                        ...this.representationConfig[i]
+                    };
+                }
+            }
+
+            return {
+                decorators: [],
+                decorator: undefined,
+                name: undefined
+            };
+        }
+
+        // -------------------------------------------
+
+        private static fillProperty(property: Property) {
+            if(typeof property.type === 'undefined') {
+                property.type = 'SIMPLE';
+            }
+
+            if(typeof property.declaredAs === 'undefined') {
+                property.declaredAs = 'argument';
+            }
+
+            if(typeof property.amount === 'undefined') {
+                property.amount = 'one';
+            }
+
+            if(typeof property.position === 'undefined') {
+                property.position = 0;
+            }
+
+            return property;
+        }
+    }
+
     // -------------------------------------------
 
-    export type Representation = Record<ID, string | Array<string>>;
+    export type PropertyType = 'PAYLOAD' | 'STATUS_CODE' | 'DESCRIPTION' /* | 'PATH' | 'MEDIA_TYPE' | 'KEY' */ | 'OPTIONS' | 'SIMPLE' | 'TYPE';
+    export interface Property {
+        /**
+         * Default: 'SIMPLE'
+         */
+        type?: PropertyType;
+        /**
+         * Default: 'argument'
+         */
+        declaredAs?: 'argument' | 'typeArgument';
+        /**
+         * Default: one
+         */
+        amount?: 'one' | 'all';
+        /**
+         * Default: 0
+         */
+        position?: number;
+    }
+
+    // -------------------------------------------
+
+    export type Representation = Record<ID, RepresentationConfig | Array<RepresentationConfig>>;
+    export interface RepresentationConfig {
+        name: string;
+        decorator?: DecoratorData;
+        decorators?: Array<DecoratorData>;
+        properties?: Array<Property>;
+    }
 
     export interface Config {
-        useLibrary?: Library | Array<Library> | Record<Library, ID> | Record<Library, Representation>;
+        useLibrary?:
+            Library |
+            Array<Library> |
+            Record<
+                Library,
+                Array<ID> | ID | Record<ID, boolean>
+                >;
         useBuildIn?: boolean | Array<ID> | Record<ID, boolean> | ID;
         override?: Representation;
     }
@@ -70,28 +266,17 @@ export namespace Decorator {
     
 
     
-    const idRepresentationCache : Partial<Record<ID, Array<string>>> = {};
+    const handlerCache : Partial<Record<ID, RepresentationResolver>> = {};
 
-    function toManyRepresentation(representation: string | Array<string>) : Array<string> {
+    function toManyRepresentation(representation: RepresentationConfig | Array<RepresentationConfig>) : Array<RepresentationConfig> {
         return Array.isArray(representation) ? representation : [representation];
     }
 
-    export function getIDRepresentation(id: ID, map?: Config) : string {
-        const values = getIDRepresentations(id, map);
-
-        if(values.length === 0) {
-            throw new Error('The ID '+id+' is not valid identifier for a supported decorator.');
-        }
-
-        // Return first found representation
-        return values[0];
-    }
-
-    export function getIDRepresentations(id: ID, map?: Config) : Array<string> {
-        let value : Array<string> = [];
+    export function getRepresentationHandler(id: ID, map?: Config) : RepresentationResolver {
+        let value : Array<RepresentationConfig> = [];
         
-        if(hasOwnProperty(idRepresentationCache, id)) {
-            return idRepresentationCache[id];
+        if(hasOwnProperty(handlerCache, id)) {
+            return handlerCache[id];
         }
         
         if(typeof map === 'undefined' || typeof map.override === 'undefined' || !hasOwnProperty(map.override, id)) {
@@ -118,12 +303,14 @@ export namespace Decorator {
                     value = [...value, ...toManyRepresentation(buildInValue)];
                 }
             }
-
-            idRepresentationCache[id] = value;
-            
-            return value;
+        } else {
+            value = toManyRepresentation(map.override[id]);
         }
 
-        return toManyRepresentation(map.override[id]);
+        const resolver = new RepresentationResolver(id, value);
+
+        handlerCache[id] = resolver;
+
+        return resolver;
     }
 }

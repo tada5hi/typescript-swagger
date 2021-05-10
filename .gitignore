@@ -10,3 +10,5 @@ npm-debug.log*
 .idea
 reports
 package-lock.json
+writable
+coveralls.yml
