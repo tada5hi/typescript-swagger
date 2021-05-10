@@ -250,14 +250,16 @@ export namespace Decorator {
         properties?: Array<Property>;
     }
 
+    export type ConfigLibrary =
+        Library |
+        Array<Library> |
+        Record<
+            Library,
+            Array<ID> | ID | Record<ID, boolean>
+            >;
+
     export interface Config {
-        useLibrary?:
-            Library |
-            Array<Library> |
-            Record<
-                Library,
-                Array<ID> | ID | Record<ID, boolean>
-                >;
+        useLibrary?: ConfigLibrary;
         useBuildIn?: boolean | Array<ID> | Record<ID, boolean> | ID;
         override?: Representation;
     }

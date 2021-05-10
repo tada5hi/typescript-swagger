@@ -1,5 +1,4 @@
 import {SpecGenerator} from "../../../src";
-import {Library} from "../../../src/decorator/library";
 import {Decorator} from "../../../src/decorator/type";
 import {MetadataGenerator} from "../../../src/metadata/metadataGenerator";
 import {getDefaultOptions} from "../../data/defaultOptions";
@@ -7,7 +6,7 @@ import {getDefaultOptions} from "../../data/defaultOptions";
 const jsonata = require('jsonata');
 
 export function createSwaggerSpecGenerator(
-    library: Library | Array<Library> | Record<Library, Decorator.ID> | Record<Library, Decorator.Representation>,
+    library: Decorator.ConfigLibrary,
     entryFile: Array<string> | string
 ) {
     const compilerOptions = {
