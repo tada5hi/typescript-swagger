@@ -252,8 +252,27 @@ export default representation;
 ```
 ### Specification
 
-The specification how the decorator(s) mus be designed, is described in the following:
+How you can reference decorators, is described in the following.
 
+#### SWAGGER_HIDDEN
+Target:
+- Class
+- Method
+
+Properties:
+
+Example:
+- Decorator: `@SwaggerHidden()`
+- Representation:
+  ```json
+  {
+    "SWAGGER_HIDDEN": {
+      "name": "SwaggerHidden", 
+      "properties": []
+    }
+  }
+  ```
+  
 #### SWAGGER_TAGS
 Target: 
 - Class
@@ -267,12 +286,14 @@ Properties:
 Example:
 - Decorator: `@SwaggerTags('tag-one')`, `@SwaggerTags('tag-one', 'tag-two')`
 - Representation:
-  ```typescript
-  SWAGGER_TAGS: {
-    name: "SwaggerTags", 
-    properties: [
-      {amount: 'all', declaredAs: "argument"}
-    ]
+  ```json
+  {
+    "SWAGGER_TAGS": {
+      "name": "SwaggerTags", 
+      "properties": [
+        {"amount": "all", "declaredAs": "argument"}
+      ]
+    }
   }
   ```
 
@@ -288,12 +309,14 @@ Properties:
 Example:
 - Decorator: `@Path('/path')`
 - Representation:
-  ```typescript
-  CLASS_PATH: {
-    name: "Path", 
-    properties: [
-        {amount: "one", declaredAs: "argument"}
-    ]
+  ```json
+  {
+    "CLASS_PATH": {
+      "name": "Path", 
+      "properties": [
+          {"amount": "one", "declaredAs": "argument"}
+      ]
+    }
   }
   ```
 
@@ -310,38 +333,14 @@ Properties:
 Example:
 - Decorator: `@RequestConsumes('application/json')`, `@RequestConsumes('application/json', 'text/html')`
 - Representation:
-  ```typescript
-  REQUEST_CONSUMES: {
-    name: "RequestConsumes", 
-    properties: [
-        {amount: 'all', declaredAs: "argument"}
-    ]
-  }
-  ```
-
-#### RESPONSE_EXAMPLE
-Target:
-- Class
-- Method
-
-Properties:
-- TYPE:
-  - Type: any
-  - Description: (typescript) type of the example
-- PAYLOAD:
-  - Type: any
-  - Description: value of the example 
-
-Example:
-- Decorator: `@ResponseExample<{name: string}>({name: 'Peter'})`
-- Representation:
-  ```typescript
-  RESPONSE_EXAMPLE: {
-    name: "Path", 
-    properties: [
-        {type: "TYPE", declaredAs: "typeArgument"}, 
-        {type: "PAYLOAD", declaredAs: "argument"}
-    ]
+  ```json
+  {
+    "REQUEST_CONSUMES": {
+      "name": "RequestConsumes", 
+      "properties": [
+          {"amount": "all", "declaredAs": "argument"}
+      ]
+    }
   }
   ```
 
@@ -367,16 +366,48 @@ Properties:
 Example:
 - Decorator: `@ResponseDescription<{name: string}>(200, 'Return object with name attribute.', '{name: 'Peter'})`
 - Representation
-  ```typescript
-  RESPONSE_EXAMPLE: {
-    name: "Path", 
-    properties: [
-        {type: "TYPE", declaredAs: "typeArgument"}, 
-        {type: "PAYLOAD", declaredAs: "argument"}
-    ]
+  ```json
+  {
+    "RESPONSE_DESCRIPTION": {
+      "name": "ResponseDescription", 
+      "properties": [
+          {"type": "TYPE", "declaredAs": "typeArgument"},
+          {"type": "STATUS_CODE", "declaredAs": "argument", "position": 0},
+          {"type": "DESCRIPTION", "declaredAs": "argument", "position": 1},
+          {"type": "PAYLOAD", "declaredAs": "argument", "position": 2}
+      ]
+    }
   }
   ```
+  
+#### RESPONSE_EXAMPLE
+Target:
+- Class
+- Method
 
+Properties:
+- TYPE:
+  - Type: any
+  - Description: (typescript) type of the example
+- PAYLOAD:
+  - Type: any
+  - Description: value of the example
+
+Example:
+- Decorator: `@ResponseExample<{name: string}>({name: 'Peter'})`
+- Representation:
+  ```json
+  {
+    "RESPONSE_EXAMPLE": {
+      "name": "Path", 
+      "properties": [
+          {"type": "TYPE", "declaredAs": "typeArgument"}, 
+          {"type": "PAYLOAD", "declaredAs": "argument"}
+      ]
+    }
+  }
+  ```
+  
 #### RESPONSE_PRODUCES
 Target:
 - Class
@@ -390,33 +421,14 @@ Properties:
 Example:
 - Decorator: `@ResponseProduces('application/json')`, `@ResponseProduces('application/json', 'text/html')`
 - Representation:
-  ```typescript
-  REQUEST_CONSUMES: {
-    name: "ResponseProduces", 
-    properties: [
-        {amount: 'all', declaredAs: "argument"}
-    ]
-  }
-  ```
-#### SWAGGER_EXAMPLE
-Target:
-- Class
-- Method
-
-Properties:
-- SIMPLE:
-  - Type: string | Array<string>
-  - Description: media type(s) available for a response message
-
-Example:
-- Decorator: `@ResponseProduces('application/json')`, `@ResponseProduces('application/json', 'text/html')`
-- Representation:
-  ```typescript
-  REQUEST_CONSUMES: {
-    name: "ResponseProduces", 
-    properties: [
-        {amount: 'all', declaredAs: "argument"}
-    ]
+  ```json
+  {
+    "RESPONSE_PRODUCES": {
+      "name": "ResponseProduces", 
+      "properties": [
+          {"amount": "all", "declaredAs": "argument"}
+      ]
+    }
   }
   ```
 
@@ -432,12 +444,14 @@ Properties:
 Example:
 - Decorator: `@Path('/path')`
 - Representation:
-  ```typescript
-  METHOD_PATH: {
-    name: "Path", 
-    properties: [
-        {amount: "one", declaredAs: "argument"}
-    ]
+  ```json
+  {
+    "METHOD_PATH": {
+      "name": "Path", 
+      "properties": [
+          {"amount": "one", "declaredAs": "argument"}
+      ]
+    }
   }
   ```
 According to this schema you can:
