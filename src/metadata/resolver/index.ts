@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as ts from 'typescript';
-import {getDecoratorName} from "../../utils/decoratorUtils";
+import {getDecoratorName} from "../../decorator/utils";
 
 import {
     getJSDocTagComment,

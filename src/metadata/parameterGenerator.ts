@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 import {Decorator} from "../decorator/type";
-import {DecoratorData, getDecorators} from '../utils/decoratorUtils';
+import {DecoratorData, getDecorators} from '../decorator/utils';
 import { MetadataGenerator, Parameter} from './metadataGenerator';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";

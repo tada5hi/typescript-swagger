@@ -4,7 +4,7 @@ import {castArray} from 'lodash';
 import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind} from 'typescript';
 import {useDebugger} from "../debug";
 import {Decorator} from "../decorator/type";
-import { getDecorators } from '../utils/decoratorUtils';
+import { getDecorators } from '../decorator/utils';
 import {normalizePath} from "../utils/pathUtils";
 import {MetadataGenerator, ResponseType} from './metadataGenerator';
 import {TypeNodeResolver} from './resolver';

@@ -1,7 +1,7 @@
 import * as pathUtil from 'path';
 import * as ts from 'typescript';
 import {Decorator} from "../decorator/type";
-import {getDecorators} from '../utils/decoratorUtils';
+import {getDecorators} from '../decorator/utils';
 import { getJSDocDescription, getJSDocTagComment, isExistJSDocTag } from '../utils/jsDocUtils';
 import { EndpointGenerator } from './endpointGenerator';
 import {MetadataGenerator, Method, Parameter, ResponseData, ResponseType} from './metadataGenerator';

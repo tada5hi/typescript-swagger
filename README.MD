@@ -16,7 +16,7 @@ Please read the `CHANGELOG.md` in the repository for breaking changes.
 - [Limitations](#limitations)
 - [Decorator(s)](#decorators)
   - [Representation](#representation)
-  - [Specification](#sepecification)
+  - [Specification](#specification)
 - [Usage](#usage)
   - [General](#general)
   - [Build-In](#buildin)
@@ -133,77 +133,321 @@ Few decorator representations are already provided by this library and can also 
 Decorator representation by third party libraries (f.e @decorators/express or typescript-rest) can be  extended/replaced as well.
 You can also deposit your own decorator as a representation.
 
-In the following sections, the information/function which can be acquired by a decorator is called: `Decorator.ID`.
-The decorator name/text itself is called: `Decorator.Representation`.
+In the following sections, the information/function which can be acquired by a decorator is called: `ID`.
+The decorator the configuration (name/text, properties, ...) is called: `RepresentationConfig`.
 Decorators must be declared and implemented according the requirements ([Specification](#specification)) for the respectively `Decorator.ID`.
 
 ### Representation
 
-The following snippet, shows how the mapping between all ID(s) (`Decorator.ID(s)`) and the respectively (`Decorator.Representation`) 
-representations are defined for the BuildIn decorators.
+The following snippet, shows how the mapping between Decorator-ID(s) (`ID`) and the respectively (`RepresentationConfig`) 
+representation config should look like.
 
+```typescript
+type Representation = Record<ID, RepresentationConfig | Array<RepresentationConfig>>;
+```
+
+The `ID` can have one of the following values: SWAGGER_TAGS, CLASS_PATH, ... [see more]().
+
+The `RepresentationConfig` is defined as described in the following:
+```typescript
+interface RepresentationConfig {
+    name: string;
+    properties?: Array<Property>
+}
+```
+The `name` attribute is representative for the actual decorator text/name.
+
+For a few decorators the library expects different properties. How these properties/information
+are available, should be provided by the `properties` attribute of the representation config.
+
+```typescript
+export type PropertyType = 'PAYLOAD' | 'STATUS_CODE' | 'DESCRIPTION' | 'OPTIONS' | 'SIMPLE' | 'TYPE';
+export interface Property {
+    /**
+     * Default: 'SIMPLE'
+     */
+    type?: PropertyType;
+    /**
+     * Default: 'argument'
+     */
+    declaredAs?: 'argument' | 'typeArgument';
+    /**
+     * Default: one
+     */
+    amount?: 'one' | 'all';
+    /**
+     * Default: 0
+     */
+    position?: number;
+}
+```
+
+Which `PropertyType(s)` are available for a given decorator is described in the ([Specification](#specification)) section.
+In case for the build-in decorators the representation is defined as follows:
 ```typescript
 import {Decorator} from 'typescript-swagger';
 
 const representation: Decorator.Representation = {
-    // Class
-    SWAGGER_TAGS: 'SwaggerTags',
-    CLASS_PATH: undefined,
-
-    // Class + Method
-    REQUEST_ACCEPT: 'RequestAccept',
-    RESPONSE_EXAMPLE: 'ResponseExample',
-    RESPONSE_DESCRIPTION: 'ResponseDescription',
-    REQUEST_CONSUMES: 'RequestConsumes',
-    RESPONSE_PRODUCES: 'ResponseProduces',
-    SWAGGER_HIDDEN: 'SwaggerHidden',
-
-    // Method
-    ALL: undefined,
-    GET: undefined,
-    POST: undefined,
-    PUT: undefined,
-    DELETE: undefined,
-    PATCH: undefined,
-    OPTIONS: undefined,
-    HEAD: undefined,
-    METHOD_PATH: undefined,
-
-    // Parameter
-    SERVER_CONTEXT: undefined,
-    SERVER_PARAMS: undefined,
-    SERVER_QUERY: undefined,
-    SERVER_FORM: undefined,
-    SERVER_BODY: 'ServerBody',
-    SERVER_HEADERS: undefined,
-    SERVER_COOKIES: undefined,
-    SERVER_PATH_PARAMS: undefined,
-    SERVER_FILES_PARAM: undefined,
-    SERVER_FILE_PARAM: undefined,
-
-    IS_INT: 'IsInt',
-    IS_LONG: 'IsLong',
-    IS_FlOAT: 'IsFloat',
-    IS_DOUBLE: 'IsDouble'
+  /**
+   * ID: SWAGGER_TAGS
+   * RepresentationConfig: {
+   *     name: 'SwaggerTags',
+   *     properties: [...]
+   * }
+   */
+  SWAGGER_TAGS: {
+    name: 'SwaggerTags',
+    properties: [{amount: 'all', declaredAs: "argument"}]
+  },
+  
+  // Class + Method
+  RESPONSE_EXAMPLE: {
+    name: 'ResponseExample',
+    properties: [
+      {type: "TYPE", declaredAs: "typeArgument"},
+      {type: "PAYLOAD", declaredAs: "argument"}
+    ]
+  },
+  RESPONSE_DESCRIPTION: {
+    name: 'ResponseDescription',
+    properties: [
+      {type: "TYPE", declaredAs: "typeArgument"},
+      {type: "STATUS_CODE", declaredAs: "argument", position: 0},
+      {type: "DESCRIPTION", declaredAs: "argument", position: 1},
+      {type: "PAYLOAD", declaredAs: "argument", position: 2}
+    ]
+  },
+  REQUEST_CONSUMES: {
+    name: 'RequestConsumes',
+    properties: [{amount: 'all', declaredAs: "argument"}]
+  },
+  RESPONSE_PRODUCES: {
+    name: 'ResponseProduces',
+    properties: [{amount: 'all', declaredAs: "argument"}]
+  },
+  SWAGGER_HIDDEN: {
+    name: 'SwaggerHidden',
+    properties: []
+  },
+  
+  IS_INT: {
+    name: 'IsInt',
+    properties: []
+  },
+  IS_LONG: {
+    name: 'IsLong',
+    properties: []
+  },
+  IS_FlOAT: {
+    name: 'IsFloat',
+    properties: []
+  },
+  IS_DOUBLE: {
+    name: 'IsDouble',
+    properties: []
+  }
 };
 
 export default representation;
 ```
-According to this schema you can:
-- provide your own decorators used for route generation.
-- override representations for a third party library 
-  (f.e [typescript-rest](https://github.com/thiagobustamante/typescript-rest) 
-  or
-  [@decorators/express](https://github.com/serhiisol/node-decorators))
-  
-How to use the build-in decorators in your code, is described in the following section:
-[Build-In](#buildin)
-
 ### Specification
 
 The specification how the decorator(s) mus be designed, is described in the following:
 
+#### SWAGGER_TAGS
+Target: 
+- Class
+- Method
 
+Properties:
+- SIMPLE:
+  - Type: string | Array<string>
+  - Description: assign the endpoint to one or more swagger tags.
+
+Example:
+- Decorator: `@SwaggerTags('tag-one')`, `@SwaggerTags('tag-one', 'tag-two')`
+- Representation:
+  ```typescript
+  SWAGGER_TAGS: {
+    name: "SwaggerTags", 
+    properties: [
+      {amount: 'all', declaredAs: "argument"}
+    ]
+  }
+  ```
+
+#### CLASS_PATH
+Target: 
+- Class
+
+Properties: 
+- SIMPLE: 
+  - Type: string
+  - Description: base path for methods in class
+  
+Example:
+- Decorator: `@Path('/path')`
+- Representation:
+  ```typescript
+  CLASS_PATH: {
+    name: "Path", 
+    properties: [
+        {amount: "one", declaredAs: "argument"}
+    ]
+  }
+  ```
+
+#### REQUEST_CONSUMES
+Target:
+- Class
+- Method
+
+Properties:
+- SIMPLE:
+  - Type: string | Array<string>
+  - Description: supported media type(s) for request.
+
+Example:
+- Decorator: `@RequestConsumes('application/json')`, `@RequestConsumes('application/json', 'text/html')`
+- Representation:
+  ```typescript
+  REQUEST_CONSUMES: {
+    name: "RequestConsumes", 
+    properties: [
+        {amount: 'all', declaredAs: "argument"}
+    ]
+  }
+  ```
+
+#### RESPONSE_EXAMPLE
+Target:
+- Class
+- Method
+
+Properties:
+- TYPE:
+  - Type: any
+  - Description: (typescript) type of the example
+- PAYLOAD:
+  - Type: any
+  - Description: value of the example 
+
+Example:
+- Decorator: `@ResponseExample<{name: string}>({name: 'Peter'})`
+- Representation:
+  ```typescript
+  RESPONSE_EXAMPLE: {
+    name: "Path", 
+    properties: [
+        {type: "TYPE", declaredAs: "typeArgument"}, 
+        {type: "PAYLOAD", declaredAs: "argument"}
+    ]
+  }
+  ```
+
+#### RESPONSE_DESCRIPTION
+Target:
+- Class
+- Method
+
+Properties:
+- TYPE:
+  - Type: any
+  - Description: (typescript) type of the example
+- STATUS_CODE:
+  - Type: number
+  - Description: response status code (f.e 200)
+- DESCRIPTION:
+  - Type: string
+  - Description: response description
+- PAYLOAD:
+  - Type: any
+  - Description: example value or error of the description
+
+Example:
+- Decorator: `@ResponseDescription<{name: string}>(200, 'Return object with name attribute.', '{name: 'Peter'})`
+- Representation
+  ```typescript
+  RESPONSE_EXAMPLE: {
+    name: "Path", 
+    properties: [
+        {type: "TYPE", declaredAs: "typeArgument"}, 
+        {type: "PAYLOAD", declaredAs: "argument"}
+    ]
+  }
+  ```
+
+#### RESPONSE_PRODUCES
+Target:
+- Class
+- Method
+
+Properties:
+- SIMPLE:
+  - Type: string | Array<string>
+  - Description: media type(s) available for a response message
+
+Example:
+- Decorator: `@ResponseProduces('application/json')`, `@ResponseProduces('application/json', 'text/html')`
+- Representation:
+  ```typescript
+  REQUEST_CONSUMES: {
+    name: "ResponseProduces", 
+    properties: [
+        {amount: 'all', declaredAs: "argument"}
+    ]
+  }
+  ```
+#### SWAGGER_EXAMPLE
+Target:
+- Class
+- Method
+
+Properties:
+- SIMPLE:
+  - Type: string | Array<string>
+  - Description: media type(s) available for a response message
+
+Example:
+- Decorator: `@ResponseProduces('application/json')`, `@ResponseProduces('application/json', 'text/html')`
+- Representation:
+  ```typescript
+  REQUEST_CONSUMES: {
+    name: "ResponseProduces", 
+    properties: [
+        {amount: 'all', declaredAs: "argument"}
+    ]
+  }
+  ```
+
+#### METHOD_PATH
+Target:
+- Method
+
+Properties:
+- SIMPLE:
+  - Type: string
+  - Description: additional path specification to class path.
+
+Example:
+- Decorator: `@Path('/path')`
+- Representation:
+  ```typescript
+  METHOD_PATH: {
+    name: "Path", 
+    properties: [
+        {amount: "one", declaredAs: "argument"}
+    ]
+  }
+  ```
+According to this schema you can:
+- provide your own decorators used for route generation.
+- override representations for a third party library
+  (f.e [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
+  or
+  [@decorators/express](https://github.com/serhiisol/node-decorators))
+
+How to provide the representation for decorators is described in the section of the [swagger-config.json](#swagger-configjson).
 ## Usage
 
 ### General
