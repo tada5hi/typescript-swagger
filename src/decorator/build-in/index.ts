@@ -53,7 +53,16 @@ export const BuildInMap : Partial<Decorator.Representation> = {
     IS_DOUBLE: {
         name: 'IsDouble',
         properties: []
-    }
+    },
+
+    SERVER_FILES_PARAM: {
+        name: 'RequestFileParam',
+        properties: [{}]
+    },
+    SERVER_FILE_PARAM: {
+        name: 'RequestFileParam',
+        properties: [{}]
+    },
 };
 
 export function isBuildInIncluded(map?: Decorator.Config, id?: Decorator.ID) {

@@ -1,6 +1,24 @@
 'use strict';
 
 /**
+ * Document the method or class comsumes property in generated swagger docs
+ */
+export function RequestConsumes(...values: Array<string>): any {
+  return () => { return; };
+}
+
+/**
+ *
+ *
+ *
+ * @param key
+ * @constructor
+ */
+export function RequestFileParam(key: string) : any {
+  return () => { return; };
+}
+
+/**
  * A decorator to document the responses that a given service method can return. It is used to generate
  * documentation for the REST service.
  * ```typescript
@@ -49,6 +67,13 @@ export function ResponseExample<T>(example: T): any {
 }
 
 /**
+ * Document the method or class produces property in generated swagger docs
+ */
+export function ResponseProduces(...values: Array<string>): any {
+  return () => { return; };
+}
+
+/**
  * Add tags for a given method on generated swagger documentation.
  * ```typescript
  * @ Path('people')
@@ -63,20 +88,6 @@ export function ResponseExample<T>(example: T): any {
  * @param values a list of tags
  */
 export function SwaggerTags(...values: Array<string>): any {
-  return () => { return; };
-}
-
-/**
- * Document the method or class comsumes property in generated swagger docs
- */
-export function RequestConsumes(...values: Array<string>): any {
-  return () => { return; };
-}
-
-/**
- * Document the method or class produces property in generated swagger docs
- */
-export function ResponseProduces(...values: Array<string>): any {
   return () => { return; };
 }
 

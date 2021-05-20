@@ -62,6 +62,14 @@ export namespace Resolver {
 
     export type PrimitiveType = StringType | BooleanType | DoubleType | FloatType | IntegerType | LongType | VoidType;
 
+    export interface AnyType extends  BaseType {
+        typeName: 'any';
+    }
+
+    export function isAnyType(param: BaseType) : param is AnyType {
+        return param.typeName === 'any';
+    }
+
     export interface StringType extends BaseType {
         typeName: 'string';
     }

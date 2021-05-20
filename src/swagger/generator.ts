@@ -462,11 +462,20 @@ export class SpecGenerator {
         }
 
         if(type.members.length === 2) {
-            const index = type.members.findIndex((member: Resolver.Type) => Resolver.isArrayType(member));
+            let index = type.members.findIndex((member: Resolver.Type) => Resolver.isArrayType(member));
             if(index !== -1) {
                 const otherIndex = index === 0 ? 1 : 0;
 
                 if((type.members[index] as Resolver.ArrayType).elementType.typeName === type.members[otherIndex].typeName) {
+                    return this.getSwaggerType(type.members[otherIndex]);
+                }
+            }
+
+            index = type.members.findIndex((member: Resolver.Type) => Resolver.isAnyType(member));
+            if(index !== -1) {
+                const otherIndex = index === 0 ? 1 : 0;
+
+                if(Resolver.isAnyType(type.members[index])) {
                     return this.getSwaggerType(type.members[otherIndex]);
                 }
             }

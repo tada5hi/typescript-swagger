@@ -182,6 +182,8 @@ export interface Property {
 }
 ```
 
+If an attribute (type, declaredAs, amount, position) is not defined the default value will be applied.
+
 Which `PropertyType(s)` are available for a given decorator is described in the ([Specification](#specification)) section.
 In case for the build-in decorators the representation is defined as follows:
 ```typescript
@@ -245,7 +247,15 @@ const representation: Decorator.Representation = {
   IS_DOUBLE: {
     name: 'IsDouble',
     properties: []
-  }
+  },
+  SERVER_FILES_PARAM: {
+    name: 'RequestFileParam',
+    properties: [{}]
+  },
+  SERVER_FILE_PARAM: {
+    name: 'RequestFileParam',
+    properties: [{}]
+  },
 };
 
 export default representation;
@@ -735,7 +745,7 @@ Where the SecurityDefinition contract is defined as:
 ```
 
 #### DecoratorConfig
-The decorator contact is defined as:
+The decorator contract is defined as followed:
 ```typescript 
 import {Decorator} from 'typescript-swagger';
 
@@ -745,6 +755,9 @@ import {Decorator} from 'typescript-swagger';
     override?: Decorator.Representation;
 }
 ```
+
+Please read the [Representation](#representation) section for further information to provide
+valid values to override or extend library or build-in decorators.
 
 The referenced type(s) in the `Decorator` namespace are defined as follows:
 
