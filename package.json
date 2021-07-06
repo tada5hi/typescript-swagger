@@ -45,9 +45,9 @@
     "minimatch": "^3.0.4",
     "mkdirp": "^1.0.4",
     "path": "^0.12.7",
-    "swagger2openapi": "^6.2.3",
+    "swagger2openapi": "^7.0.0",
     "typescript": "^4.2.4",
-    "typescript-rest": "^2.2.6",
+    "typescript-rest": "^3.0.3",
     "yamljs": "^0.2.10"
   },
   "devDependencies": {
