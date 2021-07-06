@@ -1,6 +1,7 @@
 [![npm version](https://badge.fury.io/js/typescript-swagger.svg)](https://badge.fury.io/js/typescript-swagger)
-[![Build Status](https://travis-ci.com/Tada5hi/typescript-swagger.svg?branch=master)](https://travis-ci.com/Tada5hi/typescript-swagger)
-[![Coverage Status](https://coveralls.io/repos/github/Tada5hi/typescript-swagger/badge.svg?branch=master)](https://coveralls.io/github/Tada5hi/typescript-swagger?branch=master)
+[![codecov](https://codecov.io/gh/Tada5hi/typescript-swagger/branch/master/graph/badge.svg?token=OATCN9VJR9)](https://codecov.io/gh/Tada5hi/typescript-swagger)
+[![Master Workflow](https://github.com/Tada5hi/typescript-swagger/workflows/main/badge.svg)](https://github.com/Tada5hi/typescript-swagger)
+[![Known Vulnerabilities](https://snyk.io/test/github/Tada5hi/typescript-swagger/badge.svg?targetFile=package.json)](https://snyk.io/test/github/Tada5hi/typescript-swagger?targetFile=package.json)
 # Swagger generation for decorator api(s) 🚀
 This is a tool to generate swagger files from a decorator library or your own definitions.
 
