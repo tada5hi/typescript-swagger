@@ -1,8 +1,8 @@
 import {Node} from "typescript";
 import {hasOwnProperty} from "../metadata/resolver/utils";
-import {DecoratorData, getDecorators} from "./utils";
 import {findBuildInIDRepresentation, isBuildInIncluded} from "./build-in";
 import {findLibraryIDRepresentation, isLibraryIncluded, Library} from "./library";
+import {DecoratorData, getDecorators} from "./utils";
 
 export namespace Decorator {
     export type ClassID =

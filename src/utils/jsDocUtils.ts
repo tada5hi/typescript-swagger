@@ -8,7 +8,11 @@ export function getJSDocDescription(node: Node) : string | undefined {
     const jsDocs = (node as any).jsDoc as Array<JSDoc>;
     if (!jsDocs || !jsDocs.length) { return ''; }
 
-    return jsDocs[0].comment || undefined;
+    if(typeof jsDocs[0].comment === 'string') {
+        return jsDocs[0].comment;
+    }
+
+    return undefined;
 }
 
 
@@ -54,7 +58,7 @@ export function getJSDocTagComment(node: Node, tagName: ((tag: JSDocTag) => bool
         tags = getMatchingJSDocTags(node, tagName);
     }
 
-    if (!tags || !tags.length) {
+    if (!tags || !tags.length || typeof tags[0].comment !== 'string') {
         return undefined;
     }
     return tags[0].comment;
@@ -75,7 +79,7 @@ export function getJSDocTagNames(node: Node, requireTagName = false) : Array<str
             } else if (tag.comment === undefined) {
                 throw new ResolverError(`Orphan tag: @${String(tag.tagName.text || tag.tagName.escapedText)} should have a parameter name follows with.`);
             }
-            return tag.comment.startsWith(parameterName);
+            return typeof tag.comment === 'string' ? tag.comment.startsWith(parameterName) : false;
         });
     } else {
         tags = getMatchingJSDocTags(node as any, tag => {
