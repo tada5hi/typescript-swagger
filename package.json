@@ -48,7 +48,7 @@
     "swagger2openapi": "^7.0.0",
     "typescript": "^4.2.4",
     "typescript-rest": "^3.0.3",
-    "yamljs": "^0.2.10"
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/argparse": "^1.0.38",
