@@ -1,5 +1,11 @@
 {
   "name": "typescript-swagger",
+  "author": {
+    "name": "Peter Placzek",
+    "email": "tadashi@animesu.net",
+    "url": "https:/github.com/Tada5hi"
+  },
+  "license": "MIT",
   "version": "0.1.1",
   "description": "Generate Swagger files from a decorator library like typescript-rest or a @decorators/express.",
   "keywords": [
@@ -29,12 +35,6 @@
     "tsc": "tsc",
     "preblushOnly": "tsc -d"
   },
-  "author": {
-    "name": "Peter Placzek",
-    "email": "tadashi@animesu.net",
-    "url": "https:/github.com/Tada5hi"
-  },
-  "license": "MIT",
   "dependencies": {
     "argparse": "^1.0.10",
     "debug": "^4.2.0",
