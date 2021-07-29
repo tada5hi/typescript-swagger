@@ -6,7 +6,7 @@
     "url": "https:/github.com/Tada5hi"
   },
   "license": "MIT",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Generate Swagger files from a decorator library like typescript-rest or a @decorators/express.",
   "keywords": [
     "typescript",
