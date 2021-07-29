@@ -78,13 +78,39 @@ export class SpecGenerator {
             ? this.config.securityDefinitions
             : {};
 
-        if (this.config.consumes) { spec.consumes = this.config.consumes; }
-        if (this.config.produces) { spec.produces = this.config.produces; }
-        if (this.config.description) { spec.info.description = this.config.description; }
-        if (this.config.license) { spec.info.license = { name: this.config.license }; }
-        if (this.config.name) { spec.info.title = this.config.name; }
-        if (this.config.version) { spec.info.version = this.config.version; }
-        if (this.config.host) { spec.host = this.config.host; }
+        if (this.config.consumes) {
+            spec.consumes = this.config.consumes;
+        }
+
+        if (this.config.produces) {
+            spec.produces = this.config.produces;
+        }
+
+        if (this.config.description) {
+            spec.info.description = this.config.description;
+        }
+
+        if (this.config.license) {
+            spec.info.license = {
+                name: this.config.license
+            };
+        }
+
+        if (this.config.name) {
+            spec.info.title = this.config.name;
+        }
+
+        if (this.config.version) {
+            spec.info.version = this.config.version;
+        }
+
+        if (this.config.host) {
+            const url = new URL(this.config.host);
+            let host : string = (url.host + url.pathname).replace(/([^:]\/)\/+/g, "$1");
+            host = host.substr(-1, 1) === '/' ? host.substr(0, host.length -1) : host;
+
+            spec.host = host;
+        }
 
         if (this.config.spec) {
             spec = require('merge').recursive(spec, this.config.spec);
