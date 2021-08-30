@@ -1,12 +1,14 @@
 import * as ts from 'typescript';
+import {RepresentationManager} from "../decorator/manager";
 import {Decorator} from "../decorator/type";
 import {DecoratorData, getDecorators} from '../decorator/utils';
-import { MetadataGenerator, Parameter} from './metadataGenerator';
+import { MetadataGenerator} from './index';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
 import {getInitializerValue} from "./resolver/utils";
+import {Parameter} from "./type";
 
-const supportedParameterKeys : Array<Decorator.ParameterServerID> = [
+const supportedParameterKeys : Decorator.ParameterServerType[] = [
     'SERVER_CONTEXT',
     'SERVER_PARAMS',
     'SERVER_QUERY',
@@ -19,7 +21,7 @@ const supportedParameterKeys : Array<Decorator.ParameterServerID> = [
 ];
 
 export class ParameterGenerator {
-    protected decoratorHandler?: Decorator.RepresentationResolver;
+    protected decoratorHandler?: RepresentationManager;
     protected decorator?: DecoratorData;
 
     constructor(
@@ -95,7 +97,7 @@ export class ParameterGenerator {
         }
 
         if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
+            const argument =  this.decoratorHandler.getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
             if(typeof argument === 'string') {
                 name = argument;
             }
@@ -152,7 +154,7 @@ export class ParameterGenerator {
         }
 
         if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
+            const argument =  this.decoratorHandler.getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
             if(typeof argument === 'string') {
                 name = argument;
             }
@@ -187,7 +189,7 @@ export class ParameterGenerator {
         }
 
         if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
+            const argument =  this.decoratorHandler.getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
             if(typeof argument === 'string') {
                 name = argument;
             }
@@ -214,7 +216,7 @@ export class ParameterGenerator {
         }
 
         if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
+            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
             if(typeof argument === 'string') {
                 name = argument;
             }
@@ -241,7 +243,7 @@ export class ParameterGenerator {
         }
 
         if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
+            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
             if(typeof argument === 'string') {
                 name = argument;
             }
@@ -268,7 +270,7 @@ export class ParameterGenerator {
         }
 
         if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
+            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
             if(typeof argument === 'string') {
                 name = argument;
             }
@@ -312,13 +314,13 @@ export class ParameterGenerator {
 
                 switch (key) {
                     case 'SIMPLE':
-                        const propertyName = this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, properties[key]);
+                        const propertyName = this.decoratorHandler. getPropertyValueAsItem(this.decorator, properties[key]);
                         if(typeof propertyName !== 'undefined') {
                             name = propertyName;
                         }
                         break;
                     case 'OPTIONS':
-                        const propertyOptions = this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, properties[key]);
+                        const propertyOptions = this.decoratorHandler. getPropertyValueAsItem(this.decorator, properties[key]);
                         if(typeof propertyOptions !== 'undefined') {
                             options = propertyOptions;
                         }
@@ -349,7 +351,7 @@ export class ParameterGenerator {
         const type = this.getValidatedType(this.parameter);
 
         if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getDecoratorPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
+            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
             if(typeof argument === 'string') {
                 pathName = argument;
             }

@@ -4,21 +4,21 @@ export namespace TypescriptRestLibrary {
     export const DecoratorRepresentations : Partial<Decorator.Representation> = {
         // Class
         CLASS_PATH: {
-            name: 'Path',
+            id: 'Path',
             properties: [{amount: 'one', declaredAs: "argument"}]
         },
 
         // Class + Method
         REQUEST_ACCEPT: undefined,
         RESPONSE_EXAMPLE: {
-            name: 'Example',
+            id: 'Example',
             properties: [
                 {type: "TYPE", declaredAs: "typeArgument"},
                 {type: "PAYLOAD", declaredAs: "argument"}
             ]
         },
         RESPONSE_DESCRIPTION: {
-            name: 'Response',
+            id: 'Response',
             properties: [
                 {type: "TYPE", declaredAs: "typeArgument"},
                 {type: "STATUS_CODE", declaredAs: "argument", position: 0},
@@ -29,95 +29,95 @@ export namespace TypescriptRestLibrary {
 
         // Method
         ALL: {
-            name: 'ALL',
+            id: 'ALL',
             properties: []
         },
         GET: {
-            name: 'GET',
+            id: 'GET',
             properties: []
         },
         POST: {
-            name: 'POST',
+            id: 'POST',
             properties: []
         },
         PUT: {
-            name: 'PUT',
+            id: 'PUT',
             properties: []
         },
         DELETE: {
-            name: 'DELETE',
+            id: 'DELETE',
             properties: []
         },
         PATCH: {
-            name: 'PATCH',
+            id: 'PATCH',
             properties: []
         },
         OPTIONS: {
-            name: 'OPTIONS',
+            id: 'OPTIONS',
             properties: []
         },
         HEAD: {
-            name: 'HEAD',
+            id: 'HEAD',
             properties: []
         },
 
         METHOD_PATH: {
-            name: 'Path',
+            id: 'Path',
             properties: [{amount: 'one', declaredAs: "argument"}]
         },
 
         // Parameter
         SERVER_CONTEXT: [
             {
-                name: 'Context',
+                id: 'Context',
             },
             {
-                name: 'ContextRequest',
+                id: 'ContextRequest',
             },
             {
-                name: 'ContextResponse',
+                id: 'ContextResponse',
             },
             {
-                name: 'ContextNext',
+                id: 'ContextNext',
             },
             {
-                name: 'ContextLanguage',
+                id: 'ContextLanguage',
             },
             {
-                name: 'ContextAccept',
+                id: 'ContextAccept',
             }
         ],
         SERVER_PARAMS: {
-            name: 'Param',
+            id: 'Param',
             properties: [{}]
         },
         SERVER_QUERY: {
-            name: 'QueryParam',
+            id: 'QueryParam',
             properties: [{}]
         },
         SERVER_FORM: {
-            name: 'FormParam',
+            id: 'FormParam',
             properties: [{}]
         },
         SERVER_BODY: undefined,
         SERVER_HEADERS: {
-            name: 'HeaderParam',
+            id: 'HeaderParam',
             properties: [{}]
         },
         SERVER_COOKIES: {
-            name: 'CookieParam',
+            id: 'CookieParam',
             properties: [{}]
         },
         SERVER_PATH_PARAMS: {
-            name: 'PathParam',
+            id: 'PathParam',
             properties: [{}]
         },
         SERVER_FILES_PARAM: {
-            name: 'FilesParam',
+            id: 'FilesParam',
             properties: [{}]
         },
         SERVER_FILE_PARAM: {
-            name: 'FileParam',
+            id: 'FileParam',
             properties: [{}]
         },
     };

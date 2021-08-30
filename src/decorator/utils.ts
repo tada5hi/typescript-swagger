@@ -6,7 +6,7 @@ import {isCallExpression, isNumericLiteral, isStringLiteral, Node} from 'typescr
  * @param node
  * @param isMatching
  */
-export function getDecorators(node: Node, isMatching?: (identifier: DecoratorData) => boolean): Array<DecoratorData> {
+export function getDecorators(node: Node, isMatching?: (identifier: DecoratorData) => boolean): DecoratorData[] {
     const decorators = node.decorators;
     if (!decorators || !decorators.length) { return []; }
 
@@ -73,6 +73,6 @@ export function isDecorator(node: Node, isMatching: (identifier: DecoratorData) 
 
 export interface DecoratorData {
     text: string;
-    arguments: Array<any>;
-    typeArguments: Array<any>;
+    arguments: any[];
+    typeArguments: any[];
 }

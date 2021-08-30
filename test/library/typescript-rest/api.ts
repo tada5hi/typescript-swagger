@@ -81,10 +81,10 @@ export class MyService {
     }
 
     @POST
-    @swagger.ResponseExample<Array<Person>>([{
+    @swagger.ResponseExample<Person[]>([{
         name: 'Joe'
     }])
-    public testPostString(body: string): Array<Person> {
+    public testPostString(body: string): Person[] {
         return [];
     }
 
@@ -97,8 +97,8 @@ export class MyService {
     @GET
     @Path('multi-query')
     public testMultiQuery(
-        @QueryParam('id') ids: Array<string>,
-        @QueryParam('name'/*, { collectionFormat: 'multi', allowEmptyValue: true }*/) names?: string | Array<string>
+        @QueryParam('id') ids: string[],
+        @QueryParam('name'/*, { collectionFormat: 'multi', allowEmptyValue: true }*/) names?: string | string[]
     ) {
         return { ids: ids, names: names };
     }
@@ -110,7 +110,7 @@ export class MyService {
         @QueryParam('str') str: string = 'default value',
         @QueryParam('bool1') bool1: boolean = true,
         @QueryParam('bool2') bool2: boolean = false,
-        @QueryParam('arr') arr: Array<string> = ['a', 'b', 'c']
+        @QueryParam('arr') arr: string[] = ['a', 'b', 'c']
     ) {
         return;
     }
@@ -189,7 +189,7 @@ export class BasicModel {
 
 export class BasicEndpoint<T extends BasicModel>  {
 
-    protected list(@QueryParam('full') full?: boolean): Promise<Array<T>> {
+    protected list(@QueryParam('full') full?: boolean): Promise<T[]> {
         return new Promise((resolve, reject) => {
             // todo
         });
@@ -269,7 +269,7 @@ export type SimpleHelloType = {
      * Description for greeting property
      */
     greeting: string;
-    arrayOfSomething: Array<Something>;
+    arrayOfSomething: Something[];
 
     /**
      * Description for profile
@@ -386,7 +386,7 @@ export class PrimitiveEndpoint {
 
     @Path('/array')
     @GET
-    public getArray(): ResponseBody<Array<string>> {
+    public getArray(): ResponseBody<string[]> {
         return { data: ['hello', 'world'] };
     }
 }

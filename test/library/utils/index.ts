@@ -1,13 +1,13 @@
 import {SpecGenerator} from "../../../src";
 import {Decorator} from "../../../src/decorator/type";
-import {MetadataGenerator} from "../../../src/metadata/metadataGenerator";
+import {MetadataGenerator} from "../../../src/metadata";
 import {getDefaultOptions} from "../../data/defaultOptions";
 
 const jsonata = require('jsonata');
 
 export function createSwaggerSpecGenerator(
     library: Decorator.ConfigLibrary,
-    entryFile: Array<string> | string
+    entryFile: string[] | string
 ) {
     const compilerOptions = {
         baseUrl: '.',
@@ -16,13 +16,11 @@ export function createSwaggerSpecGenerator(
         },
     };
     const metadata = new MetadataGenerator(
-        entryFile,
-        compilerOptions,
-        undefined,
-        {
+        {entryFile: entryFile, decoratorConfig: {
             useBuildIn: true,
             useLibrary: library
-        }
+        }},
+        compilerOptions,
     ).generate();
 
     return  new SpecGenerator(metadata, getDefaultOptions());
@@ -368,7 +366,7 @@ export function buildLibraryTests(specGenerator: SpecGenerator) {
             expression = jsonata('paths."/primitives/arrayNative".get.responses."200".schema."$ref"');
             expect(expression.evaluate(spec)).toEqual('#/definitions/ResponseBodystringarray');
             expression = jsonata('paths."/primitives/array".get.responses."200".schema."$ref"');
-            expect(expression.evaluate(spec)).toEqual('#/definitions/ResponseBodyArraystring');
+            expect(expression.evaluate(spec)).toEqual('#/definitions/ResponseBodystringarray');
         });
     });
 

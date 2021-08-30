@@ -23,12 +23,12 @@ export interface SwaggerConfig {
     /**
      * Generated SwaggerConfig.json will output here
      */
-    outputDirectory: string | Array<string>;
+    outputDirectory: string | string[];
 
     /**
      * The entry point to your API
      */
-    entryFile: string | Array<string>;
+    entryFile: string | string[];
 
     /**
      * Decorator config for decorator representations.
@@ -111,7 +111,12 @@ export interface SwaggerConfig {
     collectionFormat?: string;
 
     /**
-     * Directory to ignore during TypeScript metadata scan
+     * Directory to ignore during TypeScript metadata scan.
      */
-    ignore?: [string];
+    ignore?: string[];
+
+    /**
+     * Directory to allow during TypeScript metadata scan.
+     */
+    allow?: string[];
 }

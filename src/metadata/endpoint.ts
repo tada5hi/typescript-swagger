@@ -6,8 +6,9 @@ import {useDebugger} from "../debug";
 import {Decorator} from "../decorator/type";
 import { getDecorators } from '../decorator/utils';
 import {normalizePath} from "../utils/pathUtils";
-import {MetadataGenerator, ResponseType} from './metadataGenerator';
+import {MetadataGenerator} from './index';
 import {TypeNodeResolver} from './resolver';
+import {ResponseType} from "./type";
 
 export abstract class EndpointGenerator<T extends Node> {
     protected path: string | undefined;
@@ -25,16 +26,16 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // --------------------------------------------------------------------
 
-    protected generatePath(key: Decorator.ID) {
-        const values : Array<string> = [];
+    protected generatePath(key: Decorator.Type) {
+        const values : string[] = [];
 
         const handler = Decorator.getRepresentationHandler(key, this.current.decoratorMap);
-        const config = handler.buildRepresentationConfigFromNode(this.node);
-        const property = handler.getPropertyByType(config.name);
+        const config = handler.matchToNodeDecorator(this.node);
+        const property = handler.getPropertyByType(config.id);
 
         if(typeof property !== 'undefined') {
 
-            const argument = handler.getDecoratorPropertyValueAsItem(config.decorator, property);
+            const argument = handler. getPropertyValueAsItem(config.decorator, property);
             if (typeof argument !== 'undefined') {
                 values.push(argument);
             }
@@ -45,13 +46,13 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // --------------------------------------------------------------------
 
-    protected getDecoratorValues(decoratorName: string, acceptMultiple: boolean = false) : Array<any> {
+    protected getDecoratorValues(decoratorName: string, acceptMultiple: boolean = false) : any[] {
         const decorators = getDecorators(this.node, decorator => decorator.text === decoratorName);
         if (!decorators || !decorators.length) { return []; }
         if (!acceptMultiple && decorators.length > 1) {
             throw new Error(`Only one ${decoratorName} decorator allowed in ${this.getCurrentLocation()}.`);
         }
-        let result: Array<any>;
+        let result: any[];
         if (acceptMultiple) {
             result = decorators.map(d => d.arguments);
         } else {
@@ -74,7 +75,7 @@ export abstract class EndpointGenerator<T extends Node> {
         }));
     }
 
-    protected handleRolesArray(argument: ArrayLiteralExpression): Array<string> {
+    protected handleRolesArray(argument: ArrayLiteralExpression): string[] {
         if (isArrayLiteralExpression(argument)) {
             return argument.elements.map(value => value.getText())
                 .map(val => (val && val.startsWith('\'') && val.endsWith('\'')) ? val.slice(1, -1) : val);
@@ -117,6 +118,8 @@ export abstract class EndpointGenerator<T extends Node> {
             case SyntaxKind.NumberKeyword:
             case SyntaxKind.FirstLiteralToken:
                 return parseInt(initializer.text, 10);
+            case SyntaxKind.NullKeyword:
+                return null;
             case SyntaxKind.ObjectLiteralExpression:
                 const nestedObject: any = {};
 
@@ -132,24 +135,24 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // -------------------------------------------
 
-    protected getResponses(): Array<ResponseType> {
+    protected getResponses(): ResponseType[] {
         const handler = Decorator.getRepresentationHandler('RESPONSE_DESCRIPTION', this.current.decoratorMap);
-        const config = handler.buildRepresentationConfigFromNode(this.node);
-        const args = handler.getPropertiesByTypes(config.name, ['STATUS_CODE', 'DESCRIPTION', 'PAYLOAD', 'TYPE']);
+        const config = handler.matchToNodeDecorator(this.node);
+        const args = handler.getPropertiesByTypes(config.id, ['STATUS_CODE', 'DESCRIPTION', 'PAYLOAD', 'TYPE']);
 
         if (!config.decorators || !config.decorators.length) { return []; }
 
         this.debugger('Generating Responses for %s', this.getCurrentLocation());
 
         return config.decorators.map(decorator => {
-            const description = handler.getDecoratorPropertyValueAsItem(decorator, args['DESCRIPTION']) || 'Ok';
-            const status = handler.getDecoratorPropertyValueAsItem(decorator, args['STATUS_CODE']) || '200';
-            let examples = handler.getDecoratorPropertyValueAsItem(decorator, args['PAYLOAD']);
+            const description = handler. getPropertyValueAsItem(decorator, args['DESCRIPTION']) || 'Ok';
+            const status = handler. getPropertyValueAsItem(decorator, args['STATUS_CODE']) || '200';
+            let examples = handler. getPropertyValueAsItem(decorator, args['PAYLOAD']);
             if(typeof examples !== 'undefined') {
                 examples = this.getExamplesValue(examples);
             }
 
-            const type = handler.getDecoratorPropertyValueAsItem(decorator, args['TYPE']);
+            const type = handler. getPropertyValueAsItem(decorator, args['TYPE']);
 
             const responses = {
                 description: description,
@@ -168,13 +171,13 @@ export abstract class EndpointGenerator<T extends Node> {
 
     public getProduces() {
         const handler = Decorator.getRepresentationHandler('RESPONSE_PRODUCES', this.current.decoratorMap);
-        const config = handler.buildRepresentationConfigFromNode(this.node);
+        const config = handler.matchToNodeDecorator(this.node);
 
-        const produces =  handler.getDecoratorPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.name));
+        const produces =  handler.getPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.id));
         if(typeof produces === 'undefined' || produces.length === 0) {
             const acceptHandler = Decorator.getRepresentationHandler('REQUEST_ACCEPT', this.current.decoratorMap);
-            const acceptConfig = acceptHandler.buildRepresentationConfigFromNode(this.node);
-            return acceptHandler.getDecoratorPropertyValueAsArray(acceptConfig.decorator, acceptHandler.getPropertyByType(acceptConfig.name));
+            const acceptConfig = acceptHandler.matchToNodeDecorator(this.node);
+            return acceptHandler.getPropertyValueAsArray(acceptConfig.decorator, acceptHandler.getPropertyByType(acceptConfig.id));
         }
 
         return produces;
@@ -182,16 +185,16 @@ export abstract class EndpointGenerator<T extends Node> {
 
     public getConsumes() {
         const handler = Decorator.getRepresentationHandler('REQUEST_CONSUMES', this.current.decoratorMap);
-        const config = handler.buildRepresentationConfigFromNode(this.node);
+        const config = handler.matchToNodeDecorator(this.node);
 
-        return handler.getDecoratorPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.name));
+        return handler.getPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.id));
     }
 
     public getTags() {
         const handler = Decorator.getRepresentationHandler('SWAGGER_TAGS', this.current.decoratorMap);
-        const config = handler.buildRepresentationConfigFromNode(this.node);
+        const config = handler.matchToNodeDecorator(this.node);
 
-        return handler.getDecoratorPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.name));
+        return handler.getPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.id));
     }
 
     // -------------------------------------------

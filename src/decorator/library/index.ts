@@ -15,7 +15,7 @@ export function isLibraryIncluded(library: Library, map?: Decorator.Config) : bo
         case '[object String]':
             return map.useLibrary === library;
         case '[object Array]':
-            return (map.useLibrary as Array<Library>).indexOf(library) !== -1;
+            return (map.useLibrary as Library[]).indexOf(library) !== -1;
         case '[object Object]':
             for(const key in (map.useLibrary as Record<Library, any>)) {
                 if(key === library) {
@@ -29,7 +29,7 @@ export function isLibraryIncluded(library: Library, map?: Decorator.Config) : bo
     return false;
 }
 
-export function findLibraryIDRepresentation(library: Library , key: Decorator.ID, map?: Decorator.Config) : Array<Decorator.RepresentationConfig> | Decorator.RepresentationConfig | undefined {
+export function findLibraryIDRepresentation(library: Library , key: Decorator.Type, map?: Decorator.Config) : Decorator.RepresentationConfig[] | Decorator.RepresentationConfig | undefined {
     if(typeof map === 'undefined') {
         return findRepresentationInConfig(library,key);
     }
@@ -40,7 +40,7 @@ export function findLibraryIDRepresentation(library: Library , key: Decorator.ID
         case '[object String]':
             return (map.useLibrary as Library) === library ? findRepresentationInConfig(library, key) : undefined;
         case '[object Array]':
-            return (map.useLibrary as Array<Library>).indexOf(library) !== -1 ? findRepresentationInConfig(library, key) : undefined;
+            return (map.useLibrary as Library[]).indexOf(library) !== -1 ? findRepresentationInConfig(library, key) : undefined;
         case '[object Object]':
             for(const recordKey in (map.useLibrary as Record<Library, any>)) {
                 if(recordKey !== library) {
@@ -56,9 +56,9 @@ export function findLibraryIDRepresentation(library: Library , key: Decorator.ID
                         return (item as string) === key ? findRepresentationInConfig(library, key) : undefined;
                     case '[object Array]':
                         // just allow specific keys of library.
-                        return (item as Array<string>).indexOf(key) !== -1 ? findRepresentationInConfig(library, key) : undefined;
+                        return (item as string[]).indexOf(key) !== -1 ? findRepresentationInConfig(library, key) : undefined;
                     case '[object Object]':
-                        return hasOwnProperty((item as Record<Decorator.ID, boolean>), key) && (item as Record<Decorator.ID, Decorator.RepresentationConfig>)[key] ? findRepresentationInConfig(library, key) : undefined;
+                        return hasOwnProperty((item as Record<Decorator.Type, boolean>), key) && (item as Record<Decorator.Type, Decorator.RepresentationConfig>)[key] ? findRepresentationInConfig(library, key) : undefined;
                 }
             }
     }
@@ -66,7 +66,7 @@ export function findLibraryIDRepresentation(library: Library , key: Decorator.ID
     return undefined;
 }
 
-function findRepresentationInConfig(library: Library, key: Decorator.ID) : Array<Decorator.RepresentationConfig> | Decorator.RepresentationConfig | undefined  {
+function findRepresentationInConfig(library: Library, key: Decorator.Type) : Decorator.RepresentationConfig[] | Decorator.RepresentationConfig | undefined  {
     switch (library) {
         case "typescript-rest":
             if(hasOwnProperty(TypescriptRestLibrary.DecoratorRepresentations, key)) {

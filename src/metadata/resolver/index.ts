@@ -7,7 +7,8 @@ import {
     getJSDocTagNames,
     isExistJSDocTag
 } from '../../utils/jsDocUtils';
-import {MetadataGenerator, Property} from '../metadataGenerator';
+import {MetadataGenerator} from '../index';
+import {Property} from "../type";
 import {ResolverError} from "./error";
 import {
     Resolver
@@ -108,7 +109,7 @@ export class TypeNodeResolver {
         }
 
         if (ts.isTypeLiteralNode(this.typeNode)) {
-            const properties : Array<Property> = this.typeNode.members
+            const properties : Property[] = this.typeNode.members
                 .filter(member => ts.isPropertySignature(member))
                 .reduce((res, propertySignature: ts.PropertySignature) => {
                     const type = new TypeNodeResolver(propertySignature.type as ts.TypeNode, this.current, propertySignature, this.context).resolve();
@@ -162,7 +163,7 @@ export class TypeNodeResolver {
                     (declaration !== undefined && !ts.isPropertyDeclaration(declaration) && !ts.isPropertySignature(declaration) && !ts.isParameter(declaration))
                 );
             };
-            const properties: Array<Property> = type
+            const properties: Property[] = type
                 .getProperties()
                 // Ignore methods, getter, setter and @ignored props
                 .filter(property => isIgnored(property) === false)
@@ -395,7 +396,7 @@ export class TypeNodeResolver {
         return utilityOptions;
     }
 
-    private filterUtilityProperties<T extends Record<'name' | string, any>>(properties: Array<T>, utilityType?: UtilityType, utilityOptions?: UtilityOptions) : Array<T> {
+    private filterUtilityProperties<T extends Record<'name' | string, any>>(properties: T[], utilityType?: UtilityType, utilityOptions?: UtilityOptions) : T[] {
         if(typeof utilityType === 'undefined' || typeof utilityOptions === 'undefined') {
             return properties;
         }
@@ -563,7 +564,7 @@ export class TypeNodeResolver {
         }
     }
 
-    private static getDesignatedModels(nodes: Array<ts.Node>, typeName: string): Array<ts.Node> {
+    private static getDesignatedModels(nodes: ts.Node[], typeName: string): ts.Node[] {
         return nodes;
     }
 
@@ -593,7 +594,7 @@ export class TypeNodeResolver {
         return {
             typeName: 'refEnum',
             description: this.getNodeDescription(enumDeclaration),
-            members: enums as Array<string>,
+            members: enums as string[],
             memberNames: enumNames,
             refName: enumName,
         };
@@ -759,7 +760,7 @@ export class TypeNodeResolver {
         const additionalProperties = this.getModelAdditionalProperties(modelType);
         const inheritedProperties = this.getModelInheritedProperties(modelType) || [];
 
-        const referenceType: Resolver.ReferenceType & { properties: Array<Property> } = {
+        const referenceType: Resolver.ReferenceType & { properties: Property[] } = {
             additionalProperties: additionalProperties,
             typeName: 'refObject',
             description: description,
@@ -897,7 +898,7 @@ export class TypeNodeResolver {
         return type;
     }
 
-    private resolveModelTypeScope(leftmost: ts.EntityName, statements: any): Array<any> {
+    private resolveModelTypeScope(leftmost: ts.EntityName, statements: any): any[] {
         /*
         while (leftmost.parent && leftmost.parent.kind === ts.SyntaxKind.QualifiedName) {
             const leftmostName = leftmost.kind === ts.SyntaxKind.Identifier ? leftmost.text : leftmost.right.text;
@@ -939,7 +940,7 @@ export class TypeNodeResolver {
         type UsableDeclarationWithoutPropertySignature = Exclude<UsableDeclaration, ts.PropertySignature>;
 
         const leftmostIdentifier = TypeNodeResolver.resolveLeftmostIdentifier(type);
-        const statements : Array<ts.Node> = this.resolveModelTypeScope(leftmostIdentifier, this.current.nodes);
+        const statements : ts.Node[] = this.resolveModelTypeScope(leftmostIdentifier, this.current.nodes);
 
         const typeName = type.kind === ts.SyntaxKind.Identifier ? type.text : type.right.text;
 
@@ -950,7 +951,7 @@ export class TypeNodeResolver {
 
             const modelTypeDeclaration = node as UsableDeclaration;
             return (modelTypeDeclaration.name as ts.Identifier)?.text === typeName;
-        }) as Array<UsableDeclarationWithoutPropertySignature>;
+        }) as UsableDeclarationWithoutPropertySignature[];
 
         if (!modelTypes.length) {
             throw new ResolverError(
@@ -964,7 +965,7 @@ export class TypeNodeResolver {
                 return modelType.getSourceFile().fileName.replace(/\\/g, '/').toLowerCase().indexOf('node_modules') <= -1;
             });
 
-            modelTypes = TypeNodeResolver.getDesignatedModels(modelTypes, typeName) as Array<UsableDeclarationWithoutPropertySignature>;
+            modelTypes = TypeNodeResolver.getDesignatedModels(modelTypes, typeName) as UsableDeclarationWithoutPropertySignature[];
         }
         if (modelTypes.length > 1) {
             const conflicts = modelTypes.map(modelType => modelType.getSourceFile().fileName).join('"; "');
@@ -974,7 +975,7 @@ export class TypeNodeResolver {
         return modelTypes[0];
     }
 
-    private getModelProperties(node: ts.InterfaceDeclaration | ts.ClassDeclaration, overrideToken?: OverrideToken, utilityType?: UtilityType, utilityOptions?: UtilityOptions): Array<Property> {
+    private getModelProperties(node: ts.InterfaceDeclaration | ts.ClassDeclaration, overrideToken?: OverrideToken, utilityType?: UtilityType, utilityOptions?: UtilityOptions): Property[] {
         const isIgnored = (e: ts.TypeElement | ts.ClassElement) => {
             return isExistJSDocTag(e, tag => tag.tagName.text === 'ignore');
         };
@@ -1127,8 +1128,8 @@ export class TypeNodeResolver {
         return context;
     }
 
-    private getModelInheritedProperties(modelTypeDeclaration: Exclude<UsableDeclaration, ts.PropertySignature | ts.TypeAliasDeclaration | ts.EnumMember>): Array<Property> {
-        let properties: Array<Property> = [];
+    private getModelInheritedProperties(modelTypeDeclaration: Exclude<UsableDeclaration, ts.PropertySignature | ts.TypeAliasDeclaration | ts.EnumMember>): Property[] {
+        let properties: Property[] = [];
 
         const heritageClauses = modelTypeDeclaration.heritageClauses;
         if (!heritageClauses) {

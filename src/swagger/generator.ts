@@ -7,13 +7,14 @@ import {stringify} from 'yamljs';
 import {Specification, SwaggerConfig} from '../config';
 import {useDebugger} from "../debug";
 
-import {Metadata, MetadataGenerator, Method, Parameter, Property, ResponseType} from '../metadata/metadataGenerator';
+import {MetadataGenerator} from '../metadata';
 import {Resolver} from "../metadata/resolver/type";
+import {Metadata, Method, Parameter, Property, ResponseType} from "../metadata/type";
 
 import {Swagger} from './index';
 
 export async function generateDocumentation(swaggerConfig: SwaggerConfig, tsConfig: CompilerOptions) : Promise<string> {
-    const metadata = new MetadataGenerator(swaggerConfig.entryFile, tsConfig, swaggerConfig.ignore, swaggerConfig.decoratorConfig).generate();
+    const metadata = new MetadataGenerator(swaggerConfig, tsConfig).generate();
     await new SpecGenerator(metadata, swaggerConfig).generate();
 
     return Array.isArray(swaggerConfig.outputDirectory) ? swaggerConfig.outputDirectory.join('/') : swaggerConfig.outputDirectory;
@@ -334,7 +335,7 @@ export class SpecGenerator {
         return swaggerParameter;
     }
 
-    private buildProperties(properties: Array<Property>) {
+    private buildProperties(properties: Property[]) {
         const swaggerProperties: { [propertyName: string]: Swagger.Schema } = {};
 
         properties.forEach(property => {

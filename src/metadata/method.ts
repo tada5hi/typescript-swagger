@@ -3,12 +3,13 @@ import * as ts from 'typescript';
 import {Decorator} from "../decorator/type";
 import {getDecorators} from '../decorator/utils';
 import { getJSDocDescription, getJSDocTagComment, isExistJSDocTag } from '../utils/jsDocUtils';
-import { EndpointGenerator } from './endpointGenerator';
-import {MetadataGenerator, Method, Parameter, ResponseData, ResponseType} from './metadataGenerator';
-import { ParameterGenerator } from './parameterGenerator';
+import { EndpointGenerator } from './endpoint';
+import {MetadataGenerator} from './index';
+import { ParameterGenerator } from './parameter';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
-import MethodHttpVerbKey = Decorator.MethodHttpVerbID;
+import {Method, Parameter, ResponseData, ResponseType} from "./type";
+import MethodHttpVerbKey = Decorator.MethodHttpVerbType;
 
 export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private method: string;
@@ -145,15 +146,15 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
 
     private getMethodSuccessExamples() {
         const handler = Decorator.getRepresentationHandler('RESPONSE_EXAMPLE', this.current.decoratorMap);
-        const config = handler.buildRepresentationConfigFromNode(this.node);
-        const property = handler.getPropertiesByTypes(config.name, ['TYPE', 'PAYLOAD']);
+        const config = handler.matchToNodeDecorator(this.node);
+        const property = handler.getPropertiesByTypes(config.id, ['TYPE', 'PAYLOAD']);
 
-        const example = handler.getDecoratorPropertyValueAsItem(config.decorator, property['PAYLOAD']);
+        const example = handler.getPropertyValueAsItem(config.decorator, property['PAYLOAD']);
 
         return this.getExamplesValue(example);
     }
 
-    private mergeResponses(responses: Array<ResponseType>, defaultResponse: ResponseType) {
+    private mergeResponses(responses: ResponseType[], defaultResponse: ResponseType) {
         if (!responses || !responses.length) {
             return [defaultResponse];
         }
@@ -171,6 +172,6 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     }
 
     private supportsPathMethod(method: string) : boolean {
-        return (['ALL', 'GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS', 'HEAD'] as Array<MethodHttpVerbKey>).some(m => m.toLowerCase() === method.toLowerCase());
+        return (['ALL', 'GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS', 'HEAD'] as MethodHttpVerbKey[]).some(m => m.toLowerCase() === method.toLowerCase());
     }
 }

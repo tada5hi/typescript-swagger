@@ -4,7 +4,7 @@
 import {ArgumentParser} from 'argparse';
 import {Debugger} from 'debug';
 import {useDebugger} from "../debug";
-import {MetadataGenerator} from '../metadata/metadataGenerator';
+import {MetadataGenerator} from '../metadata';
 import {SpecGenerator} from '../swagger/generator';
 import {getCompilerOptions, getSwaggerConfig, validateSwaggerConfig} from "./utils";
 
@@ -56,7 +56,7 @@ try {
     debugLog('Swagger Config: %j', swaggerConfig);
 
     debugLog('Processing Services Metadata');
-    const metadata = new MetadataGenerator(swaggerConfig.entryFile, compilerOptions, swaggerConfig.ignore).generate();
+    const metadata = new MetadataGenerator(swaggerConfig, compilerOptions).generate();
     debugLog('Generated Metadata: %j', metadata);
 
     new SpecGenerator(metadata, swaggerConfig).generate()

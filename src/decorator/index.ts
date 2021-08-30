@@ -3,7 +3,7 @@
 /**
  * Document the method or class comsumes property in generated swagger docs
  */
-export function RequestConsumes(...values: Array<string>): any {
+export function RequestConsumes(...values: string[]): any {
   return () => { return; };
 }
 
@@ -69,7 +69,7 @@ export function ResponseExample<T>(example: T): any {
 /**
  * Document the method or class produces property in generated swagger docs
  */
-export function ResponseProduces(...values: Array<string>): any {
+export function ResponseProduces(...values: string[]): any {
   return () => { return; };
 }
 
@@ -87,7 +87,7 @@ export function ResponseProduces(...values: Array<string>): any {
  * ```
  * @param values a list of tags
  */
-export function SwaggerTags(...values: Array<string>): any {
+export function SwaggerTags(...values: string[]): any {
   return () => { return; };
 }
 

@@ -6,7 +6,7 @@ describe('index.ts', () => {
         expect(isBuildInIncluded(undefined)).toBeTruthy();
         expect(isBuildInIncluded({useBuildIn: "CLASS_PATH"}, 'CLASS_PATH')).toBeTruthy();
         expect(isBuildInIncluded({useBuildIn: ["CLASS_PATH"]}, 'CLASS_PATH')).toBeTruthy();
-        expect(isBuildInIncluded({useBuildIn: ({"CLASS_PATH": true} as Record<Decorator.ID, boolean>)}, 'CLASS_PATH')).toBeTruthy();
+        expect(isBuildInIncluded({useBuildIn: ({"CLASS_PATH": true} as Record<Decorator.Type, boolean>)}, 'CLASS_PATH')).toBeTruthy();
         expect(isBuildInIncluded({useBuildIn: null})).toBeTruthy();
     });
 
@@ -19,7 +19,7 @@ describe('index.ts', () => {
 
         expect(findBuildInIDRepresentation('CLASS_PATH', {useBuildIn: 'RESPONSE_DESCRIPTION'})).toBeUndefined();
         expect(findBuildInIDRepresentation('CLASS_PATH', {useBuildIn: ["CLASS_PATH"]})).toBeUndefined();
-        expect(findBuildInIDRepresentation('CLASS_PATH', {useBuildIn: ({"CLASS_PATH": true} as Record<Decorator.ID, boolean>)}, )).toBeUndefined();
-        expect(findBuildInIDRepresentation('CLASS_PATH', {useBuildIn: ({"CLASS_PATH": false} as Record<Decorator.ID, boolean>)}, )).toBeUndefined();
+        expect(findBuildInIDRepresentation('CLASS_PATH', {useBuildIn: ({"CLASS_PATH": true} as Record<Decorator.Type, boolean>)}, )).toBeUndefined();
+        expect(findBuildInIDRepresentation('CLASS_PATH', {useBuildIn: ({"CLASS_PATH": false} as Record<Decorator.Type, boolean>)}, )).toBeUndefined();
     });
 });

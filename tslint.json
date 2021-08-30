@@ -4,10 +4,6 @@
     "tslint-config-prettier"
   ],
   "rules": {
-    "array-type": [
-      true,
-      "generic"
-    ],
     "no-string-literal": false,
     "object-literal-shorthand": [
       true,

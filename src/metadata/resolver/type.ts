@@ -1,4 +1,4 @@
-import {Property} from "../metadataGenerator";
+import {Property} from "../type";
 
 export namespace Resolver {
     export type TypeStringLiteral =
@@ -166,7 +166,7 @@ export namespace Resolver {
 
     export interface NestedObjectLiteralType extends BaseType {
         typeName: 'nestedObjectLiteral';
-        properties: Array<Property>;
+        properties: Property[];
         additionalProperties?: Type;
     }
 
@@ -178,7 +178,7 @@ export namespace Resolver {
 
     export interface IntersectionType extends BaseType {
         typeName: 'intersection';
-        members: Array<Type>;
+        members: Type[];
     }
 
     export function isIntersectionType(param: BaseType) : param is IntersectionType {
@@ -189,7 +189,7 @@ export namespace Resolver {
 
     export interface UnionType extends BaseType {
         typeName: 'union';
-        members: Array<Type>;
+        members: Type[];
     }
 
     export function isUnionType(param: BaseType) : param is UnionType {
@@ -212,7 +212,7 @@ export namespace Resolver {
     export interface RefEnumType extends ReferenceTypeBase {
         typeName: 'refEnum';
         members: Array<string | number>;
-        memberNames?: Array<string>;
+        memberNames?: string[];
     }
 
     export function isRefEnumType(param: BaseType) : param is RefEnumType {
@@ -221,7 +221,7 @@ export namespace Resolver {
 
     export interface RefObjectType extends ReferenceTypeBase {
         typeName: 'refObject';
-        properties: Array<Property>;
+        properties: Property[];
         additionalProperties?: Type;
     }
 
@@ -241,11 +241,3 @@ export namespace Resolver {
         return param.typeName === 'refEnum' || param.typeName === 'refAlias' || param.typeName === 'refObject';
     }
 }
-
-export type PickUtilityType = 'Pick';
-export type OmitUtilityType = 'Omit';
-export type RequiredUtilityType = 'Required';
-export type PartialUtilityType = 'Partial';
-export type ReadonlyUtilityType = 'Readonly';
-
-export type UtilityType = PickUtilityType | OmitUtilityType | PartialUtilityType | RequiredUtilityType | ReadonlyUtilityType;

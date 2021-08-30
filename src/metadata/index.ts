@@ -11,34 +11,48 @@ import {
     Node,
     NodeFlags,
     Program,
+    SourceFile,
     SyntaxKind,
     TypeChecker
 } from 'typescript';
+import {SwaggerConfig} from "../config";
 import {useDebugger} from "../debug";
 import {Decorator} from "../decorator/type";
-import {ControllerGenerator} from './controllerGenerator';
+import {ControllerGenerator} from './controller';
 import {TypeNodeResolver} from "./resolver";
 import {Resolver} from "./resolver/type";
+import {Metadata} from "./type";
 
-const M = require("minimatch");
+const minimatch = require("minimatch");
+
+export type MetadataSwaggerConfig = Pick<SwaggerConfig, 'entryFile' | 'decoratorConfig'> & Partial<Omit<SwaggerConfig, 'entryFile' | 'decoratorConfig'>>;
 
 export class MetadataGenerator {
     public readonly nodes = new Array<Node>();
     public readonly typeChecker: TypeChecker;
+
+    public readonly decoratorMap?: Decorator.Config;
+
+    private readonly swaggerConfig: MetadataSwaggerConfig;
     private readonly program: Program;
+
     private referenceTypes: { [typeName: string]: Resolver.ReferenceType} = {};
     private circularDependencyResolvers = new Array<(referenceTypes: { [refName: string]: Resolver.ReferenceType}) => void>();
     private debugger = useDebugger();
 
+    // -------------------------------------------------------------------------
+
     constructor(
-        entryFile: string | Array<string>,
-        compilerOptions: CompilerOptions,
-        private readonly  ignorePaths?: Array<string>,
-        public decoratorMap?: Decorator.Config
+        swaggerConfig: MetadataSwaggerConfig,
+        compilerOptions: CompilerOptions
     ) {
+        this.swaggerConfig = swaggerConfig;
+        this.decoratorMap = swaggerConfig.decoratorConfig;
+
         TypeNodeResolver.clearCache();
 
-        const sourceFiles = this.getSourceFiles(entryFile);
+        const sourceFiles = this.scanSourceFiles(swaggerConfig.entryFile);
+
         this.debugger('Starting Metadata Generator');
         this.debugger('Source files: %j ', sourceFiles);
         this.debugger('Compiler Options: %j ', compilerOptions);
@@ -47,41 +61,10 @@ export class MetadataGenerator {
         this.typeChecker = this.program.getTypeChecker();
     }
 
+    // -------------------------------------------------------------------------
+
     public generate(): Metadata {
-        this.program.getSourceFiles().forEach((sf: any) => {
-            if (this.ignorePaths && this.ignorePaths.length) {
-                for (const path of this.ignorePaths) {
-                    if(
-                        // sf.fileName.includes('node_modules/typescript-rest/') ||
-                        // sf.fileName.includes('node_modules/@decorators/express') ||
-                        M(sf.fileName, path)
-                    ) {
-                        return;
-                    }
-                }
-            }
-
-            forEachChild(sf, (node: any) => {
-
-                if (isModuleDeclaration(node)) {
-                    /**
-                     * For some reason unknown to me, TS resolves both `declare module` and `namespace` to
-                     * the same kind (`ModuleDeclaration`). In order to figure out whether it's one or the other,
-                     * we check the node flags. They tell us whether it is a namespace or not.
-                     */
-                    // tslint:disable-next-line:no-bitwise
-                    if ((node.flags & NodeFlags.Namespace) === 0 && node.body && isModuleBlock(node.body)) {
-                        node.body.statements.forEach(statement => {
-                            this.nodes.push(statement);
-                        });
-                        return;
-                    }
-                }
-
-
-                this.nodes.push(node);
-            });
-        });
+        this.buildNodesFromSourceFiles();
 
         this.debugger('Building Metadata for controllers Generator');
         const controllers = this.buildControllers();
@@ -95,9 +78,74 @@ export class MetadataGenerator {
         };
     }
 
+    protected buildNodesFromSourceFiles() : void {
+        this.program.getSourceFiles().forEach((sf: SourceFile) => {
+            const isIgnored : boolean = this.isIgnoredPath(sf.fileName);
+            if(isIgnored) {
+                if(!this.isAllowedPath(sf.fileName)) {
+                    return;
+                }
+            }
+
+            forEachChild(sf, (node: any) => {
+                if (isModuleDeclaration(node)) {
+                    /**
+                     * For some reason unknown to me, TS resolves both `declare module` and `namespace` to
+                     * the same kind (`ModuleDeclaration`). In order to figure out whether it's one or the other,
+                     * we check the node flags. They tell us whether it is a namespace or not.
+                     */
+
+                    // tslint:disable-next-line:no-bitwise
+                    if ((node.flags & NodeFlags.Namespace) === 0 && node.body && isModuleBlock(node.body)) {
+                        node.body.statements.forEach(statement => {
+                            this.nodes.push(statement);
+                        });
+                        return;
+                    }
+                }
+
+
+                this.nodes.push(node);
+            });
+        });
+    }
+
+    // -------------------------------------------------------------------------
+
+    /**
+     * Check if the source file path is in the ignored path list.
+     *
+     * @param path
+     * @protected
+     */
+    protected isIgnoredPath(path: string) : boolean {
+        if(typeof this.swaggerConfig.ignore === 'undefined') {
+            return false;
+        }
+
+        return this.swaggerConfig.ignore.some(item => minimatch(path, item));
+    }
+
+    /**
+     * Check if the source file path is in the allowed path list.
+     * @param path
+     * @protected
+     */
+    protected isAllowedPath(path: string) : boolean {
+        if(typeof this.swaggerConfig.allow === 'undefined') {
+            return false;
+        }
+
+        return this.swaggerConfig.allow.some(item => minimatch(path, item));
+    }
+
+    // -------------------------------------------------------------------------
+
     public isExportedNode(node: Node) {
         return true;
     }
+
+    // -------------------------------------------------------------------------
 
     public addReferenceType(referenceType: Resolver.ReferenceType) {
         if (!referenceType.refName) {
@@ -139,7 +187,7 @@ export class MetadataGenerator {
         return undefined;
     }
 
-    private getSourceFiles(sourceFiles: string | Array<string>) {
+    private scanSourceFiles(sourceFiles: string | string[]) {
         this.debugger('Getting source files from expressions');
         this.debugger('Source file patterns: %j ', sourceFiles);
         const sourceFilesExpressions = castArray(sourceFiles);
@@ -168,77 +216,3 @@ export class MetadataGenerator {
     }
 }
 
-export interface Metadata {
-    controllers: Array<Controller>;
-    referenceTypes: { [typeName: string]: Resolver.ReferenceType};
-}
-
-export interface Controller {
-    location: string;
-    methods: Array<Method>;
-    name: string;
-    path: string;
-    consumes: Array<string>;
-    produces: Array<string>;
-    responses: Array<ResponseType>;
-    tags: Array<string>;
-    security?: Array<Security>;
-}
-
-export interface Method {
-    deprecated?: boolean;
-    description: string;
-    method: string;
-    name: string;
-    parameters: Array<Parameter>;
-    path: string;
-    type: Resolver.BaseType;
-    tags: Array<string>;
-    responses: Array<ResponseType>;
-    security?: Array<Security>;
-    summary?: string;
-    consumes: Array<string>;
-    produces: Array<string>;
-}
-
-export interface Parameter {
-    parameterName: string;
-    description: string;
-    in: string;
-    name: string;
-    required: boolean;
-    type: Resolver.BaseType;
-    collectionFormat?: boolean;
-    allowEmptyValue?: boolean;
-    default?: any;
-    maxItems?: number;
-    minItems?: number;
-}
-
-export interface Security {
-    name: string;
-    scopes?: Array<string>;
-}
-
-export interface ResponseType {
-    description: string;
-    status: string;
-    schema?: Resolver.BaseType;
-    examples?: any;
-}
-
-export interface Property {
-    default?: any;
-    format?: string;
-    example?: unknown;
-    validators?: Record<string, { value?: any, message?: string }>;
-    description?: string;
-    name: string;
-    type: Resolver.Type;
-    required: boolean;
-}
-
-export interface ResponseData {
-    status: string;
-    type: Resolver.BaseType;
-}

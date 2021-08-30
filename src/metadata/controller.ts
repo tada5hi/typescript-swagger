@@ -1,8 +1,9 @@
 import {ClassDeclaration, MethodDeclaration, SyntaxKind} from 'typescript';
 import {Decorator} from "../decorator/type";
-import { EndpointGenerator } from './endpointGenerator';
-import {Controller, MetadataGenerator, Method} from './metadataGenerator';
-import { MethodGenerator } from './methodGenerator';
+import {EndpointGenerator} from './endpoint';
+import {MetadataGenerator} from './index';
+import {MethodGenerator} from './method';
+import {Controller, Method} from "./type";
 
 export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     private genMethods: Set<string> = new Set<string>();
@@ -46,7 +47,7 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
         return (this.node as ClassDeclaration).name.text;
     }
 
-    private buildMethods() : Array<Method> {
+    private buildMethods() : Method[] {
         const handler = Decorator.getRepresentationHandler('SWAGGER_HIDDEN', this.current.decoratorMap);
 
         return this.node.members

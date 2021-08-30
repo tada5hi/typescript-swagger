@@ -5,7 +5,7 @@ import {ResolverError} from "../metadata/resolver/error";
 // Description
 // -----------------------------------------
 export function getJSDocDescription(node: Node) : string | undefined {
-    const jsDocs = (node as any).jsDoc as Array<JSDoc>;
+    const jsDocs = (node as any).jsDoc as JSDoc[];
     if (!jsDocs || !jsDocs.length) { return ''; }
 
     if(typeof jsDocs[0].comment === 'string') {
@@ -19,8 +19,8 @@ export function getJSDocDescription(node: Node) : string | undefined {
 // -----------------------------------------
 // Tag
 // -----------------------------------------
-export function getMatchingJSDocTags(node: Node, isMatching: (t: JSDocTag) => boolean) : Array<JSDocTag> {
-    const jsDocs = (node as any).jsDoc as Array<JSDoc>;
+export function getMatchingJSDocTags(node: Node, isMatching: (t: JSDocTag) => boolean) : JSDocTag[] {
+    const jsDocs = (node as any).jsDoc as JSDoc[];
     if (!jsDocs || !jsDocs.length) { return undefined; }
 
     const jsDoc = jsDocs[0];
@@ -30,7 +30,7 @@ export function getMatchingJSDocTags(node: Node, isMatching: (t: JSDocTag) => bo
 }
 
 export function isExistJSDocTag(node: Node, tagName: ((tag: JSDocTag) => boolean) | string) : boolean {
-    let tags : Array<JSDocTag>;
+    let tags : JSDocTag[];
 
     if(typeof tagName === 'string') {
         tags = getJSDocTags(node, tagName);
@@ -41,7 +41,7 @@ export function isExistJSDocTag(node: Node, tagName: ((tag: JSDocTag) => boolean
     return !(!tags || !tags.length);
 }
 
-export function getJSDocTags(node: Node, tagName: string) : Array<JSDocTag> {
+export function getJSDocTags(node: Node, tagName: string) : JSDocTag[] {
     return getMatchingJSDocTags(node, t => t.tagName.text === tagName);
 }
 
@@ -50,7 +50,7 @@ export function getJSDocTags(node: Node, tagName: string) : Array<JSDocTag> {
 // -----------------------------------------
 
 export function getJSDocTagComment(node: Node, tagName: ((tag: JSDocTag) => boolean) | string) : undefined | string {
-    let tags : Array<JSDocTag>;
+    let tags : JSDocTag[];
 
     if(typeof tagName === 'string') {
         tags = getJSDocTags(node, tagName);
@@ -68,8 +68,8 @@ export function getJSDocTagComment(node: Node, tagName: ((tag: JSDocTag) => bool
 // Tag Names
 // -----------------------------------------
 
-export function getJSDocTagNames(node: Node, requireTagName = false) : Array<string> {
-    let tags: Array<JSDocTag> = [];
+export function getJSDocTagNames(node: Node, requireTagName = false) : string[] {
+    let tags: JSDocTag[] = [];
 
     if (node.kind === SyntaxKind.Parameter) {
         const parameterName = ((node as any).name as Identifier).text;

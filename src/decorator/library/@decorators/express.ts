@@ -4,42 +4,42 @@ export namespace DecoratorExpressLibrary {
     export const DecoratorRepresentations : Partial<Decorator.Representation> = {
         // Class
         CLASS_PATH: {
-            name: 'Controller',
+            id: 'Controller',
             properties: [{}]
         },
 
         // Method
         METHOD_PATH: [
             {
-                name: 'All',
+                id: 'All',
                 properties: [{}]
             },
             {
-                name: 'Get',
+                id: 'Get',
                 properties: [{}]
             },
             {
-                name: 'Post',
+                id: 'Post',
                 properties: [{}]
             },
             {
-                name: 'Put',
+                id: 'Put',
                 properties: [{}]
             },
             {
-                name: 'Delete',
+                id: 'Delete',
                 properties: [{}]
             },
             {
-                name: 'Patch',
+                id: 'Patch',
                 properties: [{}]
             },
             {
-                name: 'Options',
+                id: 'Options',
                 properties: [{}]
             },
             {
-                name: 'Head',
+                id: 'Head',
                 properties: [{}]
             }
         ],
@@ -47,37 +47,37 @@ export namespace DecoratorExpressLibrary {
         // Parameter
         SERVER_CONTEXT: [
             {
-                name: 'Request',
+                id: 'Request',
                 properties: []
             },
             {
-                name: 'Response',
+                id: 'Response',
                 properties: []
             },
             {
-                name: 'Next',
+                id: 'Next',
                 properties: []
             },
         ],
         SERVER_QUERY: {
-            name: 'Query',
+            id: 'Query',
             properties: [{}]
         },
         SERVER_FORM: undefined,
         SERVER_BODY: {
-            name: 'Body',
+            id: 'Body',
             properties: [{}]
         },
         SERVER_HEADERS: {
-            name: 'Headers',
+            id: 'Headers',
             properties: [{}]
         },
         SERVER_COOKIES: {
-            name: 'Cookies',
+            id: 'Cookies',
             properties: [{}]
         },
         SERVER_PATH_PARAMS: {
-            name: 'Params',
+            id: 'Params',
             properties: [{}]
         }
     };
