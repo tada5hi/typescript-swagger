@@ -56,7 +56,7 @@ try {
     debugLog('Swagger Config: %j', swaggerConfig);
 
     debugLog('Processing Services Metadata');
-    const metadata = new MetadataGenerator(swaggerConfig, compilerOptions).generate();
+    const metadata = new MetadataGenerator(config, compilerOptions).generate();
     debugLog('Generated Metadata: %j', metadata);
 
     new SpecGenerator(metadata, swaggerConfig).generate()

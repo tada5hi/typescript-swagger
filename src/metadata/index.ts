@@ -15,10 +15,9 @@ import {
     SyntaxKind,
     TypeChecker
 } from 'typescript';
-import {SwaggerConfig} from "../config";
+import {Config} from "../config";
 import {useDebugger} from "../debug";
 import {DecoratorMapper} from "../decorator/mapper";
-import {Decorator} from "../decorator/type";
 import {ControllerGenerator} from './controller';
 import {TypeNodeResolver} from "./resolver";
 import {Resolver} from "./resolver/type";
@@ -26,17 +25,14 @@ import {Metadata} from "./type";
 
 const minimatch = require("minimatch");
 
-export type MetadataSwaggerConfig = Pick<SwaggerConfig, 'entryFile' | 'decoratorConfig'> & Partial<Omit<SwaggerConfig, 'entryFile' | 'decoratorConfig'>>;
-
 export class MetadataGenerator {
     public readonly nodes = new Array<Node>();
     public readonly typeChecker: TypeChecker;
 
-    public readonly decoratorMap?: Decorator.Config;
-
     public readonly decoratorMapper: DecoratorMapper;
 
-    private readonly swaggerConfig: MetadataSwaggerConfig;
+    private readonly config: Config;
+
     private readonly program: Program;
 
     private referenceTypes: { [typeName: string]: Resolver.ReferenceType} = {};
@@ -46,17 +42,16 @@ export class MetadataGenerator {
     // -------------------------------------------------------------------------
 
     constructor(
-        swaggerConfig: MetadataSwaggerConfig,
+        config: Config,
         compilerOptions: CompilerOptions
     ) {
-        this.swaggerConfig = swaggerConfig;
-        this.decoratorMap = swaggerConfig.decoratorConfig;
+        this.config = config;
 
         TypeNodeResolver.clearCache();
 
-        this.decoratorMapper = new DecoratorMapper(swaggerConfig.decoratorConfig);
+        this.decoratorMapper = new DecoratorMapper(config.decorator);
 
-        const sourceFiles = this.scanSourceFiles(swaggerConfig.entryFile);
+        const sourceFiles = this.scanSourceFiles(config.swagger.entryFile);
 
         this.debugger('Starting Metadata Generator');
         this.debugger('Source files: %j ', sourceFiles);
@@ -124,11 +119,11 @@ export class MetadataGenerator {
      * @protected
      */
     protected isIgnoredPath(path: string) : boolean {
-        if(typeof this.swaggerConfig.ignore === 'undefined') {
+        if(typeof this.config.swagger.ignore === 'undefined') {
             return false;
         }
 
-        return this.swaggerConfig.ignore.some(item => minimatch(path, item));
+        return this.config.swagger.ignore.some(item => minimatch(path, item));
     }
 
     /**
@@ -137,11 +132,11 @@ export class MetadataGenerator {
      * @protected
      */
     protected isAllowedPath(path: string) : boolean {
-        if(typeof this.swaggerConfig.allow === 'undefined') {
+        if(typeof this.config.swagger.allow === 'undefined') {
             return false;
         }
 
-        return this.swaggerConfig.allow.some(item => minimatch(path, item));
+        return this.config.swagger.allow.some(item => minimatch(path, item));
     }
 
     // -------------------------------------------------------------------------

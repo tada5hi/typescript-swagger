@@ -15,9 +15,6 @@ Please read the `CHANGELOG.md` in the repository for breaking changes.
   - [CLI](#cli)
   - [Runtime](#runtime)
 - [Limitations](#limitations)
-- [Decorator(s)](#decorators)
-  - [Representation](#representation)
-  - [Specification](#specification)
 - [Usage](#usage)
   - [General](#general)
   - [Build-In](#buildin)
@@ -31,6 +28,9 @@ Please read the `CHANGELOG.md` in the repository for breaking changes.
   - [SwaggerConfig (swagger-config.json)](#swagger-configjson)
     - [DecoratorConfig](#decoratorconfig)
     - [SecurityDefinition](#securitydefinition)
+- [Decorator(s)](#decorators)
+    - [TypeRepresentationMapping](#typerepresentationmapping-trm)
+    - [Specification](#specification)
 - [Credits](#credits)
 
 ## Installation
@@ -72,13 +72,13 @@ Where the [swagger-config.json](#swagger-configjson) file, contains settings abo
 
 ```json
 {
+    "decorator": {
+        "useBuildIn": true,
+        "useLibrary": ["typescript-rest", "@decorators/express"]
+    },
     "swagger": {
         "outputDirectory": "./dist",
-        "entryFile": "./tests/data/apis.ts",
-        "decoratorConfig": {
-            "useBuildIn": true,
-            "useLibrary": ["typescript-rest", "@decorators/express"]
-        }
+        "entryFile": "./tests/data/apis.ts"
     }
 }
 ```
@@ -86,30 +86,32 @@ Where the [swagger-config.json](#swagger-configjson) file, contains settings abo
 ### Runtime
 
 ```typescript
-import {SwaggerConfig, generateDocumentation} from "typescript-swagger";
+import {Config, generateDocumentation} from "typescript-swagger";
 
 const packageJson = require('package.json');
 const tsConfig = require('tsconfig.json');
 
-export const swaggerConfig: SwaggerConfig = {
-  yaml: true,
-  name: 'API - Documentation',
-  description: packageJson.description,
-  basePath: '/',
-  version: packageJson.version,
-  outputDirectory: 'public',
-  entryFile: path.join('src', 'controllers', '**', '*.ts'),
-  decoratorConfig: {
-     useBuildIn: true,
-     useLibrary: ["typescript-rest", "@decorators/express"],
-  },
-  ignore: ['**/node_modules/**'],
-  consumes: ['application/json'],
-  produces: ['application/json']
+export const config: Config = {
+    decorator: {
+        useBuildIn: true,
+        useLibrary: ["typescript-rest", "@decorators/express"],
+    },
+    swagger: {
+        yaml: true,
+        name: 'API - Documentation',
+        description: packageJson.description,
+        basePath: '/',
+        version: packageJson.version,
+        outputDirectory: 'public',
+        entryFile: path.join('src', 'controllers', '**', '*.ts'),
+        ignore: ['**/node_modules/**'],
+        consumes: ['application/json'],
+        produces: ['application/json']
+    }
 }
 
 export async function generateSwaggerDocumentation(): Promise<void> {
-    await generateDocumentation(swaggerConfig, tsConfig);
+    await generateDocumentation(config, tsConfig);
 }
 ```
 
@@ -126,11 +128,423 @@ Also the following built in typescript utility types are supported:
 * Required
 * Pick
 
+## Usage
+
+### General
+
+The documentation will be generated consulting all decorators present on your code.
+
+Which decorator will be used, depends on your [swagger-config.json](#swagger-configjson).
+However, there are some additional information that only can be provided, through some third party decorator or your own defined representations.
+
+To cover all functions the following decorators packs are supported by default:
+* build-in
+* [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
+* [@decorators/express](https://github.com/serhiisol/node-decorators)
+
+You can override the used decorator packs in you [swagger-config.json](#swagger-configjson).
+
+In the following there are two specific examples in combination with the third party libraries: typescript-rest and @decorators/express.
+
+#### typescript-rest
+```typescript
+import {Path, Accept, GET} from 'typescript-rest';
+import {SwaggerTags} from 'typescript-swagger';
+
+interface Person {
+    id: number;
+    name: string;
+    avatar: string;
+    password: string;
+}
+
+@Path('mypath')
+export class MyService {
+    @GET
+    @SwaggerTags('adminMethod', 'otherTag')
+    @Accept('text/html')
+    test( ): string {
+        return 'OK';
+    }
+
+    @GET
+    @Path('secondpath')
+    test2( @QueryParam('testParam')test?: string ): Pick<Person, 'name' | 'avatar'> {
+        return {name: 'OK'};
+    }
+}
+```
+
+#### @decorators/express
+```typescript
+import {Controller, Get, Query} from '@decorators/express';
+import {SwaggerTags} from 'typescript-swagger';
+
+interface Person {
+    id: number;
+    name: string;
+    avatar: string;
+    password: string;
+}
+
+@Controller('mypath')
+export class MyService {
+    @Get('')
+    @SwaggerTags('adminMethod', 'otherTag')
+    test( ): string {
+        return res.send('Ok');
+    }
+
+    @Get('secondpath')
+    test2( @Query('testParam')test?: string ): Pick<Person, 'name' | 'avatar'> {
+        return res.json({name: 'OK'});
+    }
+}
+```
+
+It is also important to notice that all JsDoc (Comments, Tags, ...) provided on your methods, classes, and parameters have influence on the generated swagger file:
+
+```typescript
+@Accept('text/plain')
+@Path('mypath')
+export class MyService {
+    /**
+     * This description will be used to describe the get operation of path '/mypath' on the generated swagger
+     * @param test And this will describe the parameter test of this same operation
+     */
+    @GET
+    @Path('secondpath')
+    test2( @QueryParam('testParam')test?: string ): Person {
+        return {name: 'OK'};
+    }
+}
+```
+### BuildIn
+
+The provided swagger decorator representations by this library, are listed in the following sections.
+
+#### @ResponseDescription
+
+A decorator to document the responses that a given service method can return. It is used to generate documentation for the REST service.
+
+```typescript
+interface MyError {
+   message: string
+}
+
+@Path('people')
+class PeopleService {
+  @ResponseDescription<string>(200, 'Retrieve a list of people.')
+  @ResponseDescription<MyError>(401, 'The user is unauthorized.', {message: 'The user is not authorized to access this operation.'})
+  @GET
+  getPeople(@Param('name') name: string) {
+     // ...
+  }
+}
+```
+
+A Default response is already created in swagger documentation from the method return analisys. So any response declared
+through this decorator is an additional response created.
+
+#### @ResponseExample
+
+Used to provide an example of method return to be added into the method response section of the generated documentation for this method.
+
+```typescript
+@Path('people')
+class PeopleService {
+  @ResponseExample<Array<Person>>([{
+    name: 'Joe'
+  }])
+  @GET
+  getPeople(@Param('name') name: string): Person[] {
+     // ...
+  }
+}
+```
+
+#### @ResponseProduces
+
+Document the produces property in generated swagger docs
+
+```typescript
+@Path('people')
+@ResponseProduces('text/html')
+class PeopleService {
+  @GET
+  getPeople(@Param('name') name: string) {
+     // ...
+  }
+}
+```
+
+A Default produces is already created in swagger documentation from the method return analisys.
+You can use this decorator to override this default produces.
+
+#### @RequestConsumes
+
+Document the consumes property in generated swagger docs
+
+```typescript
+@Path('people')
+@RequestConsumes('text/html')
+class PeopleService {
+  @PUT
+  createPeople(@Param('name') name: string, people: People) {
+     // ...
+  }
+}
+```
+
+#### @SwaggerTags
+
+Add tags for a given method on generated swagger documentation.
+
+```typescript
+@Path('people')
+class PeopleService {
+  @SwaggerTags('adiministrative', 'department1')
+  @GET
+  getPeople(@Param('name') name: string) {
+     // ...
+  }
+}
+```
+
+#### @SwaggerHidden
+
+Allow to hide some APIs from swagger docs (ex: test or dev APIs, etc ...).
+This decorator can be applied for the whole class or only a single method
+
+```typescript
+@Path('people')
+@SwaggerHidden()
+class PeopleService {
+  @GET
+  getPeople(@Param('name') name: string) {
+     // ...
+  }
+}
+```
+
+#### @IsInt, @IsLong, @IsFloat, @IsDouble
+
+Document the type of a `number` property or parameter in generated swagger docs.
+If no decorator is present, the `number` type defaults to `double` format.
+
+```typescript
+class Person {
+    @IsInt id: number;
+}
+
+@Path('people')
+class PeopleService {
+    @Path(':id')
+    @GET
+    getById(@PathParam('id') @IsLong id: number) {
+        // ...
+    }
+}
+```
+
+Because decorators don't work on type and interface properties, this can also be specified as a JSDoc tag.
+
+```typescript
+interface Person {
+    /**
+     * The person's id
+     * @IsInt
+     */
+    id: number;
+}
+```
+
+
+### Swagger-config.json
+
+The swagger config file supports the following properties:
+
+Property | Type | Default | Description
+-------- | ---- | ----- | -----------
+basePath | string | `"/"` | Base API path; e.g. the 'v1' in https://myapi.com/v1
+collectionFormat | string | `"csv"` | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
+consumes | [string] | `[]` | Default consumes property for the entire API
+description | string |  | API description; defaults to npm package description
+entryFile | string or string[] | `[]` | The entry point to your API (it is possible to use glob patters)
+host | string | | The hostname to be informed in the generated swagger file
+license | string |  |  API license number; defaults to npm package license
+name | string |  |  API name; defaults to npm package name
+outputDirectory | string | | Where to write the generated swagger file
+outputFormat | 'Swagger_2' or 'OpenApi_3' | `"Swagger_2"` | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
+produces | [string] | | Default produces property for the entire API
+spec | any | | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here
+securityDefinitions | *SecurityDefinition | | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme.
+version | string | `0.0.1` | API version number; defaults to npm package version
+yaml | boolean | `true` | Generates the output also as a yaml file
+
+
+#### SecurityDefinition
+Where the SecurityDefinition contract is defined as:
+```typescript
+export type SecureDefinition = {
+    [name: string]: {
+        type: string;
+        name?: string;
+        authorizationUrl?: string;
+        tokenUrl?: string;
+        flow?: string;
+        in?: string;
+        scopes?: { [scopeName: string]: string; }
+    }
+}
+```
+
+#### DecoratorConfig
+The decorator contract is defined as followed:
+```typescript
+import {Decorator} from 'typescript-swagger';
+
+export type Config = {
+    useLibrary?: Decorator.Library | Array<Decorator.Library> | Record<Library, ID> | Record<Decorator.Library, Decorator.Representation>;
+    useBuildIn?: boolean | Array<Decorator.ID> | Record<Decorator.ID, boolean> | Decorator.ID;
+    override?: Decorator.Representation;
+}
+```
+
+Please read the [TypeRepresentationMapping](#typerepresentationmapping-trm) section for further information to provide
+valid values to override or extend library or build-in decorators.
+
+The referenced type(s) in the `Decorator` namespace are defined as follows:
+
+```typescript
+export type Library = 'typescript-rest' | '@decorators/express';
+export type Representation = Record<ID, string | Array<string>>;
+
+export type Type = ClassType | MethodType | ParameterType;
+
+export type ClassType =
+    'SWAGGER_TAGS' |
+    'CLASS_PATH' |
+    MethodAndCLassType
+    ;
+
+export type MethodAndCLassType =
+    'REQUEST_ACCEPT' |
+    'RESPONSE_EXAMPLE' |
+    'RESPONSE_DESCRIPTION' |
+    'REQUEST_CONSUMES' |
+    'RESPONSE_PRODUCES' |
+    'SWAGGER_HIDDEN'
+    ;
+
+export type MethodHttpVerbType =
+    'ALL' |
+    'GET' |
+    'POST' |
+    'PUT' |
+    'DELETE' |
+    'PATCH' |
+    'OPTIONS' |
+    'HEAD';
+
+export type MethodType =
+    'METHOD_PATH' |
+    MethodHttpVerbType |
+    MethodAndCLassType
+    ;
+
+export type ParameterType =
+    ParameterServerType |
+    'IS_INT' |
+    'IS_LONG' |
+    'IS_FlOAT' |
+    'IS_DOUBLE'
+    ;
+
+export type ParameterServerType =
+    'SERVER_CONTEXT' |
+    'SERVER_PARAMS' |
+    'SERVER_QUERY' |
+    'SERVER_FORM' |
+    'SERVER_BODY' |
+    'SERVER_HEADERS' |
+    'SERVER_COOKIES' |
+    'SERVER_PATH_PARAMS' |
+    'SERVER_FILE_PARAM' |
+    'SERVER_FILES_PARAM';
+```
+
+
+#### Example
+
+See an example:
+```json
+{
+    "decorator": {
+        "useBuildIn": true,
+        "useLibrary": [
+            "typescript-rest",
+            "@decorators/express"
+        ]
+    },
+    "swagger": {
+        "outputDirectory": "./dist",
+        "entryFile": "./controllers/*.ts",
+        "outputFormat": "openapi_3",
+        "host": "localhost:3000",
+        "version": "1.0",
+        "name": "Typescript-rest Test API",
+        "description": "a description",
+        "license": "MIT",
+        "basePath": "/v1",
+        "securityDefinitions": {
+            "api_key": {
+                "type": "apiKey",
+                "name": "access_token",
+                "in": "query"
+            }
+        },
+        "ignore": [
+          "**/node_modules/**"
+        ]
+    }
+}
+```
+
+or in yaml format:
+See an example:
+
+```yaml
+decorator:
+  useBuildIn: true
+  useLibrary:
+    - @decorators/express
+    - typescript-rest
+swagger:
+  outputDirectory: ./dist
+  entryFile:
+    - ./controllers/*.ts
+  outputFormat: openapi_3
+  host: localhost:3000
+  version: 1.0
+  name: Typescript-rest Test API
+  description: A description
+  license: MIT
+  basePath: /v1
+  securityDefinitions:
+    api_key:
+      type: apiKey
+      name: access_token
+      in: query
+  ignore:
+    - /node_modules/**
+```
+
 ## Decorator(s)
 
 The information which are required to generate fully featured swagger documentations are collected by consulting decorators
 present on your code.
-Few decorator `Type-Representation-Mappings` ([TRMs](#decoratortyperepresentationmapping-dtrms)) are already provided by this library and can also be disabled.
+Few decorator `Type-Representation-Mappings` ([TRMs](#typerepresentationmapping-trm)) are already provided by this library and can also be disabled.
 `TRMs` by third party libraries (f.e @decorators/express or typescript-rest) can be  extended/replaced as well.
 You can also deposit your own DTRMs.
 
@@ -138,7 +552,7 @@ In the following sections, the decorator which can be represented is called: `Ty
 The decorator the configuration (name/text, properties, ...) is called: `Representation`.
 DTRMs must be declared and implemented according the requirements ([Specification](#specification)) for the respective decorator.
 
-### DecoratorTypeRepresentationMapping (DTRM)
+### TypeRepresentationMapping (TRM)
 
 The following snippet, shows how the mapping between decorator `Type`s and the respective `Representation`s should look like.
 
@@ -472,415 +886,6 @@ According to this schema you can:
   [@decorators/express](https://github.com/serhiisol/node-decorators))
 
 How to provide the representation for decorators is described in the section of the [swagger-config.json](#swagger-configjson).
-## Usage
-
-### General
-
-The documentation will be generated consulting all decorators present on your code.
-
-Which decorator will be used, depends on your [swagger-config.json](#swagger-configjson).
-However, there are some additional information that only can be provided, through some third party decorator or your own defined representations.
-
-To cover all functions the following decorators packs are supported by default:
-* build-in
-* [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
-* [@decorators/express](https://github.com/serhiisol/node-decorators)
-
-You can override the used decorator packs in you [swagger-config.json](#swagger-configjson).
-
-In the following there are two specific examples in combination with the third party libraries: typescript-rest and @decorators/express.
-
-#### typescript-rest
-```typescript
-import {Path, Accept, GET} from 'typescript-rest';
-import {SwaggerTags} from 'typescript-swagger';
-
-interface Person {
-    id: number;
-    name: string;
-    avatar: string;
-    password: string;
-}
-
-@Path('mypath')
-export class MyService {
-    @GET
-    @SwaggerTags('adminMethod', 'otherTag')
-    @Accept('text/html')
-    test( ): string {
-        return 'OK';
-    }
-
-    @GET
-    @Path('secondpath')
-    test2( @QueryParam('testParam')test?: string ): Pick<Person, 'name' | 'avatar'> {
-        return {name: 'OK'};
-    }
-}
-```
-
-#### @decorators/express
-```typescript
-import {Controller, Get, Query} from '@decorators/express';
-import {SwaggerTags} from 'typescript-swagger';
-
-interface Person {
-    id: number;
-    name: string;
-    avatar: string;
-    password: string;
-}
-
-@Controller('mypath')
-export class MyService {
-    @Get('')
-    @SwaggerTags('adminMethod', 'otherTag')
-    test( ): string {
-        return res.send('Ok');
-    }
-
-    @Get('secondpath')
-    test2( @Query('testParam')test?: string ): Pick<Person, 'name' | 'avatar'> {
-        return res.json({name: 'OK'});
-    }
-}
-```
-
-It is also important to notice that all JsDoc (Comments, Tags, ...) provided on your methods, classes, and parameters have influence on the generated swagger file:
-
-```typescript
-@Accept('text/plain')
-@Path('mypath')
-export class MyService {
-    /**
-     * This description will be used to describe the get operation of path '/mypath' on the generated swagger
-     * @param test And this will describe the parameter test of this same operation
-     */
-    @GET
-    @Path('secondpath')
-    test2( @QueryParam('testParam')test?: string ): Person {
-        return {name: 'OK'};
-    }
-}
-```
-### BuildIn
-
-The provided swagger decorator representations by this library, are listed in the following sections.
-
-#### @ResponseDescription
-
-A decorator to document the responses that a given service method can return. It is used to generate documentation for the REST service.
-
-```typescript
-interface MyError {
-   message: string
-}
-
-@Path('people')
-class PeopleService {
-  @ResponseDescription<string>(200, 'Retrieve a list of people.')
-  @ResponseDescription<MyError>(401, 'The user is unauthorized.', {message: 'The user is not authorized to access this operation.'})
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
-}
-```
-
-A Default response is already created in swagger documentation from the method return analisys. So any response declared
-through this decorator is an additional response created.
-
-#### @ResponseExample
-
-Used to provide an example of method return to be added into the method response section of the generated documentation for this method.
-
-```typescript
-@Path('people')
-class PeopleService {
-  @ResponseExample<Array<Person>>([{
-    name: 'Joe'
-  }])
-  @GET
-  getPeople(@Param('name') name: string): Person[] {
-     // ...
-  }
-}
-```
-
-#### @ResponseProduces
-
-Document the produces property in generated swagger docs
-
-```typescript
-@Path('people')
-@ResponseProduces('text/html')
-class PeopleService {
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
-}
-```
-
-A Default produces is already created in swagger documentation from the method return analisys.
-You can use this decorator to override this default produces.
-
-#### @RequestConsumes
-
-Document the consumes property in generated swagger docs
-
-```typescript
-@Path('people')
-@RequestConsumes('text/html')
-class PeopleService {
-  @PUT
-  createPeople(@Param('name') name: string, people: People) {
-     // ...
-  }
-}
-```
-
-#### @SwaggerTags
-
-Add tags for a given method on generated swagger documentation.
-
-```typescript
-@Path('people')
-class PeopleService {
-  @SwaggerTags('adiministrative', 'department1')
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
-}
-```
-
-#### @SwaggerHidden
-
-Allow to hide some APIs from swagger docs (ex: test or dev APIs, etc ...).
-This decorator can be applied for the whole class or only a single method
-
-```typescript
-@Path('people')
-@SwaggerHidden()
-class PeopleService {
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
-}
-```
-
-#### @IsInt, @IsLong, @IsFloat, @IsDouble
-
-Document the type of a `number` property or parameter in generated swagger docs.
-If no decorator is present, the `number` type defaults to `double` format.
-
-```typescript
-class Person {
-    @IsInt id: number;
-}
-
-@Path('people')
-class PeopleService {
-    @Path(':id')
-    @GET
-    getById(@PathParam('id') @IsLong id: number) {
-        // ...
-    }
-}
-```
-
-Because decorators don't work on type and interface properties, this can also be specified as a JSDoc tag.
-
-```typescript
-interface Person {
-    /**
-     * The person's id
-     * @IsInt
-     */
-    id: number;
-}
-```
-
-
-### Swagger-config.json
-
-The swagger config file supports the following properties:
-
-Property | Type | Default | Description
--------- | ---- | ----- | -----------
-basePath | string | `"/"` | Base API path; e.g. the 'v1' in https://myapi.com/v1
-collectionFormat | string | `"csv"` | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
-consumes | [string] | `[]` | Default consumes property for the entire API
-decoratorConfig | *DecoratorConfig | `{ "useBuildIn": true, "useLibrary": ["typescript-rest", "@decorators/express"] }` | Configuration for own and third-party decorator representations.
-description | string |  | API description; defaults to npm package description
-entryFile | string or string[] | `[]` | The entry point to your API (it is possible to use glob patters)
-host | string | | The hostname to be informed in the generated swagger file
-license | string |  |  API license number; defaults to npm package license
-name | string |  |  API name; defaults to npm package name
-outputDirectory | string | | Where to write the generated swagger file
-outputFormat | 'Swagger_2' or 'OpenApi_3' | `"Swagger_2"` | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
-produces | [string] | | Default produces property for the entire API
-spec | any | | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here
-securityDefinitions | *SecurityDefinition | | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme.
-version | string | `0.0.1` | API version number; defaults to npm package version
-yaml | boolean | `true` | Generates the output also as a yaml file
-
-
-#### SecurityDefinition
-Where the SecurityDefinition contract is defined as:
-```typescript
-{
-    [name: string]: {
-        type: string;
-        name?: string;
-        authorizationUrl?: string;
-        tokenUrl?: string;
-        flow?: string;
-        in?: string;
-        scopes?: { [scopeName: string]: string; }
-    }
-}
-```
-
-#### DecoratorConfig
-The decorator contract is defined as followed:
-```typescript
-import {Decorator} from 'typescript-swagger';
-
-{
-    useLibrary?: Decorator.Library | Array<Decorator.Library> | Record<Library, ID> | Record<Decorator.Library, Decorator.Representation>;
-    useBuildIn?: boolean | Array<Decorator.ID> | Record<Decorator.ID, boolean> | Decorator.ID;
-    override?: Decorator.Representation;
-}
-```
-
-Please read the [Representation](#representation) section for further information to provide
-valid values to override or extend library or build-in decorators.
-
-The referenced type(s) in the `Decorator` namespace are defined as follows:
-
-```typescript
-export type Library = 'typescript-rest' | '@decorators/express';
-export type Representation = Record<ID, string | Array<string>>;
-
-export type ID = ClassID | MethodID | ParameterID;
-
-export type ClassID =
-    'SWAGGER_TAGS' |
-    'CLASS_PATH' |
-    MethodAndCLassID
-    ;
-
-export type MethodAndCLassID =
-    'REQUEST_ACCEPT' |
-    'RESPONSE_EXAMPLE' |
-    'RESPONSE_DESCRIPTION' |
-    'REQUEST_CONSUMES' |
-    'RESPONSE_PRODUCES' |
-    'SWAGGER_HIDDEN'
-    ;
-
-export type MethodHttpVerbID =
-    'ALL' |
-    'GET' |
-    'POST' |
-    'PUT' |
-    'DELETE' |
-    'PATCH' |
-    'OPTIONS' |
-    'HEAD';
-
-export type MethodID =
-    'METHOD_PATH' |
-    MethodHttpVerbID |
-    MethodAndCLassID
-    ;
-
-export type ParameterID =
-    ParameterServerID |
-    'IS_INT' |
-    'IS_LONG' |
-    'IS_FlOAT' |
-    'IS_DOUBLE'
-    ;
-
-export type ParameterServerID =
-    'SERVER_CONTEXT' |
-    'SERVER_PARAMS' |
-    'SERVER_QUERY' |
-    'SERVER_FORM' |
-    'SERVER_BODY' |
-    'SERVER_HEADERS' |
-    'SERVER_COOKIES' |
-    'SERVER_PATH_PARAMS' |
-    'SERVER_FILE_PARAM' |
-    'SERVER_FILES_PARAM';
-```
-
-
-#### Example
-
-See an example:
-```json
-{
-    "swagger": {
-        "outputDirectory": "./dist",
-        "entryFile": "./controllers/*.ts",
-        "decoratorConfig": {
-            "useBuildIn": true,
-            "useLibrary": ["typescript-rest", "@decorators/express"]
-        },
-        "outputFormat": "openapi_3",
-        "host": "localhost:3000",
-        "version": "1.0",
-        "name": "Typescript-rest Test API",
-        "description": "a description",
-        "license": "MIT",
-        "basePath": "/v1",
-        "securityDefinitions": {
-            "api_key": {
-                "type": "apiKey",
-                "name": "access_token",
-                "in": "query"
-            }
-        },
-        "ignore": [
-          "**/node_modules/**"
-        ]
-    }
-}
-```
-
-or in yaml format:
-See an example:
-
-```yaml
-swagger:
-  outputDirectory: ./dist
-  entryFile:
-    - ./controllers/*.ts
-  decoratorConfig:
-    useBuildIn: true
-    useLibrary:
-      - @decorators/express
-      - typescript-rest
-  outputFormat: openapi_3
-  host: localhost:3000
-  version: 1.0
-  name: Typescript-rest Test API
-  description: A description
-  license: MIT
-  basePath: /v1
-  securityDefinitions:
-    api_key:
-      type: apiKey
-      name: access_token
-      in: query
-  ignore:
-    - /node_modules/**
-```
 
 ### Credits
 

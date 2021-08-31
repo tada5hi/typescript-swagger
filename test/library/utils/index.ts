@@ -16,10 +16,17 @@ export function createSwaggerSpecGenerator(
         },
     };
     const metadata = new MetadataGenerator(
-        {entryFile: entryFile, decoratorConfig: {
-            useBuildIn: true,
-            useLibrary: library
-        }},
+        {
+            decorator: {
+                useBuildIn: true,
+                useLibrary: library
+            },
+            swagger: {
+                entryFile: entryFile,
+                outputDirectory: undefined,
+                yaml: true
+            }
+        },
         compilerOptions,
     ).generate();
 

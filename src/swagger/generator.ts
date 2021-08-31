@@ -4,7 +4,7 @@ import {castArray, union} from 'lodash';
 import {posix} from 'path';
 import {CompilerOptions} from "typescript";
 import {stringify} from 'yamljs';
-import {Specification, SwaggerConfig} from '../config';
+import {Config, Specification, SwaggerConfig} from '../config';
 import {useDebugger} from "../debug";
 
 import {MetadataGenerator} from '../metadata';
@@ -13,11 +13,11 @@ import {Metadata, Method, Parameter, Property, ResponseType} from "../metadata/t
 
 import {Swagger} from './index';
 
-export async function generateDocumentation(swaggerConfig: SwaggerConfig, tsConfig: CompilerOptions) : Promise<string> {
-    const metadata = new MetadataGenerator(swaggerConfig, tsConfig).generate();
-    await new SpecGenerator(metadata, swaggerConfig).generate();
+export async function generateDocumentation(config: Config, tsConfig: CompilerOptions) : Promise<string> {
+    const metadata = new MetadataGenerator(config, tsConfig).generate();
+    await new SpecGenerator(metadata, config.swagger).generate();
 
-    return Array.isArray(swaggerConfig.outputDirectory) ? swaggerConfig.outputDirectory.join('/') : swaggerConfig.outputDirectory;
+    return Array.isArray(config.swagger.outputDirectory) ? config.swagger.outputDirectory.join('/') : config.swagger.outputDirectory;
 }
 
 export class SpecGenerator {
@@ -285,7 +285,7 @@ export class SpecGenerator {
             if (method.parameters.some(p => (p.in === 'formData' && p.type.typeName === 'file'))) {
                 pathMethod.consumes = pathMethod.consumes || [];
                 pathMethod.consumes.push('multipart/form-data');
-            } else if (this.hasFormParams(method)) {
+            } else if (SpecGenerator.hasFormParams(method)) {
                 pathMethod.consumes = pathMethod.consumes || [];
                 pathMethod.consumes.push('application/x-www-form-urlencoded');
             } else if (this.supportsBodyParameters(method.method)) {
@@ -295,7 +295,7 @@ export class SpecGenerator {
         }
     }
 
-    private hasFormParams(method: Method) {
+    private static hasFormParams(method: Method) {
         return method.parameters.find(p => (p.in === 'formData'));
     }
 
@@ -373,7 +373,7 @@ export class SpecGenerator {
 
     private buildOperation(controllerName: string, method: Method) {
         const operation: any = {
-            operationId: this.getOperationId(controllerName, method.name),
+            operationId: SpecGenerator.getOperationId(controllerName, method.name),
             produces: [],
             responses: {}
         };
@@ -389,17 +389,17 @@ export class SpecGenerator {
                 if (swaggerType.type !== 'void') {
                     operation.responses[res.status]['schema'] = swaggerType;
                 }
-                methodReturnTypes.add(this.getMimeType(swaggerType));
+                methodReturnTypes.add(SpecGenerator.getMimeType(swaggerType));
             }
             if (res.examples) {
                 operation.responses[res.status]['examples'] = { 'application/json': res.examples };
             }
         });
-        this.handleMethodProduces(method, operation, methodReturnTypes);
+        SpecGenerator.handleMethodProduces(method, operation, methodReturnTypes);
         return operation;
     }
 
-    private getMimeType(swaggerType: Swagger.Schema) {
+    private static getMimeType(swaggerType: Swagger.Schema) {
         if (swaggerType.$ref || swaggerType.type === 'array' || swaggerType.type === 'object') {
             return 'application/json';
         } else if (swaggerType.type === 'string' && swaggerType.format === 'binary') {
@@ -409,7 +409,7 @@ export class SpecGenerator {
         }
     }
 
-    private handleMethodProduces(method: Method, operation: any, methodReturnTypes: Set<string>) {
+    private static handleMethodProduces(method: Method, operation: any, methodReturnTypes: Set<string>) {
         if (method.produces.length) {
             operation.produces = method.produces;
         } else if (methodReturnTypes && methodReturnTypes.size > 0) {
@@ -417,7 +417,7 @@ export class SpecGenerator {
         }
     }
 
-    private getOperationId(controllerName: string, methodName: string) {
+    private static getOperationId(controllerName: string, methodName: string) {
         const controllerNameWithoutSuffix = controllerName.replace(new RegExp('Controller$'), '');
         return `${controllerNameWithoutSuffix}${methodName.charAt(0).toUpperCase() + methodName.substr(1)}`;
     }
@@ -426,7 +426,7 @@ export class SpecGenerator {
         if (Resolver.isVoidType(type)) {
             return {} as Swagger.BaseSchema;
         } else if (Resolver.isReferenceType(type)) {
-            return this.getSwaggerTypeForReferenceType(type);
+            return SpecGenerator.getSwaggerTypeForReferenceType(type);
         } else if (
             type.typeName === 'any' ||
             type.typeName === 'binary' ||
@@ -443,7 +443,7 @@ export class SpecGenerator {
             type.typeName === 'object' ||
             type.typeName === 'string'
         ) {
-            return this.getSwaggerTypeForPrimitiveType(type.typeName);
+            return SpecGenerator.getSwaggerTypeForPrimitiveType(type.typeName);
         } else if (Resolver.isArrayType(type)) {
             return this.getSwaggerTypeForArrayType(type);
         } else if (Resolver.isEnumType(type)) {
@@ -511,7 +511,7 @@ export class SpecGenerator {
         return { type: 'object' };
     }
 
-    private getSwaggerTypeForPrimitiveType(type: Resolver.PrimitiveTypeLiteral) {
+    private static getSwaggerTypeForPrimitiveType(type: Resolver.PrimitiveTypeLiteral) {
         const map: Record<Resolver.PrimitiveTypeLiteral, Swagger.Schema> = {
             any: {
                 // While the any type is discouraged, it does explicitly allows anything, so it should always allow additionalProperties
@@ -576,7 +576,7 @@ export class SpecGenerator {
         };
     }
 
-    private getSwaggerTypeForReferenceType(referenceType: Resolver.ReferenceType): Swagger.Schema {
+    private static getSwaggerTypeForReferenceType(referenceType: Resolver.ReferenceType): Swagger.Schema {
         return { $ref: `#/definitions/${referenceType.refName}` };
     }
 

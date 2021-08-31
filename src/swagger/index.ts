@@ -224,9 +224,9 @@ export namespace Swagger {
         externalDocs?: ExternalDocs;
         host?: string;
         basePath?: string;
-        schemes?: [string];
-        consumes?: [string];
-        produces?: [string];
+        schemes?: string[];
+        consumes?: string[];
+        produces?: string[];
         paths: { [pathName: string]: Path };
         definitions?: { [definitionsName: string]: Schema };
         parameters?: { [parameterName: string]: BodyParameter | QueryParameter };

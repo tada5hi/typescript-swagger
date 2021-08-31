@@ -7,6 +7,11 @@ export interface Config {
      * Swagger generation configuration object
      */
     swagger: SwaggerConfig;
+
+    /**
+     * Decorator config for decorator representations.
+     */
+    decorator?: Decorator.Config;
 }
 
 export enum Specification {
@@ -29,11 +34,6 @@ export interface SwaggerConfig {
      * The entry point to your API
      */
     entryFile: string | string[];
-
-    /**
-     * Decorator config for decorator representations.
-     */
-    decoratorConfig?: Decorator.Config;
 
     /**
      * Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
@@ -97,12 +97,12 @@ export interface SwaggerConfig {
     /**
      * Default consumes property for the entire API
      */
-    consumes?: [string];
+    consumes?: string[];
 
     /**
      * Default produces property for the entire API
      */
-    produces?: [string];
+    produces?: string[];
 
     /**
      * Default collectionFormat property for query parameters of array type.
