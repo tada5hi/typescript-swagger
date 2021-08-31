@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import * as ts from 'typescript';
-import {getDecoratorName} from "../../decorator/utils";
+import {Decorator} from "../../decorator/type";
+import {getDecorators} from "../../decorator/utils";
 
 import {
     getJSDocTagComment,
@@ -210,7 +211,7 @@ export class TypeNodeResolver {
                 if (declaration.name) {
                     declaration = this.getModelTypeDeclaration(declaration.name as ts.EntityName) as ts.TypeAliasDeclaration | ts.EnumDeclaration | ts.DeclarationStatement;
                 }
-                
+
                 const name = TypeNodeResolver.getRefTypeName(this.referencer.getText());
                 return this.handleCachingAndCircularReferences(name, () => {
                     if (ts.isTypeAliasDeclaration(declaration)) {
@@ -498,12 +499,14 @@ export class TypeNodeResolver {
                 })
                 .map(name => name.toLowerCase());
 
-            let decorator : string | undefined = getDecoratorName(parentNode, identifier => [
+            const data : Decorator.Data[] = getDecorators(parentNode, identifier => [
                 'isInt',
                 'isLong',
                 'isFloat',
                 'isDouble'
             ].some(m => m.toLowerCase() === identifier.text.toLowerCase()));
+
+            let decorator : string | undefined = data.length > 0 ? data[0].text : undefined;
 
             if(typeof decorator !== 'undefined') {
                 decorator = decorator.toLowerCase();

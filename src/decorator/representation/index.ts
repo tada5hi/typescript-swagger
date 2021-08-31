@@ -1,11 +1,10 @@
 import {Decorator} from "../type";
-import {DecoratorData} from "../utils";
 import {extendRepresentationPropertyConfig, extractRepresentationPropertyValue} from "./property/utils";
 
 export class RepresentationManager {
     constructor(
         protected representation: Decorator.Representation,
-        public readonly decorators: DecoratorData[]
+        public readonly decorators: Decorator.Data[]
     ) {
         this.extendProperties();
     }
@@ -18,15 +17,15 @@ export class RepresentationManager {
      * @param decoratorOrIndex
      */
     public getPropertyValue(
-        type: Decorator.PropertyType | Decorator.PropertyConfig = 'SIMPLE',
-        decoratorOrIndex?: number | DecoratorData
+        type: Decorator.PropertyType | Decorator.Property = 'SIMPLE',
+        decoratorOrIndex?: number | Decorator.Data
     ) : unknown | undefined {
-        const config : Decorator.PropertyConfig = typeof type === 'string' ? this.getPropertyConfiguration(type) : type;
+        const config : Decorator.Property = typeof type === 'string' ? this.getPropertyConfiguration(type) : type;
         if(typeof config === 'undefined') {
             return undefined;
         }
 
-        let decorator : DecoratorData;
+        let decorator : Decorator.Data;
 
         if(
             typeof decoratorOrIndex === 'number' ||
@@ -47,7 +46,7 @@ export class RepresentationManager {
 
     // -------------------------------------------
 
-    public getPropertyConfiguration(type: Decorator.PropertyType = 'SIMPLE') : Decorator.PropertyConfig | undefined {
+    public getPropertyConfiguration(type: Decorator.PropertyType = 'SIMPLE') : Decorator.Property | undefined {
         // tslint:disable-next-line:no-shadowed-variable
         const index = this.representation.properties.findIndex(property => property.type === type);
         if(index === -1) {
@@ -57,7 +56,7 @@ export class RepresentationManager {
         return this.representation.properties[index];
     }
 
-    public getPropertyConfigurations(types?: Decorator.PropertyType[]) : Decorator.PropertyConfig[] {
+    public getPropertyConfigurations(types?: Decorator.PropertyType[]) : Decorator.Property[] {
         if (typeof types === 'undefined') {
             return this.representation.properties;
         }

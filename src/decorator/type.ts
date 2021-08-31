@@ -1,6 +1,11 @@
-import {DecoratorData} from "./utils";
-
 export namespace Decorator {
+    export interface Data {
+        text: string;
+        arguments: any[];
+        typeArguments: any[];
+    }
+
+
     /**
      * A decorator type is an identifier which is associated
      * to specific decorator names.
@@ -62,7 +67,7 @@ export namespace Decorator {
     // -------------------------------------------
 
     export type PropertyType = 'PAYLOAD' | 'STATUS_CODE' | 'DESCRIPTION' /* | 'PATH' | 'MEDIA_TYPE' | 'KEY' */ | 'OPTIONS' | 'SIMPLE' | 'TYPE';
-    export interface PropertyConfig {
+    export interface Property {
         /**
          * Default: 'SIMPLE'
          */
@@ -93,9 +98,7 @@ export namespace Decorator {
 
     export interface Representation {
         id: string;
-        decorator?: DecoratorData;
-        decorators?: DecoratorData[];
-        properties?: PropertyConfig[];
+        properties?: Property[];
     }
 
     export type ConfigLibrary =

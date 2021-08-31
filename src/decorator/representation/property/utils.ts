@@ -1,7 +1,6 @@
 import {Decorator} from "../../type";
-import {DecoratorData} from "../../utils";
 
-export function extendRepresentationPropertyConfig(property: Decorator.PropertyConfig): Decorator.PropertyConfig {
+export function extendRepresentationPropertyConfig(property: Decorator.Property): Decorator.Property {
     if (typeof property.type === 'undefined') {
         property.type = 'SIMPLE';
     }
@@ -22,8 +21,8 @@ export function extendRepresentationPropertyConfig(property: Decorator.PropertyC
 }
 
 export function extractRepresentationPropertyValue(
-    decorator: DecoratorData,
-    config: Decorator.PropertyConfig
+    decorator: Decorator.Data,
+    config: Decorator.Property
 ): unknown | undefined {
     switch (config.amount) {
         case "all":

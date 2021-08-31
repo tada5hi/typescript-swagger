@@ -2,7 +2,7 @@ import {Node} from "typescript";
 import {hasOwnProperty} from "../../metadata/resolver/utils";
 import {RepresentationManager} from "../representation";
 import {Decorator} from "../type";
-import {DecoratorData, getDecorators} from "../utils";
+import {getDecorators} from "../utils";
 import {InternalMapping} from "./config/internal";
 import {getLibraryMapping} from "./config/library/utils";
 import {isMappingTypeIncluded, reduceTypeRepresentationMapping} from "./utils";
@@ -24,13 +24,13 @@ export class DecoratorMapper {
      */
     public match(
         type: Decorator.Type,
-        data: DecoratorData[] | Node
+        data: Decorator.Data[] | Node
     ) {
         if(!hasOwnProperty(this.mapping, type)) {
             return undefined;
         }
 
-        const decorators : DecoratorData[] = Array.isArray(data) ? data : getDecorators(data);
+        const decorators : Decorator.Data[] = Array.isArray(data) ? data : getDecorators(data);
 
         const representations = this.mapping[type];
         if(Array.isArray(representations)) {
@@ -92,7 +92,7 @@ export class DecoratorMapper {
                 const libraries : Decorator.Library[] = Array.isArray(this.config.useLibrary) ?
                     this.config.useLibrary :
                     [this.config.useLibrary];
-                
+
                 items.push(...libraries.map(library => getLibraryMapping(library)));
             } else {
                 // tslint:disable-next-line:forin

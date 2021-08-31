@@ -7,7 +7,7 @@ This is a tool to generate swagger files from a decorator library or your own de
 
 Please read the `CHANGELOG.md` in the repository for breaking changes.
 
-**Table of Contents** 
+**Table of Contents**
 
 - [Installation](#installation)
 
@@ -41,7 +41,7 @@ npm install typescript-swagger -g
 
 ## Build
 
-You can either build the `swagger.yml` and `swagger.json` file by command line or on runtime of your application. 
+You can either build the `swagger.yml` and `swagger.json` file by command line or on runtime of your application.
 The files will be generated in the `outputDirectory` specified in the `SwaggerConfig`.
 
 The [tsconfig.json](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) file contains the compilerOptions, which
@@ -130,30 +130,29 @@ Also the following built in typescript utility types are supported:
 
 The information which are required to generate fully featured swagger documentations are collected by consulting decorators
 present on your code.
-Few decorator representations are already provided by this library and can also be disabled. 
-Decorator representation by third party libraries (f.e @decorators/express or typescript-rest) can be  extended/replaced as well.
-You can also deposit your own decorator as a representation.
+Few decorator `Type-Representation-Mappings` ([TRMs](#decoratortyperepresentationmapping-dtrms)) are already provided by this library and can also be disabled.
+`TRMs` by third party libraries (f.e @decorators/express or typescript-rest) can be  extended/replaced as well.
+You can also deposit your own DTRMs.
 
-In the following sections, the information/function which can be acquired by a decorator is called: `ID`.
-The decorator the configuration (name/text, properties, ...) is called: `RepresentationConfig`.
-Decorators must be declared and implemented according the requirements ([Specification](#specification)) for the respectively `Decorator.ID`.
+In the following sections, the decorator which can be represented is called: `Type`.
+The decorator the configuration (name/text, properties, ...) is called: `Representation`.
+DTRMs must be declared and implemented according the requirements ([Specification](#specification)) for the respective decorator.
 
-### Representation
+### DecoratorTypeRepresentationMapping (DTRM)
 
-The following snippet, shows how the mapping between Decorator-ID(s) (`ID`) and the respectively (`RepresentationConfig`) 
-representation config should look like.
+The following snippet, shows how the mapping between decorator `Type`s and the respective `Representation`s should look like.
 
 ```typescript
-type Representation = Record<ID, RepresentationConfig | Array<RepresentationConfig>>;
+type TypeRepresentationMapping = Record<Type, Representation | Representation[]>;
 ```
 
-The `ID` can have one of the following values: SWAGGER_TAGS, CLASS_PATH, ... [see more]().
+The `Type` can have one of the following values: SWAGGER_TAGS, CLASS_PATH, ... [see more]().
 
-The `RepresentationConfig` is defined as described in the following:
+The `Representation` is defined as described in the following:
 ```typescript
-interface RepresentationConfig {
+interface Representation {
     name: string;
-    properties?: Array<Property>
+    properties?: Property[]
 }
 ```
 The `name` attribute is representative for the actual decorator text/name.
@@ -190,7 +189,7 @@ In case for the build-in decorators the representation is defined as follows:
 ```typescript
 import {Decorator} from 'typescript-swagger';
 
-const representation: Decorator.Representation = {
+const representation: Decorator.TypeRepresentationMapping = {
   /**
    * ID: SWAGGER_TAGS
    * RepresentationConfig: {
@@ -202,7 +201,7 @@ const representation: Decorator.Representation = {
     name: 'SwaggerTags',
     properties: [{amount: 'all', declaredAs: "argument"}]
   },
-  
+
   // Class + Method
   RESPONSE_EXAMPLE: {
     name: 'ResponseExample',
@@ -232,7 +231,7 @@ const representation: Decorator.Representation = {
     name: 'SwaggerHidden',
     properties: []
   },
-  
+
   IS_INT: {
     name: 'IsInt',
     properties: []
@@ -278,14 +277,14 @@ Example:
   ```json
   {
     "SWAGGER_HIDDEN": {
-      "name": "SwaggerHidden", 
+      "name": "SwaggerHidden",
       "properties": []
     }
   }
   ```
-  
+
 #### SWAGGER_TAGS
-Target: 
+Target:
 - Class
 - Method
 
@@ -300,7 +299,7 @@ Example:
   ```json
   {
     "SWAGGER_TAGS": {
-      "name": "SwaggerTags", 
+      "name": "SwaggerTags",
       "properties": [
         {"amount": "all", "declaredAs": "argument"}
       ]
@@ -309,21 +308,21 @@ Example:
   ```
 
 #### CLASS_PATH
-Target: 
+Target:
 - Class
 
-Properties: 
-- SIMPLE: 
+Properties:
+- SIMPLE:
   - Type: string
   - Description: base path for methods in class
-  
+
 Example:
 - Decorator: `@Path('/path')`
 - Representation:
   ```json
   {
     "CLASS_PATH": {
-      "name": "Path", 
+      "name": "Path",
       "properties": [
           {"amount": "one", "declaredAs": "argument"}
       ]
@@ -347,7 +346,7 @@ Example:
   ```json
   {
     "REQUEST_CONSUMES": {
-      "name": "RequestConsumes", 
+      "name": "RequestConsumes",
       "properties": [
           {"amount": "all", "declaredAs": "argument"}
       ]
@@ -380,7 +379,7 @@ Example:
   ```json
   {
     "RESPONSE_DESCRIPTION": {
-      "name": "ResponseDescription", 
+      "name": "ResponseDescription",
       "properties": [
           {"type": "TYPE", "declaredAs": "typeArgument"},
           {"type": "STATUS_CODE", "declaredAs": "argument", "position": 0},
@@ -390,7 +389,7 @@ Example:
     }
   }
   ```
-  
+
 #### RESPONSE_EXAMPLE
 Target:
 - Class
@@ -410,15 +409,15 @@ Example:
   ```json
   {
     "RESPONSE_EXAMPLE": {
-      "name": "Path", 
+      "name": "Path",
       "properties": [
-          {"type": "TYPE", "declaredAs": "typeArgument"}, 
+          {"type": "TYPE", "declaredAs": "typeArgument"},
           {"type": "PAYLOAD", "declaredAs": "argument"}
       ]
     }
   }
   ```
-  
+
 #### RESPONSE_PRODUCES
 Target:
 - Class
@@ -435,7 +434,7 @@ Example:
   ```json
   {
     "RESPONSE_PRODUCES": {
-      "name": "ResponseProduces", 
+      "name": "ResponseProduces",
       "properties": [
           {"amount": "all", "declaredAs": "argument"}
       ]
@@ -458,7 +457,7 @@ Example:
   ```json
   {
     "METHOD_PATH": {
-      "name": "Path", 
+      "name": "Path",
       "properties": [
           {"amount": "one", "declaredAs": "argument"}
       ]
@@ -626,7 +625,7 @@ class PeopleService {
 A Default produces is already created in swagger documentation from the method return analisys.
 You can use this decorator to override this default produces.
 
-#### @RequestConsumes 
+#### @RequestConsumes
 
 Document the consumes property in generated swagger docs
 
@@ -656,7 +655,7 @@ class PeopleService {
 }
 ```
 
-#### @SwaggerHidden 
+#### @SwaggerHidden
 
 Allow to hide some APIs from swagger docs (ex: test or dev APIs, etc ...).
 This decorator can be applied for the whole class or only a single method
@@ -705,9 +704,9 @@ interface Person {
 ```
 
 
-### Swagger-config.json 
+### Swagger-config.json
 
-The swagger config file supports the following properties: 
+The swagger config file supports the following properties:
 
 Property | Type | Default | Description
 -------- | ---- | ----- | -----------
@@ -731,7 +730,7 @@ yaml | boolean | `true` | Generates the output also as a yaml file
 
 #### SecurityDefinition
 Where the SecurityDefinition contract is defined as:
-```typescript 
+```typescript
 {
     [name: string]: {
         type: string;
@@ -747,7 +746,7 @@ Where the SecurityDefinition contract is defined as:
 
 #### DecoratorConfig
 The decorator contract is defined as followed:
-```typescript 
+```typescript
 import {Decorator} from 'typescript-swagger';
 
 {
@@ -762,7 +761,7 @@ valid values to override or extend library or build-in decorators.
 
 The referenced type(s) in the `Decorator` namespace are defined as follows:
 
-```typescript 
+```typescript
 export type Library = 'typescript-rest' | '@decorators/express';
 export type Representation = Record<ID, string | Array<string>>;
 
@@ -860,7 +859,7 @@ See an example:
 ```yaml
 swagger:
   outputDirectory: ./dist
-  entryFile: 
+  entryFile:
     - ./controllers/*.ts
   decoratorConfig:
     useBuildIn: true
@@ -880,7 +879,7 @@ swagger:
       name: access_token
       in: query
   ignore:
-    - /node_modules/**    
+    - /node_modules/**
 ```
 
 ### Credits
