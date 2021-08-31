@@ -29,6 +29,7 @@
     "lint": "tslint ./src/**/*.ts ./test/**/*.ts",
     "lint:fix": "tslint --fix ./src/**/*.ts ./test/**/*.ts -t verbose",
     "swagger-gen": "node ./dist/cli.js -c ./test/data/swagger.js",
+    "pretest": "cross-env NODE_ENV=test npm run build && npm run lint",
     "test": "cross-env NODE_ENV=test jest --config ./test/jest.config.js",
     "test:coverage": "cross-env NODE_ENV=test jest --config ./test/jest.config.js --coverage",
     "tsc": "tsc",
@@ -43,10 +44,8 @@
     "merge": "^2.1.1",
     "minimatch": "^3.0.4",
     "mkdirp": "^1.0.4",
-    "path": "^0.12.7",
     "swagger2openapi": "^7.0.0",
     "typescript": "^4.2.4",
-    "typescript-rest": "^3.0.3",
     "yamljs": "^0.2.10"
   },
   "devDependencies": {
@@ -71,7 +70,8 @@
     "ts-node": "^8.10.2",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.17.0",
-    "typescript": "^4.2.3"
+    "typescript": "^4.2.3",
+    "typescript-rest": "^3.0.3"
   },
   "repository": {
     "type": "git",
