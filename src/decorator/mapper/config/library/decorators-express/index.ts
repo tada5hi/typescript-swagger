@@ -1,7 +1,7 @@
-import {Decorator} from "../../type";
+import {Decorator} from "../../../../type";
 
 export namespace DecoratorExpressLibrary {
-    export const DecoratorRepresentations : Partial<Decorator.Representation> = {
+    export const DecoratorRepresentations: Decorator.TypeRepresentationMapping = {
         // Class
         CLASS_PATH: {
             id: 'Controller',
@@ -80,5 +80,5 @@ export namespace DecoratorExpressLibrary {
             id: 'Params',
             properties: [{}]
         }
-    };
+    } as Decorator.TypeRepresentationMapping;
 }

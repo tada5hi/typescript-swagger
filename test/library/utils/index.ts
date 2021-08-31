@@ -23,7 +23,7 @@ export function createSwaggerSpecGenerator(
         compilerOptions,
     ).generate();
 
-    return  new SpecGenerator(metadata, getDefaultOptions());
+    return new SpecGenerator(metadata, getDefaultOptions());
 }
 
 export function buildLibraryTests(specGenerator: SpecGenerator) {

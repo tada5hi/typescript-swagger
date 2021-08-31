@@ -82,13 +82,13 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
 
     private buildParameters() {
         this.debugger('Processing method %s parameters.', this.getCurrentLocation());
+
         const parameters = this.node.parameters.map((p: ts.ParameterDeclaration) => {
             try {
                 const path = pathUtil.posix.join('/', (this.controllerPath ? this.controllerPath : ''), this.path);
 
                 return new ParameterGenerator(p, this.method, path, this.current).generate();
             } catch (e) {
-                console.log(e);
                 const methodId = this.node.name as ts.Identifier;
                 const controllerId = (this.node.parent as ts.ClassDeclaration).name as ts.Identifier;
                 const parameterId = p.name as ts.Identifier;
@@ -145,13 +145,17 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     }
 
     private getMethodSuccessExamples() {
-        const handler = Decorator.getRepresentationHandler('RESPONSE_EXAMPLE', this.current.decoratorMap);
-        const config = handler.matchToNodeDecorator(this.node);
-        const property = handler.getPropertiesByTypes(config.id, ['TYPE', 'PAYLOAD']);
+        const representation = this.current.decoratorMapper.match('RESPONSE_EXAMPLE', this.node);
+        if(typeof representation === 'undefined') {
+            return [];
+        }
 
-        const example = handler.getPropertyValueAsItem(config.decorator, property['PAYLOAD']);
+        const value : unknown = representation.getPropertyValue('PAYLOAD');
+        if(typeof value === 'undefined') {
+            return [];
+        }
 
-        return this.getExamplesValue(example);
+        return this.getExamplesValue(value);
     }
 
     private mergeResponses(responses: ResponseType[], defaultResponse: ResponseType) {

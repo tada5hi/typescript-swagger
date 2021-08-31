@@ -126,3 +126,4 @@ export function IsFloat(target: any, propertyKey: string, parameterIndex?: numbe
 export function IsDouble(target: any, propertyKey: string, parameterIndex?: number) {
   return;
 }
+export {DecoratorManager} from "./utils";

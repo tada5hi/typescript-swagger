@@ -1,7 +1,7 @@
 'use strict';
 
 import {castArray} from 'lodash';
-import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind} from 'typescript';
+import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, TypeNode} from 'typescript';
 import {useDebugger} from "../debug";
 import {Decorator} from "../decorator/type";
 import { getDecorators } from '../decorator/utils';
@@ -29,15 +29,11 @@ export abstract class EndpointGenerator<T extends Node> {
     protected generatePath(key: Decorator.Type) {
         const values : string[] = [];
 
-        const handler = Decorator.getRepresentationHandler(key, this.current.decoratorMap);
-        const config = handler.matchToNodeDecorator(this.node);
-        const property = handler.getPropertyByType(config.id);
-
-        if(typeof property !== 'undefined') {
-
-            const argument = handler. getPropertyValueAsItem(config.decorator, property);
-            if (typeof argument !== 'undefined') {
-                values.push(argument);
+        const representation = this.current.decoratorMapper.match(key, this.node);
+        if(typeof representation !== 'undefined') {
+            const value = representation.getPropertyValue();
+            if(typeof value === 'string') {
+                values.push(value);
             }
         }
 
@@ -136,65 +132,102 @@ export abstract class EndpointGenerator<T extends Node> {
     // -------------------------------------------
 
     protected getResponses(): ResponseType[] {
-        const handler = Decorator.getRepresentationHandler('RESPONSE_DESCRIPTION', this.current.decoratorMap);
-        const config = handler.matchToNodeDecorator(this.node);
-        const args = handler.getPropertiesByTypes(config.id, ['STATUS_CODE', 'DESCRIPTION', 'PAYLOAD', 'TYPE']);
+        const representation = this.current.decoratorMapper.match('RESPONSE_DESCRIPTION', this.node);
+        if(typeof representation === 'undefined') {
+            return [];
+        }
 
-        if (!config.decorators || !config.decorators.length) { return []; }
+        const responses : ResponseType[] = [];
 
-        this.debugger('Generating Responses for %s', this.getCurrentLocation());
+        for(let i=0; i<representation.decorators.length; i++) {
+            const description = representation.getPropertyValue('DESCRIPTION', i) || 'Ok';
+            const status = representation. getPropertyValue('STATUS_CODE', i) || '200';
+            let examples = representation. getPropertyValue('PAYLOAD', i);
 
-        return config.decorators.map(decorator => {
-            const description = handler. getPropertyValueAsItem(decorator, args['DESCRIPTION']) || 'Ok';
-            const status = handler. getPropertyValueAsItem(decorator, args['STATUS_CODE']) || '200';
-            let examples = handler. getPropertyValueAsItem(decorator, args['PAYLOAD']);
             if(typeof examples !== 'undefined') {
                 examples = this.getExamplesValue(examples);
             }
 
-            const type = handler. getPropertyValueAsItem(decorator, args['TYPE']);
+            const type = representation.getPropertyValue('TYPE');
 
-            const responses = {
-                description: description,
+            const response : ResponseType = {
+                description: description as string,
                 examples: examples,
-                schema: type ? new TypeNodeResolver(type, this.current).resolve() : undefined,
-                status: status
+                schema: type ? new TypeNodeResolver(type as TypeNode, this.current).resolve() : undefined,
+                status: status as string
             };
 
             this.debugger('Generated Responses for %s: %j', this.getCurrentLocation(), responses);
 
-            return responses;
-        });
+            responses.push(response);
+        }
+
+        return responses;
     }
 
     // -------------------------------------------
 
-    public getProduces() {
-        const handler = Decorator.getRepresentationHandler('RESPONSE_PRODUCES', this.current.decoratorMap);
-        const config = handler.matchToNodeDecorator(this.node);
-
-        const produces =  handler.getPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.id));
-        if(typeof produces === 'undefined' || produces.length === 0) {
-            const acceptHandler = Decorator.getRepresentationHandler('REQUEST_ACCEPT', this.current.decoratorMap);
-            const acceptConfig = acceptHandler.matchToNodeDecorator(this.node);
-            return acceptHandler.getPropertyValueAsArray(acceptConfig.decorator, acceptHandler.getPropertyByType(acceptConfig.id));
+    public getProduces() : string[] {
+        let representation = this.current.decoratorMapper.match('RESPONSE_PRODUCES', this.node);
+        if(typeof representation === 'undefined') {
+            return [];
         }
 
-        return produces;
+        let value : string[] | string = representation.getPropertyValue() as string[] | string;
+        if(typeof value === 'undefined') {
+            return [];
+        }
+
+        value = Array.isArray(value) ? value : [value];
+
+        if(value.length === 0) {
+            representation = this.current.decoratorMapper.match('REQUEST_ACCEPT', this.node);
+            if(typeof representation === 'undefined') {
+                return [];
+            }
+
+            value = representation.getPropertyValue()  as string[] | string;
+
+            if(typeof value === 'undefined') {
+                return [];
+            }
+
+            value = Array.isArray(value) ? value : [value];
+        }
+
+        return value;
     }
 
-    public getConsumes() {
-        const handler = Decorator.getRepresentationHandler('REQUEST_CONSUMES', this.current.decoratorMap);
-        const config = handler.matchToNodeDecorator(this.node);
+    public getConsumes() : string[] {
+        const representation = this.current.decoratorMapper.match('REQUEST_CONSUMES', this.node);
+        if(typeof representation === 'undefined') {
+            return [];
+        }
 
-        return handler.getPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.id));
+        let value : string[] | string = representation.getPropertyValue() as string[] | string;
+        if(typeof value === 'undefined') {
+            return [];
+        }
+
+        value = Array.isArray(value) ? value : [value];
+
+        return value;
     }
 
-    public getTags() {
-        const handler = Decorator.getRepresentationHandler('SWAGGER_TAGS', this.current.decoratorMap);
-        const config = handler.matchToNodeDecorator(this.node);
+    public getTags() : string[] {
+        const representation = this.current.decoratorMapper.match('SWAGGER_TAGS', this.node);
+        if(typeof representation === 'undefined') {
+            return [];
+        }
 
-        return handler.getPropertyValueAsArray(config.decorator, handler.getPropertyByType(config.id));
+        let value : string[] | string = representation.getPropertyValue() as string[] | string;
+        if(typeof value === 'undefined') {
+            return [];
+        }
+
+        value = Array.isArray(value) ? value : [value];
+
+        return value;
     }
 
     // -------------------------------------------

@@ -1,5 +1,4 @@
 import {ClassDeclaration, MethodDeclaration, SyntaxKind} from 'typescript';
-import {Decorator} from "../decorator/type";
 import {EndpointGenerator} from './endpoint';
 import {MetadataGenerator} from './index';
 import {MethodGenerator} from './method';
@@ -48,11 +47,9 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     }
 
     private buildMethods() : Method[] {
-        const handler = Decorator.getRepresentationHandler('SWAGGER_HIDDEN', this.current.decoratorMap);
-
         return this.node.members
             .filter((method: { kind: unknown; }) => (method.kind === SyntaxKind.MethodDeclaration))
-            .filter((method: MethodDeclaration) => !handler.isPresentOnNode(method))
+            .filter((method: MethodDeclaration) => typeof this.current.decoratorMapper.match('SWAGGER_HIDDEN', method) === 'undefined')
             .map((method: MethodDeclaration) => new MethodGenerator(method, this.current,this.path || ''))
             .filter((generator: MethodGenerator) => {
                 if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {

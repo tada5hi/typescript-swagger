@@ -1,7 +1,7 @@
-import {Decorator} from "../type";
+import {Decorator} from "../../../../type";
 
 export namespace TypescriptRestLibrary {
-    export const DecoratorRepresentations : Partial<Decorator.Representation> = {
+    export const DecoratorRepresentations: Decorator.TypeRepresentationMapping = {
         // Class
         CLASS_PATH: {
             id: 'Path',
@@ -120,5 +120,5 @@ export namespace TypescriptRestLibrary {
             id: 'FileParam',
             properties: [{}]
         },
-    };
+    } as Decorator.TypeRepresentationMapping;
 }

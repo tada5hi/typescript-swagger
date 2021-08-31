@@ -31,5 +31,6 @@ module.exports = {
             statements: 73
         }
     },
-    rootDir: '../'
+    rootDir: '../',
+    verbose: true
 };

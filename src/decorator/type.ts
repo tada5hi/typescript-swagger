@@ -1,7 +1,3 @@
-import {hasOwnProperty} from "../metadata/resolver/utils";
-import {findBuildInIDRepresentation, isBuildInIncluded} from "./build-in";
-import {findLibraryIDRepresentation, isLibraryIncluded, Library} from "./library";
-import {RepresentationManager} from "./manager";
 import {DecoratorData} from "./utils";
 
 export namespace Decorator {
@@ -66,7 +62,7 @@ export namespace Decorator {
     // -------------------------------------------
 
     export type PropertyType = 'PAYLOAD' | 'STATUS_CODE' | 'DESCRIPTION' /* | 'PATH' | 'MEDIA_TYPE' | 'KEY' */ | 'OPTIONS' | 'SIMPLE' | 'TYPE';
-    export interface Property {
+    export interface PropertyConfig {
         /**
          * Default: 'SIMPLE'
          */
@@ -87,77 +83,29 @@ export namespace Decorator {
 
     // -------------------------------------------
 
-    export type Representation = Record<Type, RepresentationConfig | RepresentationConfig[]>;
-    export interface RepresentationConfig {
+    export type Library = 'typescript-rest' | '@decorators/express';
+
+    // -------------------------------------------
+
+    export type ConfigMappingOption = boolean | Type | Type[] | Record<Type, boolean>;
+
+    export type TypeRepresentationMapping = Record<Type, Representation | Representation[]>;
+
+    export interface Representation {
         id: string;
         decorator?: DecoratorData;
         decorators?: DecoratorData[];
-        properties?: Property[];
+        properties?: PropertyConfig[];
     }
 
     export type ConfigLibrary =
         Library |
         Library[] |
-        Record<
-            Library,
-            Type[] | Type | Record<Type, boolean>
-            >;
+        Record<Library, ConfigMappingOption>;
 
     export interface Config {
         useLibrary?: ConfigLibrary;
-        useBuildIn?: boolean | Type[] | Record<Type, boolean> | Type;
-        override?: Representation;
-    }
-
-    // -------------------------------------------
-    
-
-    
-    const handlerCache : Partial<Record<Type, RepresentationManager>> = {};
-
-    function toManyRepresentation(representation: RepresentationConfig | RepresentationConfig[]) : RepresentationConfig[] {
-        return Array.isArray(representation) ? representation : [representation];
-    }
-
-    export function getRepresentationHandler(id: Type, map?: Config) : RepresentationManager {
-        let value : RepresentationConfig[] = [];
-        
-        if(hasOwnProperty(handlerCache, id)) {
-            return handlerCache[id];
-        }
-        
-        if(typeof map === 'undefined' || typeof map.override === 'undefined' || !hasOwnProperty(map.override, id)) {
-            const libraries : Library[] = [
-                "@decorators/express", 
-                "typescript-rest"
-            ];
-            
-            for(let i=0; i<libraries.length; i++) {
-                if(!isLibraryIncluded(libraries[i], map)) {
-                    continue; 
-                }
-
-                const currentValue = findLibraryIDRepresentation(libraries[i], id, map);
-
-                if(typeof currentValue !== 'undefined') {
-                    value = [...value, ...toManyRepresentation(currentValue)];
-                }
-            }
-
-            if(isBuildInIncluded(map, id)) {
-                const buildInValue = findBuildInIDRepresentation(id);
-                if(typeof buildInValue !== 'undefined') {
-                    value = [...value, ...toManyRepresentation(buildInValue)];
-                }
-            }
-        } else {
-            value = toManyRepresentation(map.override[id]);
-        }
-
-        const resolver = new RepresentationManager(id, value);
-
-        handlerCache[id] = resolver;
-
-        return resolver;
+        useBuildIn?: ConfigMappingOption;
+        override?: TypeRepresentationMapping;
     }
 }

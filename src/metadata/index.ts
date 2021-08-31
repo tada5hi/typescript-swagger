@@ -17,6 +17,7 @@ import {
 } from 'typescript';
 import {SwaggerConfig} from "../config";
 import {useDebugger} from "../debug";
+import {DecoratorMapper} from "../decorator/mapper";
 import {Decorator} from "../decorator/type";
 import {ControllerGenerator} from './controller';
 import {TypeNodeResolver} from "./resolver";
@@ -32,6 +33,8 @@ export class MetadataGenerator {
     public readonly typeChecker: TypeChecker;
 
     public readonly decoratorMap?: Decorator.Config;
+
+    public readonly decoratorMapper: DecoratorMapper;
 
     private readonly swaggerConfig: MetadataSwaggerConfig;
     private readonly program: Program;
@@ -50,6 +53,8 @@ export class MetadataGenerator {
         this.decoratorMap = swaggerConfig.decoratorConfig;
 
         TypeNodeResolver.clearCache();
+
+        this.decoratorMapper = new DecoratorMapper(swaggerConfig.decoratorConfig);
 
         const sourceFiles = this.scanSourceFiles(swaggerConfig.entryFile);
 
@@ -203,13 +208,14 @@ export class MetadataGenerator {
     }
 
     private buildControllers() {
-        const hiddenHandler = Decorator.getRepresentationHandler('SWAGGER_HIDDEN', this.decoratorMap);
-        const pathHandler = Decorator.getRepresentationHandler('CLASS_PATH', this.decoratorMap);
-
         return this.nodes
             .filter(node => node.kind === SyntaxKind.ClassDeclaration)
-            .filter(node => !hiddenHandler.isPresentOnNode(node))
-            .filter(node => pathHandler.isPresentOnNode(node))
+            .filter(node => {
+                const isHidden = this.decoratorMapper.match('SWAGGER_HIDDEN', node);
+
+                return typeof isHidden === 'undefined';
+            })
+            .filter(node => typeof this.decoratorMapper.match('CLASS_PATH', node) !== 'undefined')
             .map((classDeclaration: ClassDeclaration) => new ControllerGenerator(classDeclaration, this))
             .filter(generator => generator.isValid())
             .map(generator => generator.generate());

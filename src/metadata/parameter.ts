@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
-import {RepresentationManager} from "../decorator/manager";
+import {RepresentationManager} from "../decorator/representation";
 import {Decorator} from "../decorator/type";
-import {DecoratorData, getDecorators} from '../decorator/utils';
+import {getDecorators} from '../decorator/utils';
 import { MetadataGenerator} from './index';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
@@ -21,8 +21,7 @@ const supportedParameterKeys : Decorator.ParameterServerType[] = [
 ];
 
 export class ParameterGenerator {
-    protected decoratorHandler?: RepresentationManager;
-    protected decorator?: DecoratorData;
+    protected representationMapper: RepresentationManager;
 
     constructor(
         private readonly parameter: ts.ParameterDeclaration,
@@ -33,26 +32,15 @@ export class ParameterGenerator {
 
     public generate(): Parameter {
         const decorators = getDecorators(this.parameter);
-        const decoratorNames = decorators.map(decorator => decorator.text);
 
         for(let i=0; i<supportedParameterKeys.length; i++) {
-            const handler = Decorator.getRepresentationHandler(supportedParameterKeys[i], this.current.decoratorMap);
-            const names = handler.getNames();
-
-            let index: number = -1;
-            for(let j=0; j<names.length; j++) {
-                index = decoratorNames.indexOf(names[j]);
-                if(index !== -1) {
-                    break;
-                }
-            }
-
-            if(index === -1) {
+            const representation = this.current.decoratorMapper.match(supportedParameterKeys[i], decorators);
+            if(typeof representation === 'undefined') {
                 continue;
             }
 
-            this.decorator = decorators[index];
-            this.decoratorHandler = handler;
+            // grab the first decorator :)
+            this.representationMapper = representation;
 
             switch (supportedParameterKeys[i]) {
                 case 'SERVER_CONTEXT':
@@ -96,10 +84,10 @@ export class ParameterGenerator {
             throw new Error(`Param can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
-            if(typeof argument === 'string') {
-                name = argument;
+        if(typeof this.representationMapper !== 'undefined') {
+            const value = this.representationMapper.getPropertyValue();
+            if(typeof value === 'string') {
+                name = value;
             }
         }
 
@@ -153,10 +141,10 @@ export class ParameterGenerator {
             throw new Error(`File(s)Param can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
-            if(typeof argument === 'string') {
-                name = argument;
+        if(typeof this.representationMapper !== 'undefined') {
+            const value = this.representationMapper.getPropertyValue();
+            if(typeof value === 'string') {
+                name = value;
             }
         }
 
@@ -188,10 +176,10 @@ export class ParameterGenerator {
             throw new Error(`Form can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler.getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
-            if(typeof argument === 'string') {
-                name = argument;
+        if(typeof this.representationMapper !== 'undefined') {
+            const value = this.representationMapper.getPropertyValue();
+            if(typeof value === 'string') {
+                name = value;
             }
         }
 
@@ -215,10 +203,10 @@ export class ParameterGenerator {
            throw new Error(`Cookie can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
-            if(typeof argument === 'string') {
-                name = argument;
+        if(typeof this.representationMapper !== 'undefined') {
+            const value = this.representationMapper.getPropertyValue();
+            if(typeof value === 'string') {
+                name = value;
             }
         }
 
@@ -242,10 +230,10 @@ export class ParameterGenerator {
             throw new Error(`Body can't support ${this.method} method`);
         }
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
-            if(typeof argument === 'string') {
-                name = argument;
+        if(typeof this.representationMapper !== 'undefined') {
+            const value = this.representationMapper.getPropertyValue();
+            if(typeof value === 'string') {
+                name = value;
             }
         }
 
@@ -269,10 +257,10 @@ export class ParameterGenerator {
             throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a header parameter in '${this.getCurrentLocation()}'.`);
         }
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
-            if(typeof argument === 'string') {
-                name = argument;
+        if(typeof this.representationMapper !== 'undefined') {
+            const value = this.representationMapper.getPropertyValue();
+            if(typeof value === 'string') {
+                name = value;
             }
         }
 
@@ -304,28 +292,15 @@ export class ParameterGenerator {
         let name : string = parameterName;
         let options : any = {};
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const properties = this.decoratorHandler.getPropertiesByTypes(this.decorator.text, ['SIMPLE', 'OPTIONS']);
-            // tslint:disable-next-line:forin
-            for(const key in properties) {
-                if(!properties.hasOwnProperty(key)) {
-                    continue;
-                }
+        if(typeof this.representationMapper !== 'undefined') {
+            const nameValue = this.representationMapper.getPropertyValue('SIMPLE');
+            if(typeof nameValue === 'string') {
+                name = nameValue;
+            }
 
-                switch (key) {
-                    case 'SIMPLE':
-                        const propertyName = this.decoratorHandler. getPropertyValueAsItem(this.decorator, properties[key]);
-                        if(typeof propertyName !== 'undefined') {
-                            name = propertyName;
-                        }
-                        break;
-                    case 'OPTIONS':
-                        const propertyOptions = this.decoratorHandler. getPropertyValueAsItem(this.decorator, properties[key]);
-                        if(typeof propertyOptions !== 'undefined') {
-                            options = propertyOptions;
-                        }
-                        break;
-                }
+            const optionsValue = this.representationMapper.getPropertyValue('OPTIONS');
+            if(typeof optionsValue !== 'undefined') {
+                options = optionsValue;
             }
         }
 
@@ -350,10 +325,10 @@ export class ParameterGenerator {
 
         const type = this.getValidatedType(this.parameter);
 
-        if(typeof this.decoratorHandler !== 'undefined' && typeof this.decorator !== 'undefined') {
-            const argument =  this.decoratorHandler. getPropertyValueAsItem(this.decorator, this.decoratorHandler.getPropertyByType(this.decorator.text));
-            if(typeof argument === 'string') {
-                pathName = argument;
+        if(typeof this.representationMapper !== 'undefined') {
+            const value = this.representationMapper.getPropertyValue();
+            if(typeof value === 'string') {
+                pathName = value;
             }
         }
 
