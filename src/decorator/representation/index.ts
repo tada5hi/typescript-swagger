@@ -56,16 +56,6 @@ export class RepresentationManager {
         return this.representation.properties[index];
     }
 
-    public getPropertyConfigurations(types?: Decorator.PropertyType[]) : Decorator.Property[] {
-        if (typeof types === 'undefined') {
-            return this.representation.properties;
-        }
-
-        return this.representation.properties
-            // tslint:disable-next-line:no-shadowed-variable
-            .filter(property => types.indexOf(property.type) !== -1);
-    }
-
     // -------------------------------------------
 
     protected extendProperties() : void {

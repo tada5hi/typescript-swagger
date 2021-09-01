@@ -362,7 +362,26 @@ interface Person {
 
 ### Swagger-config.json
 
-The swagger config file supports the following properties:
+The `decorator` property object of the config file can have the following properties:
+
+```typescript
+import {Decorator} from 'typescript-swagger';
+
+export namespace Decorator {
+    // ...
+    export type Config = {
+        useLibrary? : Decorator.Library | Array<Decorator.Library> | Record<Library, ID> | Record<Decorator.Library, Decorator.Representation>;
+        useBuildIn? : boolean | Array<Decorator.ID> | Record<Decorator.ID, boolean> | Decorator.ID;
+        override? : Decorator.Representation;
+    };
+    // ...
+}
+```
+
+Please read the [TypeRepresentationMapping (TRM)](#typerepresentationmapping-trm) section for further information to provide
+valid values to override or extend library or build-in TRMs.
+
+The `swagger` property object of the config file on the other hand supports the following properties:
 
 Property | Type | Default | Description
 -------- | ---- | ----- | -----------
@@ -398,82 +417,6 @@ export type SecureDefinition = {
     }
 }
 ```
-
-#### DecoratorConfig
-The decorator contract is defined as followed:
-```typescript
-import {Decorator} from 'typescript-swagger';
-
-export type Config = {
-    useLibrary?: Decorator.Library | Array<Decorator.Library> | Record<Library, ID> | Record<Decorator.Library, Decorator.Representation>;
-    useBuildIn?: boolean | Array<Decorator.ID> | Record<Decorator.ID, boolean> | Decorator.ID;
-    override?: Decorator.Representation;
-}
-```
-
-Please read the [TypeRepresentationMapping](#typerepresentationmapping-trm) section for further information to provide
-valid values to override or extend library or build-in decorators.
-
-The referenced type(s) in the `Decorator` namespace are defined as follows:
-
-```typescript
-export type Library = 'typescript-rest' | '@decorators/express';
-export type Representation = Record<ID, string | Array<string>>;
-
-export type Type = ClassType | MethodType | ParameterType;
-
-export type ClassType =
-    'SWAGGER_TAGS' |
-    'CLASS_PATH' |
-    MethodAndCLassType
-    ;
-
-export type MethodAndCLassType =
-    'REQUEST_ACCEPT' |
-    'RESPONSE_EXAMPLE' |
-    'RESPONSE_DESCRIPTION' |
-    'REQUEST_CONSUMES' |
-    'RESPONSE_PRODUCES' |
-    'SWAGGER_HIDDEN'
-    ;
-
-export type MethodHttpVerbType =
-    'ALL' |
-    'GET' |
-    'POST' |
-    'PUT' |
-    'DELETE' |
-    'PATCH' |
-    'OPTIONS' |
-    'HEAD';
-
-export type MethodType =
-    'METHOD_PATH' |
-    MethodHttpVerbType |
-    MethodAndCLassType
-    ;
-
-export type ParameterType =
-    ParameterServerType |
-    'IS_INT' |
-    'IS_LONG' |
-    'IS_FlOAT' |
-    'IS_DOUBLE'
-    ;
-
-export type ParameterServerType =
-    'SERVER_CONTEXT' |
-    'SERVER_PARAMS' |
-    'SERVER_QUERY' |
-    'SERVER_FORM' |
-    'SERVER_BODY' |
-    'SERVER_HEADERS' |
-    'SERVER_COOKIES' |
-    'SERVER_PATH_PARAMS' |
-    'SERVER_FILE_PARAM' |
-    'SERVER_FILES_PARAM';
-```
-
 
 #### Example
 
@@ -542,8 +485,7 @@ swagger:
 
 ## Decorator(s)
 
-The information which are required to generate fully featured swagger documentations are collected by consulting decorators
-present on your code.
+The information which are required to generate swagger documentations are collected by consulting decorators present on your code.
 Few decorator `Type-Representation-Mappings` ([TRMs](#typerepresentationmapping-trm)) are already provided by this library and can also be disabled.
 `TRMs` by third party libraries (f.e @decorators/express or typescript-rest) can be  extended/replaced as well.
 You can also deposit your own DTRMs.
@@ -565,11 +507,11 @@ The `Type` can have one of the following values: SWAGGER_TAGS, CLASS_PATH, ... [
 The `Representation` is defined as described in the following:
 ```typescript
 interface Representation {
-    name: string;
+    id: string;
     properties?: Property[]
 }
 ```
-The `name` attribute is representative for the actual decorator text/name.
+The `id` attribute is representative for the actual decorator text/name.
 
 For a few decorators the library expects different properties. How these properties/information
 are available, should be provided by the `properties` attribute of the representation config.
@@ -596,7 +538,7 @@ export interface Property {
 }
 ```
 
-If an attribute (type, declaredAs, amount, position) is not defined the default value will be applied.
+If an attribute (type, declaredAs, amount, position) is not defined the default value(s) will be applied.
 
 Which `PropertyType(s)` are available for a given decorator is described in the ([Specification](#specification)) section.
 In case for the build-in decorators the representation is defined as follows:
