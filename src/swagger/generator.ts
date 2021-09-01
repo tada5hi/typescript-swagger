@@ -454,8 +454,6 @@ export class SpecGenerator {
             return this.getSwaggerTypeForIntersectionType(type);
         } else if (Resolver.isNestedObjectLiteralType(type)) {
             return this.getSwaggerTypeForObjectLiteral(type);
-        } else {
-            console.log(type);
         }
 
         return {} as Swagger.BaseSchema;
@@ -524,12 +522,11 @@ export class SpecGenerator {
             date: { type: 'string', format: 'date' },
             datetime: { type: 'string', format: 'date-time' },
             double: { type: 'number', format: 'double' },
-            file: { type: 'file' },
+            file: { type: 'string', format: 'binary' },
             float: { type: 'number', format: 'float' },
             integer: { type: 'integer', format: 'int32' },
             long: { type: 'integer', format: 'int64' },
             object: {
-                additionalProperties: true,
                 type: 'object',
             },
             string: { type: 'string' },
