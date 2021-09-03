@@ -23,7 +23,8 @@ export namespace Decorator {
         'RESPONSE_DESCRIPTION' |
         'REQUEST_CONSUMES' |
         'RESPONSE_PRODUCES' |
-        'SWAGGER_HIDDEN'
+        'HIDDEN' |
+        'EXTENSION'
         ;
 
     export type MethodHttpVerbType =
@@ -38,6 +39,7 @@ export namespace Decorator {
 
     export type MethodType =
         'METHOD_PATH' |
+        'DEPRECATED' |
         MethodHttpVerbType |
         MethodAndCLassType
         ;
@@ -84,6 +86,14 @@ export namespace Decorator {
          * Default: 0
          */
         position?: number;
+    }
+
+    export interface PropertyItem {
+        type: 'array' | 'element';
+        srcArgumentType: 'argument' | 'typeArgument';
+        srcPosition?: number;
+        srcAmount?: number;
+        srcStrategy?: 'merge' | 'none';
     }
 
     // -------------------------------------------

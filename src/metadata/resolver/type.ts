@@ -207,6 +207,7 @@ export namespace Resolver {
         typeName: RefTypeLiteral;
         refName: string;
         example?: unknown;
+        deprecated: boolean;
     }
 
     export interface RefEnumType extends ReferenceTypeBase {

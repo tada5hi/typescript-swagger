@@ -1,6 +1,7 @@
 'use strict';
 
 import {Decorator} from "./decorator/type";
+import {SwaggerV2} from "./swagger/type/v2";
 
 export interface Config {
     /**
@@ -26,9 +27,9 @@ export interface SwaggerConfig {
     yaml: boolean;
 
     /**
-     * Generated SwaggerConfig.json will output here
+     * Generated swagger.{json|yaml} will output here
      */
-    outputDirectory: string | string[];
+    outputDirectory: string;
 
     /**
      * The entry point to your API
@@ -82,17 +83,7 @@ export interface SwaggerConfig {
      * specification. This does not enforce the security schemes on the operations
      * and only serves to provide the relevant details for each scheme.
      */
-    securityDefinitions?: {
-        [name: string]: {
-            type: string;
-            name?: string;
-            authorizationUrl?: string;
-            tokenUrl?: string;
-            flow?: string;
-            in?: string;
-            scopes?: { [scopeName: string]: string; }
-        }
-    };
+    securityDefinitions?: Record<string, SwaggerV2.Security>;
 
     /**
      * Default consumes property for the entire API
@@ -114,9 +105,4 @@ export interface SwaggerConfig {
      * Directory to ignore during TypeScript metadata scan.
      */
     ignore?: string[];
-
-    /**
-     * Directory to allow during TypeScript metadata scan.
-     */
-    allow?: string[];
 }

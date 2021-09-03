@@ -115,6 +115,7 @@ export class TypeNodeResolver {
                 .reduce((res, propertySignature: ts.PropertySignature) => {
                     const type = new TypeNodeResolver(propertySignature.type as ts.TypeNode, this.current, propertySignature, this.context).resolve();
                     const property: Property = {
+                        deprecated: isExistJSDocTag(propertySignature, tag => tag.tagName.text === 'deprecated'),
                         example: TypeNodeResolver.getNodeExample(propertySignature),
                         default: getJSDocTagComment(propertySignature, 'default'),
                         description: this.getNodeDescription(propertySignature),
@@ -122,7 +123,7 @@ export class TypeNodeResolver {
                         name: (propertySignature.name as ts.Identifier).text,
                         required: !propertySignature.questionToken,
                         type: type,
-                        validators: getPropertyValidators(propertySignature) || {},
+                        validators: getPropertyValidators(propertySignature) || {}
                     };
 
                     return [property, ...res];
@@ -192,6 +193,7 @@ export class TypeNodeResolver {
                     return {
                         name: property.getName(),
                         required: required,
+                        deprecated: false,
                         type: new TypeNodeResolver(typeNode, this.current, this.typeNode, this.context, this.referencer).resolve(),
                         validators: {},
                     };
@@ -600,6 +602,7 @@ export class TypeNodeResolver {
             members: enums as string[],
             memberNames: enumNames,
             refName: enumName,
+            deprecated: isExistJSDocTag(enumDeclaration, tag => tag.tagName.text === 'deprecated')
         };
     }
 
@@ -685,6 +688,7 @@ export class TypeNodeResolver {
                     members: [this.current.typeChecker.getConstantValue(declaration)!],
                     // @ts-ignore
                     memberNames: [declaration.name.getText()],
+                    deprecated: isExistJSDocTag(declaration, tag => tag.tagName.text === 'deprecated')
                 };
             } else {
                 referenceType = this.getModelReference(declaration, name, utilityType, utilityOptions);
@@ -725,15 +729,16 @@ export class TypeNodeResolver {
             refName: refName,
             format: TypeNodeResolver.getNodeFormat(declaration),
             type: type,
-            validators: getPropertyValidators
-            (declaration) || {},
+            validators: getPropertyValidators(declaration) || {},
+            deprecated: isExistJSDocTag(declaration, tag => tag.tagName.text === 'deprecated'),
             ...(example && { example: example }),
         };
     }
 
-    private getModelReference(modelType: ts.InterfaceDeclaration | ts.ClassDeclaration, name: string, utilityType?: UtilityType, utilityOptions?: UtilityOptions) {
+    private getModelReference(modelType: ts.InterfaceDeclaration | ts.ClassDeclaration, name: string, utilityType?: UtilityType, utilityOptions?: UtilityOptions) : Resolver.ReferenceType {
         const example = TypeNodeResolver.getNodeExample(modelType);
         const description = this.getNodeDescription(modelType);
+        const deprecated = isExistJSDocTag(modelType, tag => tag.tagName.text === 'deprecated') || typeof this.current.decoratorMapper.match('DEPRECATED', modelType) !== 'undefined';
 
         // Handle toJSON methods
         if (!modelType.name) {
@@ -754,9 +759,10 @@ export class TypeNodeResolver {
                 typeName: 'refAlias',
                 description: description,
                 type: new TypeNodeResolver(nodeType, this.current).resolve(),
+                deprecated: deprecated,
                 validators: {},
                 ...(example && { example: example }),
-            } as Resolver.ReferenceType;
+            };
         }
 
         const properties = this.getModelProperties(modelType, undefined, utilityType, utilityOptions);
@@ -769,6 +775,7 @@ export class TypeNodeResolver {
             description: description,
             properties: this.filterUtilityProperties(inheritedProperties, utilityType, utilityOptions),
             refName: TypeNodeResolver.getRefTypeName(name, utilityType),
+            deprecated: deprecated,
             ...(example && { example: example }),
         };
 
@@ -1023,6 +1030,7 @@ export class TypeNodeResolver {
         }
 
         const property: Property = {
+            deprecated: isExistJSDocTag(propertySignature, tag => tag.tagName.text === 'deprecated'),
             default: getJSDocTagComment(propertySignature, 'default'),
             description: this.getNodeDescription(propertySignature),
             example: TypeNodeResolver.getNodeExample(propertySignature),
@@ -1030,7 +1038,7 @@ export class TypeNodeResolver {
             name: identifier.text,
             required: required,
             type: new TypeNodeResolver(propertySignature.type, this.current, propertySignature.type.parent, this.context, propertySignature.type).resolve(),
-            validators: getPropertyValidators(propertySignature) || {},
+            validators: getPropertyValidators(propertySignature) || {}
         };
         return property;
     }
@@ -1068,6 +1076,7 @@ export class TypeNodeResolver {
         }
 
         const property: Property = {
+            deprecated: isExistJSDocTag(propertyDeclaration, tag => tag.tagName.text === 'deprecated'),
             default: getInitializerValue(propertyDeclaration.initializer, this.current.typeChecker),
             description: this.getNodeDescription(propertyDeclaration),
             example: TypeNodeResolver.getNodeExample(propertyDeclaration),

@@ -3,9 +3,11 @@
 
 import {ArgumentParser} from 'argparse';
 import {Debugger} from 'debug';
+import {Specification} from "../config";
 import {useDebugger} from "../debug";
 import {MetadataGenerator} from '../metadata';
-import {SpecGenerator} from '../swagger/generator';
+import {Version2SpecGenerator} from "../swagger/generator/v2";
+import {Version3SpecGenerator} from "../swagger/generator/v3";
 import {getCompilerOptions, getSwaggerConfig, validateSwaggerConfig} from "./utils";
 
 
@@ -59,12 +61,25 @@ try {
     const metadata = new MetadataGenerator(config, compilerOptions).generate();
     debugLog('Generated Metadata: %j', metadata);
 
-    new SpecGenerator(metadata, swaggerConfig).generate()
+    let specGenerator : Version2SpecGenerator | Version3SpecGenerator;
+    switch (config.swagger.outputFormat) {
+        case Specification.Swagger_2:
+            specGenerator = new Version2SpecGenerator(metadata, swaggerConfig);
+            break;
+        case Specification.OpenApi_3:
+            specGenerator = new Version3SpecGenerator(metadata, swaggerConfig);
+            break;
+
+    }
+
+    specGenerator.build();
+
+    specGenerator.save()
         .then(() => {
-            console.log('Generation completed');
+            console.log('Swagger file(s) saved to disk.');
         })
         .catch((err: any) => {
-            console.log(`Error generating swagger. ${err}`);
+            console.log(`Error saving generating swagger. ${err}`);
         });
 
 } catch (e) {

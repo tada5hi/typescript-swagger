@@ -63,7 +63,7 @@ export class MetadataGenerator {
 
     // -------------------------------------------------------------------------
 
-    public generate(): Metadata {
+    public generate(): Metadata.Output {
         this.buildNodesFromSourceFiles();
 
         this.debugger('Building Metadata for controllers Generator');
@@ -82,9 +82,7 @@ export class MetadataGenerator {
         this.program.getSourceFiles().forEach((sf: SourceFile) => {
             const isIgnored : boolean = this.isIgnoredPath(sf.fileName);
             if(isIgnored) {
-                if(!this.isAllowedPath(sf.fileName)) {
-                    return;
-                }
+                return;
             }
 
             forEachChild(sf, (node: any) => {
@@ -124,19 +122,6 @@ export class MetadataGenerator {
         }
 
         return this.config.swagger.ignore.some(item => minimatch(path, item));
-    }
-
-    /**
-     * Check if the source file path is in the allowed path list.
-     * @param path
-     * @protected
-     */
-    protected isAllowedPath(path: string) : boolean {
-        if(typeof this.config.swagger.allow === 'undefined') {
-            return false;
-        }
-
-        return this.config.swagger.allow.some(item => minimatch(path, item));
     }
 
     // -------------------------------------------------------------------------
@@ -206,7 +191,7 @@ export class MetadataGenerator {
         return this.nodes
             .filter(node => node.kind === SyntaxKind.ClassDeclaration)
             .filter(node => {
-                const isHidden = this.decoratorMapper.match('SWAGGER_HIDDEN', node);
+                const isHidden = this.decoratorMapper.match('HIDDEN', node);
 
                 return typeof isHidden === 'undefined';
             })

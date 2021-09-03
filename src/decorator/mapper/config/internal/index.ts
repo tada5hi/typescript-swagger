@@ -1,6 +1,18 @@
 import {Decorator} from "../../../type";
 
 export const InternalMapping: Decorator.TypeRepresentationMapping = {
+    DEPRECATED: {
+        id: 'Deprecated',
+        properties: []
+    },
+    EXTENSION: {
+        id: 'Extension',
+        properties: [
+            {amount: "one", declaredAs: "argument", position: 0},
+            {amount: "one", declaredAs: "argument", position: 1}
+        ]
+    },
+
     // Class
     SWAGGER_TAGS: {
         id: 'SwaggerTags',
@@ -32,7 +44,7 @@ export const InternalMapping: Decorator.TypeRepresentationMapping = {
         id: 'ResponseProduces',
         properties: [{amount: 'all', declaredAs: "argument"}]
     },
-    SWAGGER_HIDDEN: {
+    HIDDEN: {
         id: 'SwaggerHidden',
         properties: []
     },

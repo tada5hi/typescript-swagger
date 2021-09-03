@@ -2,7 +2,7 @@ import {ClassDeclaration, MethodDeclaration, SyntaxKind} from 'typescript';
 import {EndpointGenerator} from './endpoint';
 import {MetadataGenerator} from './index';
 import {MethodGenerator} from './method';
-import {Controller, Method} from "./type";
+import {Controller, Metadata} from "./type";
 
 export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     private genMethods: Set<string> = new Set<string>();
@@ -46,10 +46,10 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
         return (this.node as ClassDeclaration).name.text;
     }
 
-    private buildMethods() : Method[] {
+    private buildMethods() : Metadata.Method[] {
         return this.node.members
             .filter((method: { kind: unknown; }) => (method.kind === SyntaxKind.MethodDeclaration))
-            .filter((method: MethodDeclaration) => typeof this.current.decoratorMapper.match('SWAGGER_HIDDEN', method) === 'undefined')
+            .filter((method: MethodDeclaration) => !this.isHidden(method))
             .map((method: MethodDeclaration) => new MethodGenerator(method, this.current,this.path || ''))
             .filter((generator: MethodGenerator) => {
                 if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {

@@ -2,17 +2,18 @@ import * as pathUtil from 'path';
 import * as ts from 'typescript';
 import {Decorator} from "../decorator/type";
 import {getDecorators} from '../decorator/utils';
-import { getJSDocDescription, getJSDocTagComment, isExistJSDocTag } from '../utils/jsDocUtils';
+import { getJSDocDescription, getJSDocTagComment } from '../utils/jsDocUtils';
 import { EndpointGenerator } from './endpoint';
 import {MetadataGenerator} from './index';
 import { ParameterGenerator } from './parameter';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
-import {Method, Parameter, ResponseData, ResponseType} from "./type";
+import {Metadata, Parameter, Response, ResponseData} from "./type";
 import MethodHttpVerbKey = Decorator.MethodHttpVerbType;
 
+
 export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
-    private method: string;
+    private method: Metadata.MethodType;
 
     // --------------------------------------------------------------------
 
@@ -36,7 +37,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         return identifier.text;
     }
 
-    public generate(): Method {
+    public generate(): Metadata.Method {
         if (!this.isValid()) { throw new Error('This isn\'t a valid controller method.'); }
 
         this.debugger('Generating Metadata for method %s', this.getCurrentLocation());
@@ -52,10 +53,12 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         const type = new TypeNodeResolver(nodeType, this.current).resolve();
         const responses = this.mergeResponses(this.getResponses(), this.getMethodSuccessResponse(type));
 
-        const methodMetadata : Method = {
+        const methodMetadata : Metadata.Method = {
+            // todo: implement extensions
+            extensions: [],
+            isHidden: this.isHidden(this.node),
             consumes: this.getConsumes(),
-            // todo: rework deprecated
-            deprecated: isExistJSDocTag(this.node, 'deprecated'),
+            deprecated: this.isDeprecated(this.node),
             description: getJSDocDescription(this.node),
             method: this.method,
             name: (this.node.name as ts.Identifier).text,
@@ -64,7 +67,6 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             produces: this.getProduces(),
             responses: responses,
             security: this.getSecurity(),
-            // todo: rework summary
             summary: getJSDocTagComment(this.node, 'summary'),
             tags: this.getTags(),
             type: type
@@ -118,7 +120,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         }
 
         const methodDecorator = httpMethodDecorators[0];
-        this.method = methodDecorator.text.toLowerCase();
+        this.method = methodDecorator.text.toLowerCase() as Metadata.MethodType;
         this.debugger('Processing method %s decorators.', this.getCurrentLocation());
 
         this.generatePath('METHOD_PATH');
@@ -126,14 +128,16 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         this.debugger('Mapping endpoint %s %s', this.method, this.path);
     }
 
-    private getMethodSuccessResponse(type: Resolver.BaseType): ResponseType {
+    private getMethodSuccessResponse(type: Resolver.BaseType): Response {
         const responseData = MethodGenerator.getMethodSuccessResponseData(type);
 
         return {
             description: Resolver.isVoidType(type) ? 'No content' : 'Ok',
             examples: this.getMethodSuccessExamples(),
             schema: responseData.type,
-            status: responseData.status
+            status: responseData.status,
+            name: Resolver.isVoidType(type) ? '204' : '200',
+
         };
     }
 
@@ -158,7 +162,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         return this.getExamplesValue(value);
     }
 
-    private mergeResponses(responses: ResponseType[], defaultResponse: ResponseType) {
+    private mergeResponses(responses: Response[], defaultResponse: Response) {
         if (!responses || !responses.length) {
             return [defaultResponse];
         }

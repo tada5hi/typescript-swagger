@@ -5,10 +5,11 @@ import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, Type
 import {useDebugger} from "../debug";
 import {Decorator} from "../decorator/type";
 import { getDecorators } from '../decorator/utils';
+import {isExistJSDocTag} from "../utils/jsDocUtils";
 import {normalizePath} from "../utils/pathUtils";
 import {MetadataGenerator} from './index';
 import {TypeNodeResolver} from './resolver';
-import {ResponseType} from "./type";
+import {Response} from "./type";
 
 export abstract class EndpointGenerator<T extends Node> {
     protected path: string | undefined;
@@ -82,7 +83,7 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // -------------------------------------------
 
-    protected getExamplesValue(argument: any) {
+    protected getExamplesValue(argument: any) : unknown[] {
         let example: any = {};
 
         if(typeof argument === 'undefined') {
@@ -131,13 +132,13 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // -------------------------------------------
 
-    protected getResponses(): ResponseType[] {
+    protected getResponses(): Response[] {
         const representation = this.current.decoratorMapper.match('RESPONSE_DESCRIPTION', this.node);
         if(typeof representation === 'undefined') {
             return [];
         }
 
-        const responses : ResponseType[] = [];
+        const responses : Response[] = [];
 
         for(let i=0; i<representation.decorators.length; i++) {
             const description = representation.getPropertyValue('DESCRIPTION', i) || 'Ok';
@@ -150,11 +151,12 @@ export abstract class EndpointGenerator<T extends Node> {
 
             const type = representation.getPropertyValue('TYPE');
 
-            const response : ResponseType = {
+            const response : Response = {
                 description: description as string,
-                examples: examples,
+                examples: examples as unknown[],
                 schema: type ? new TypeNodeResolver(type as TypeNode, this.current).resolve() : undefined,
-                status: status as string
+                status: status as string,
+                name: status as string
             };
 
             this.debugger('Generated Responses for %s: %j', this.getCurrentLocation(), responses);
@@ -235,4 +237,16 @@ export abstract class EndpointGenerator<T extends Node> {
     protected abstract getCurrentLocation(): string;
 
     // -------------------------------------------
+
+    public isHidden(node: Node) : boolean {
+        return typeof this.current.decoratorMapper.match('HIDDEN', node) !== 'undefined';
+    }
+
+    public isDeprecated(node: Node) : boolean {
+        if (isExistJSDocTag(node, tag => tag.tagName.text === 'deprecated')) {
+            return true;
+        }
+
+        return typeof this.current.decoratorMapper.match('DEPRECATED', node) !== 'undefined';
+    }
 }

@@ -1,6 +1,7 @@
-import {SpecGenerator} from "../../../src";
 import {Decorator} from "../../../src/decorator/type";
 import {MetadataGenerator} from "../../../src/metadata";
+import {Version2SpecGenerator} from "../../../src/swagger/generator/v2";
+import {Version3SpecGenerator} from "../../../src/swagger/generator/v3";
 import {getDefaultOptions} from "../../data/defaultOptions";
 
 const jsonata = require('jsonata');
@@ -30,10 +31,10 @@ export function createSwaggerSpecGenerator(
         compilerOptions,
     ).generate();
 
-    return new SpecGenerator(metadata, getDefaultOptions());
+    return new Version2SpecGenerator(metadata, getDefaultOptions());
 }
 
-export function buildLibraryTests(specGenerator: SpecGenerator) {
+export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
     const spec = specGenerator.getSwaggerSpec();
 
     describe('TypescriptRestLibrary', () => {
@@ -437,9 +438,22 @@ export function buildLibraryTests(specGenerator: SpecGenerator) {
 
     describe('SpecGenerator', () => {
         it('should be able to generate open api 3.0 outputs', async () => {
-            const openapi = await new SpecGenerator(specGenerator.getMetaData(), getDefaultOptions()).getOpenApiSpec();
+            const openapi = await new Version3SpecGenerator(specGenerator.getMetaData(), getDefaultOptions()).getSwaggerSpec();
             const expression = jsonata('paths."/supersecure".get.security');
-            expect(expression.evaluate(openapi)).toStrictEqual([{ 'default': ['access_token'] }, { 'default': ['user_email'] }, { 'default': [] }]);
+            expect(expression.evaluate(openapi)).toStrictEqual([
+                {
+                    name: 'default',
+                    scopes: ['access_token'] // todo: this should be object
+                },
+                {
+                    name: 'default',
+                    scopes: ['user_email']
+                },
+                {
+                    name: 'default',
+                    scopes: []
+                }
+            ]);
             expect(openapi.openapi).toEqual('3.0.0');
         });
     });
