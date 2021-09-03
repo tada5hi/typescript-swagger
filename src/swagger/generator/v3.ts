@@ -238,14 +238,11 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
                 };
 
                 if (res.examples) {
-                    let exampleCounter = 1;
-                    /* eslint-disable @typescript-eslint/dot-notation */
-                    swaggerResponses[name].content[contentKey]['examples'] = {};
-                    for(let i=0; i<res.examples.length; i++) {
-                        swaggerResponses[name].content[contentKey]['examples'][`Example ${exampleCounter++}`] = {
-                            value: res.examples[i]
-                        };
-                    }
+                    swaggerResponses[name].content[contentKey]['examples'] = {
+                        default: {
+                            value: res.examples
+                        }
+                    };
                 }
             }
 

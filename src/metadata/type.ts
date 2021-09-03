@@ -87,7 +87,7 @@ export interface Response {
     description: string;
     status: string;
     schema?: Resolver.BaseType;
-    examples?: unknown[];
+    examples?: unknown[] | unknown;
 }
 
 export interface Property {

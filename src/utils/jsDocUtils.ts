@@ -1,18 +1,23 @@
 import {Identifier, isJSDocParameterTag, JSDoc, JSDocTag, Node, SyntaxKind} from 'typescript';
 import {ResolverError} from "../metadata/resolver/error";
+import {hasOwnProperty} from "../metadata/resolver/utils";
 
 // -----------------------------------------
 // Description
 // -----------------------------------------
 export function getJSDocDescription(node: Node) : string | undefined {
-    const jsDocs = (node as any).jsDoc as JSDoc[];
-    if (!jsDocs || !jsDocs.length) { return ''; }
-
-    if(typeof jsDocs[0].comment === 'string') {
-        return jsDocs[0].comment;
+    if(!hasOwnProperty(node, 'jsDoc')) {
+        return undefined;
     }
 
-    return undefined;
+    const jsDocs = (node.jsDoc as JSDoc[])
+        .filter(jsDoc => typeof jsDoc.comment === 'string');
+
+    if (jsDocs.length === 0) {
+        return undefined;
+    }
+
+    return jsDocs[0].comment;
 }
 
 

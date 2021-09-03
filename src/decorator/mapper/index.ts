@@ -8,7 +8,7 @@ import {getLibraryMapping} from "./config/library/utils";
 import {isMappingTypeIncluded, reduceTypeRepresentationMapping} from "./utils";
 
 export class DecoratorMapper {
-    protected mapping : Decorator.TypeRepresentationMapping;
+    protected mapping : Partial<Decorator.TypeRepresentationMap>;
 
     constructor(
         protected config?: Decorator.Config
@@ -22,8 +22,8 @@ export class DecoratorMapper {
      * @param type
      * @param data
      */
-    public match(
-        type: Decorator.Type,
+    public match<T extends Decorator.Type>(
+        type: T,
         data: Decorator.Data[] | Node
     ) {
         if(!hasOwnProperty(this.mapping, type)) {
@@ -32,21 +32,21 @@ export class DecoratorMapper {
 
         const decorators : Decorator.Data[] = Array.isArray(data) ? data : getDecorators(data);
 
-        const representations = this.mapping[type];
+        const representations : Array<Decorator.Representation<T>> | Decorator.Representation<T> = this.mapping[type] as Array<Decorator.Representation<T>>;
         if(Array.isArray(representations)) {
             for(let i=0; i<representations.length; i++) {
                 const items = decorators.filter(decorator => decorator.text === representations[i].id);
                 if(items.length > 0) {
-                    return new RepresentationManager(
+                    return new RepresentationManager<T>(
                         representations[i],
                         items
                     );
                 }
             }
         } else {
-            const items = decorators.filter(decorator => decorator.text === representations.id);
+            const items = decorators.filter(decorator => decorator.text === (representations as Decorator.Representation<T>).id);
             if(items.length > 0) {
-                return new RepresentationManager(
+                return new RepresentationManager<T>(
                     representations,
                     items
                 );
@@ -63,7 +63,7 @@ export class DecoratorMapper {
             return;
         }
 
-        const items : Decorator.TypeRepresentationMapping[] = [];
+        const items : Array<Partial<Decorator.TypeRepresentationMap>> = [];
 
         // mapping - internal
         if(typeof this.config.useBuildIn === 'undefined') {
@@ -115,8 +115,8 @@ export class DecoratorMapper {
      * @param mappings
      * @private
      */
-    private merge(...mappings: Decorator.TypeRepresentationMapping[]) : Decorator.TypeRepresentationMapping {
-        const result : Decorator.TypeRepresentationMapping = {} as Decorator.TypeRepresentationMapping;
+    private merge(...mappings: Array<Partial<Decorator.TypeRepresentationMap>>) : Partial<Decorator.TypeRepresentationMap> {
+        const result : Partial<Decorator.TypeRepresentationMap> = {};
 
         // we need all available mapping keys :)
         let keys : Decorator.Type[] = mappings
@@ -126,11 +126,11 @@ export class DecoratorMapper {
         keys = Array.from(new Set(keys));
 
         for(let i=0; i<keys.length; i++) {
-            const representations : Decorator.Representation[] = [];
+            const representations : Array<Decorator.Representation<any>> = [];
 
             for(let j=0; j<mappings.length; j++) {
                 if(hasOwnProperty(mappings[j], keys[i])) {
-                    const value = mappings[j][keys[i]];
+                    const value : Decorator.Representation<any> | Array<Decorator.Representation<any>> = mappings[j][keys[i]];
 
                     if(typeof value === 'undefined') {
                         continue;
@@ -144,6 +144,7 @@ export class DecoratorMapper {
                 }
             }
 
+            // @ts-ignore
             result[keys[i]] = representations;
         }
 

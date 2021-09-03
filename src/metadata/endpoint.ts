@@ -27,12 +27,12 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // --------------------------------------------------------------------
 
-    protected generatePath(key: Decorator.Type) {
+    protected generatePath(key: Extract<Decorator.Type, 'CLASS_PATH' | 'METHOD_PATH'>) {
         const values : string[] = [];
 
         const representation = this.current.decoratorMapper.match(key, this.node);
         if(typeof representation !== 'undefined') {
-            const value = representation.getPropertyValue();
+            const value = representation.getPropertyValue('DEFAULT');
             if(typeof value === 'string') {
                 values.push(value);
             }
@@ -143,7 +143,7 @@ export abstract class EndpointGenerator<T extends Node> {
         for(let i=0; i<representation.decorators.length; i++) {
             const description = representation.getPropertyValue('DESCRIPTION', i) || 'Ok';
             const status = representation. getPropertyValue('STATUS_CODE', i) || '200';
-            let examples = representation. getPropertyValue('PAYLOAD', i);
+            let examples : unknown | unknown[] = representation. getPropertyValue('PAYLOAD', i);
 
             if(typeof examples !== 'undefined') {
                 examples = this.getExamplesValue(examples);
@@ -152,8 +152,8 @@ export abstract class EndpointGenerator<T extends Node> {
             const type = representation.getPropertyValue('TYPE');
 
             const response : Response = {
-                description: description as string,
-                examples: examples as unknown[],
+                description: description,
+                examples: examples,
                 schema: type ? new TypeNodeResolver(type as TypeNode, this.current).resolve() : undefined,
                 status: status as string,
                 name: status as string
@@ -175,7 +175,7 @@ export abstract class EndpointGenerator<T extends Node> {
             return [];
         }
 
-        let value : string[] | string = representation.getPropertyValue() as string[] | string;
+        let value : string[] = representation.getPropertyValue('DEFAULT');
         if(typeof value === 'undefined') {
             return [];
         }
@@ -188,7 +188,7 @@ export abstract class EndpointGenerator<T extends Node> {
                 return [];
             }
 
-            value = representation.getPropertyValue()  as string[] | string;
+            value = representation.getPropertyValue('DEFAULT');
 
             if(typeof value === 'undefined') {
                 return [];
@@ -206,7 +206,7 @@ export abstract class EndpointGenerator<T extends Node> {
             return [];
         }
 
-        let value : string[] | string = representation.getPropertyValue() as string[] | string;
+        let value : string[] = representation.getPropertyValue('DEFAULT');
         if(typeof value === 'undefined') {
             return [];
         }
@@ -222,7 +222,7 @@ export abstract class EndpointGenerator<T extends Node> {
             return [];
         }
 
-        let value : string[] | string = representation.getPropertyValue() as string[] | string;
+        let value : string[] = representation.getPropertyValue('DEFAULT');
         if(typeof value === 'undefined') {
             return [];
         }

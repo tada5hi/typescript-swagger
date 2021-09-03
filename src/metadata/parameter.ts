@@ -21,8 +21,6 @@ const supportedParameterKeys : Decorator.ParameterServerType[] = [
 ];
 
 export class ParameterGenerator {
-    protected representationMapper: RepresentationManager;
-
     constructor(
         private readonly parameter: ts.ParameterDeclaration,
         private readonly method: string,
@@ -39,30 +37,27 @@ export class ParameterGenerator {
                 continue;
             }
 
-            // grab the first decorator :)
-            this.representationMapper = representation;
-
             switch (supportedParameterKeys[i]) {
                 case 'SERVER_CONTEXT':
                     return this.getContextParameter();
                 case 'SERVER_PARAMS':
-                    return this.getRequestParameter();
+                    return this.getRequestParameter(representation);
                 case 'SERVER_FORM':
-                    return this.getFormParameter();
+                    return this.getFormParameter(representation);
                 case 'SERVER_QUERY':
-                    return this.getQueryParameter();
+                    return this.getQueryParameter(representation);
                 case 'SERVER_BODY':
-                    return this.getBodyParameter();
+                    return this.getBodyParameter(representation);
                 case 'SERVER_HEADERS':
-                    return this.getHeaderParameter();
+                    return this.getHeaderParameter(representation);
                 case 'SERVER_COOKIES':
-                    return this.getCookieParameter();
+                    return this.getCookieParameter(representation);
                 case 'SERVER_PATH_PARAMS':
-                    return this.getPathParameter();
+                    return this.getPathParameter(representation);
                 case 'SERVER_FILE_PARAM':
-                    return this.getFileParameter();
+                    return this.getFileParameter(representation);
                 case 'SERVER_FILES_PARAM':
-                    return this.getFileParameter(true);
+                    return this.getFileParameter(representation, true);
             }
         }
 
@@ -75,7 +70,7 @@ export class ParameterGenerator {
         return `${controllerId.text}.${methodId.text}`;
     }
 
-    private getRequestParameter(): Parameter {
+    private getRequestParameter(representationManager: RepresentationManager<'SERVER_PARAMS'>): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
         const type = this.getValidatedType(this.parameter);
@@ -84,12 +79,11 @@ export class ParameterGenerator {
             throw new Error(`Param can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const value = this.representationMapper.getPropertyValue();
-            if(typeof value === 'string') {
-                name = value;
-            }
+        const value = representationManager.getPropertyValue('DEFAULT');
+        if(typeof value === 'string') {
+            name = value;
         }
+
 
         return {
             description: this.getParameterDescription(this.parameter),
@@ -133,7 +127,10 @@ export class ParameterGenerator {
     }
      */
 
-    private getFileParameter(isArray?: boolean): Parameter {
+    private getFileParameter(
+        representationManager: RepresentationManager<'SERVER_FILE_PARAM' | 'SERVER_FILES_PARAM'>,
+        isArray?: boolean
+    ): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -141,11 +138,9 @@ export class ParameterGenerator {
             throw new Error(`File(s)Param can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const value = this.representationMapper.getPropertyValue();
-            if(typeof value === 'string') {
-                name = value;
-            }
+        const value = representationManager.getPropertyValue('DEFAULT');
+        if(typeof value === 'string') {
+            name = value;
         }
 
         const elementType: Resolver.Type = { typeName: 'file' };
@@ -166,7 +161,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getFormParameter(): Parameter {
+    private getFormParameter(representationManager: RepresentationManager<'SERVER_FORM'>): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -176,12 +171,11 @@ export class ParameterGenerator {
             throw new Error(`Form can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const value = this.representationMapper.getPropertyValue();
-            if(typeof value === 'string') {
-                name = value;
-            }
+        const value = representationManager.getPropertyValue('DEFAULT');
+        if(typeof value === 'string') {
+            name = value;
         }
+
 
         return {
             description: this.getParameterDescription(this.parameter),
@@ -193,7 +187,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getCookieParameter(): Parameter {
+    private getCookieParameter(representationManager: RepresentationManager<'SERVER_COOKIES'>): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -203,11 +197,9 @@ export class ParameterGenerator {
            throw new Error(`Cookie can't support '${this.getCurrentLocation()}' method.`);
         }
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const value = this.representationMapper.getPropertyValue();
-            if(typeof value === 'string') {
-                name = value;
-            }
+        const value = representationManager.getPropertyValue('DEFAULT');
+        if(typeof value === 'string') {
+            name = value;
         }
 
         return {
@@ -220,7 +212,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getBodyParameter(): Parameter {
+    private getBodyParameter(representationManager?: RepresentationManager<'SERVER_BODY'>): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -230,9 +222,9 @@ export class ParameterGenerator {
             throw new Error(`Body can't support ${this.method} method`);
         }
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const value = this.representationMapper.getPropertyValue();
-            if(typeof value === 'string') {
+        if(typeof representationManager !== 'undefined') {
+            const value = representationManager.getPropertyValue('DEFAULT');
+            if (typeof value === 'string') {
                 name = value;
             }
         }
@@ -247,7 +239,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getHeaderParameter(): Parameter {
+    private getHeaderParameter(representationManager: RepresentationManager<'SERVER_HEADERS'>): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -257,11 +249,9 @@ export class ParameterGenerator {
             throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a header parameter in '${this.getCurrentLocation()}'.`);
         }
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const value = this.representationMapper.getPropertyValue();
-            if(typeof value === 'string') {
-                name = value;
-            }
+        const value = representationManager.getPropertyValue('DEFAULT');
+        if(typeof value === 'string') {
+            name = value;
         }
 
         return {
@@ -274,7 +264,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getQueryParameter(): Parameter {
+    private getQueryParameter(representationManager: RepresentationManager<'SERVER_QUERY'>): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         const type = this.getValidatedType(this.parameter);
 
@@ -292,16 +282,14 @@ export class ParameterGenerator {
         let name : string = parameterName;
         let options : any = {};
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const nameValue = this.representationMapper.getPropertyValue('SIMPLE');
-            if(typeof nameValue === 'string') {
-                name = nameValue;
-            }
+        const nameValue = representationManager.getPropertyValue('DEFAULT');
+        if(typeof nameValue === 'string') {
+            name = nameValue;
+        }
 
-            const optionsValue = this.representationMapper.getPropertyValue('OPTIONS');
-            if(typeof optionsValue !== 'undefined') {
-                options = optionsValue;
-            }
+        const optionsValue = representationManager.getPropertyValue('OPTIONS');
+        if(typeof optionsValue !== 'undefined') {
+            options = optionsValue;
         }
 
         return {
@@ -319,18 +307,17 @@ export class ParameterGenerator {
         };
     }
 
-    private getPathParameter(): Parameter {
+    private getPathParameter(representationManager: RepresentationManager<'SERVER_PATH_PARAMS'>): Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let pathName = parameterName;
 
         const type = this.getValidatedType(this.parameter);
 
-        if(typeof this.representationMapper !== 'undefined') {
-            const value = this.representationMapper.getPropertyValue();
-            if(typeof value === 'string') {
-                pathName = value;
-            }
+        const value = representationManager.getPropertyValue('DEFAULT');
+        if(typeof value === 'string') {
+            pathName = value;
         }
+
 
         if (!this.supportPathDataType(type)) {
             throw new InvalidParameterException(`Parameter '${parameterName}:${type}' can't be passed as a path parameter in '${this.getCurrentLocation()}'.`);

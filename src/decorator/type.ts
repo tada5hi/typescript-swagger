@@ -11,105 +11,181 @@ export namespace Decorator {
      * to specific decorator names.
      */
 
-    export type ClassType =
-        'SWAGGER_TAGS' |
-        'CLASS_PATH' |
-        MethodAndCLassType
-        ;
+    export interface TypePropertyMaps {
+        // Class Type
+        SWAGGER_TAGS: {
+            DEFAULT: string[]
+        };
+        CLASS_PATH: {
+            DEFAULT: string
+        };
 
-    export type MethodAndCLassType =
-        'REQUEST_ACCEPT' |
-        'RESPONSE_EXAMPLE' |
-        'RESPONSE_DESCRIPTION' |
-        'REQUEST_CONSUMES' |
-        'RESPONSE_PRODUCES' |
-        'HIDDEN' |
-        'EXTENSION'
-        ;
+        // Method and Class
+        REQUEST_ACCEPT: undefined;
+        RESPONSE_EXAMPLE: {
+            TYPE: unknown,
+            PAYLOAD: unknown | unknown[]
+        };
+        RESPONSE_DESCRIPTION: {
+            TYPE: unknown;
+            STATUS_CODE: number | string;
+            DESCRIPTION: string;
+            PAYLOAD: unknown | unknown[];
+        };
+        REQUEST_CONSUMES: {
+            DEFAULT: string[]
+        };
+        RESPONSE_PRODUCES: {
+            DEFAULT: string[]
+        };
+        HIDDEN: {};
+        EXTENSION: {
+            KEY: string,
+            VALUE: unknown | unknown[]
+        };
 
-    export type MethodHttpVerbType =
-        'ALL' |
-        'GET' |
-        'POST' |
-        'PUT' |
-        'DELETE' |
-        'PATCH' |
-        'OPTIONS' |
-        'HEAD';
+        // Method
+        METHOD_PATH: {
+            DEFAULT: string
+        };
+        DEPRECATED: undefined;
 
-    export type MethodType =
-        'METHOD_PATH' |
-        'DEPRECATED' |
-        MethodHttpVerbType |
-        MethodAndCLassType
-        ;
+        // METHOD HTTP
+        ALL: {
+            DEFAULT?: string
+        };
+        GET: {
+            DEFAULT?: string
+        };
+        POST: {
+            DEFAULT?: string
+        };
+        PUT: {
+            DEFAULT?: string
+        };
+        DELETE: {
+            DEFAULT?: string
+        };
+        PATCH: {
+            DEFAULT?: string
+        };
+        OPTIONS: {
+            DEFAULT?: string
+        };
+        HEAD: {
+            DEFAULT?: string
+        };
 
-    export type ParameterType =
-        ParameterServerType |
-        'IS_INT' |
-        'IS_LONG' |
-        'IS_FlOAT' |
-        'IS_DOUBLE'
-        ;
+        // Parameter
+        IS_INT: undefined;
+        IS_LONG: undefined;
+        IS_FlOAT: undefined;
+        IS_DOUBLE: undefined;
 
-    export type ParameterServerType =
-        'SERVER_CONTEXT' |
-        'SERVER_PARAMS' |
-        'SERVER_QUERY' |
-        'SERVER_FORM' |
-        'SERVER_BODY' |
-        'SERVER_HEADERS' |
-        'SERVER_COOKIES' |
-        'SERVER_PATH_PARAMS' |
-        'SERVER_FILE_PARAM' |
-        'SERVER_FILES_PARAM';
+        // Parameter Server
+        SERVER_CONTEXT: {};
+        SERVER_PARAMS: {
+            // typescript-rest
+            DEFAULT?: string
+        };
+        SERVER_QUERY: {
+            // typescript-rest
+            DEFAULT?: string,
+            OPTIONS?: Record<string, any>
+        } | undefined;
+        SERVER_FORM: {
+            // typescript-rest
+            DEFAULT?: string
+        } | undefined;
+        SERVER_BODY: {
+            // typescript-rest
+            DEFAULT?: string
+        };
+        SERVER_HEADERS: {
+            // typescript-rest
+            DEFAULT?: string
+        };
+        SERVER_COOKIES: {
+            // typescript-rest
+            DEFAULT?: string
+        };
+        SERVER_PATH_PARAMS: {
+            // typescript-rest
+            DEFAULT?: string
+        };
+        SERVER_FILE_PARAM: {
+            // typescript-rest
+            DEFAULT?: string
+        };
+        SERVER_FILES_PARAM: {
+            // typescript-rest
+            DEFAULT?: string
+        };
+    }
 
-    export type Type = ClassType | MethodType | ParameterType;
+    export type Type = keyof TypePropertyMaps;
+
+    export type MethodHttpVerbType = Extract<Type, 'ALL' | 'GET' | 'POST' | 'PUT' | 'DELETE' |
+        'PATCH' | 'OPTIONS' | 'HEAD'>;
+
+
+    export type ParameterServerType = Extract<Type, 'SERVER_CONTEXT' | 'SERVER_PARAMS' | 'SERVER_QUERY' | 'SERVER_FORM' |
+        'SERVER_BODY' | 'SERVER_HEADERS' | 'SERVER_COOKIES' | 'SERVER_PATH_PARAMS' |
+        'SERVER_FILE_PARAM' | 'SERVER_FILES_PARAM'>;
 
     // -------------------------------------------
 
-    export type PropertyType = 'PAYLOAD' | 'STATUS_CODE' | 'DESCRIPTION' /* | 'PATH' | 'MEDIA_TYPE' | 'KEY' */ | 'OPTIONS' | 'SIMPLE' | 'TYPE';
+    export type PropertySrcType = 'src';
     export interface Property {
         /**
-         * Default: 'SIMPLE'
+         * Default: 'element'
          */
-        type?: PropertyType;
+        type?: 'element' | 'array' | PropertySrcType;
+
         /**
          * Default: 'argument'
          */
-        declaredAs?: 'argument' | 'typeArgument';
-        /**
-         * Default: 'one'
-         */
-        amount?: 'one' | 'all';
+        srcArgumentType?: 'argument' | 'typeArgument';
+
         /**
          * Default: 0
          */
-        position?: number;
+        srcPosition?: number;
+
+        /**
+         * Default: undefined
+         */
+        srcAmount?: number;
+
+        /**
+         * Default: 'none'
+         */
+        srcArrayStrategy?: 'merge' | 'none' | ((...items: unknown[][]) => unknown[]);
+
+        /**
+         *
+         */
+        srcObjectStrategy?: 'merge' | 'none' | ((...items: unknown[]) => unknown);
     }
 
-    export interface PropertyItem {
-        type: 'array' | 'element';
-        srcArgumentType: 'argument' | 'typeArgument';
-        srcPosition?: number;
-        srcAmount?: number;
-        srcStrategy?: 'merge' | 'none';
+    // -------------------------------------------
+    // Record<Type, PropertyReturnValueTypeMap[Type]>
+    export type TypeRepresentationMap = {
+        [T in keyof TypePropertyMaps]: Representation<T> | Array<Representation<T>>;
+    };
+
+    export interface Representation<T extends keyof TypePropertyMaps> {
+        id: string;
+        properties?: RepresentationProperties<TypePropertyMaps[T]>;
     }
+
+    export type RepresentationProperties<P> = {
+        [K in keyof P]: Property
+    };
 
     // -------------------------------------------
 
     export type Library = 'typescript-rest' | '@decorators/express';
-
-    // -------------------------------------------
-
-    export type ConfigMappingOption = boolean | Type | Type[] | Record<Type, boolean>;
-
-    export type TypeRepresentationMapping = Record<Type, Representation | Representation[]>;
-
-    export interface Representation {
-        id: string;
-        properties?: Property[];
-    }
 
     export type ConfigLibrary =
         Library |
@@ -119,6 +195,8 @@ export namespace Decorator {
     export interface Config {
         useLibrary?: ConfigLibrary;
         useBuildIn?: ConfigMappingOption;
-        override?: TypeRepresentationMapping;
+        override?: TypeRepresentationMap;
     }
+
+    export type ConfigMappingOption = boolean | Type | Type[] | Record<Type, boolean>;
 }

@@ -1,8 +1,8 @@
-import {Decorator} from "../../../src/decorator/type";
-import {MetadataGenerator} from "../../../src/metadata";
-import {Version2SpecGenerator} from "../../../src/swagger/generator/v2";
-import {Version3SpecGenerator} from "../../../src/swagger/generator/v3";
-import {getDefaultOptions} from "../../data/defaultOptions";
+import {Decorator} from "../../../../src/decorator/type";
+import {MetadataGenerator} from "../../../../src/metadata";
+import {Version2SpecGenerator} from "../../../../src/swagger/generator/v2";
+import {Version3SpecGenerator} from "../../../../src/swagger/generator/v3";
+import {getDefaultOptions} from "../../../data/defaultOptions";
 
 const jsonata = require('jsonata');
 
@@ -34,10 +34,17 @@ export function createSwaggerSpecGenerator(
     return new Version2SpecGenerator(metadata, getDefaultOptions());
 }
 
-export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
+export interface LibraryTestsOptions {
+    title?: string;
+}
+
+export function buildLibraryTests(specGenerator: Version2SpecGenerator, options?: LibraryTestsOptions) {
+    options = options ?? {};
+    options.title ??= 'Unknown';
+
     const spec = specGenerator.getSwaggerSpec();
 
-    describe('TypescriptRestLibrary', () => {
+    describe(`Library: ${options.title}`, () => {
         it('should generate paths for decorated services', () => {
             expect(spec.paths).toHaveProperty('/mypath');
             expect(spec.paths).toHaveProperty('/mypath/secondpath');
@@ -67,20 +74,24 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
             expect(expression.evaluate(spec)).toEqual(false);
             expression = jsonata('paths."/mypath/secondpath".get.parameters[2].required');
             expect(expression.evaluate(spec)).toEqual(false);
-            expression = jsonata('paths."/mypath/secondpath".get.parameters[3].enum');
-            // expect(expression.evaluate(spec)).toEqual(['option1', 'option2']);
+            expression = jsonata('paths."/mypath/secondpath".get.parameters[3]');
+            const evaluate = expression.evaluate(spec);
+            expect(evaluate.schema).toHaveProperty('$ref');
+            expect(evaluate.schema.$ref).toEqual("#/definitions/TestEnum");
         });
 
         it('should generate specs for enum params based on it values types', () => {
             let expression = jsonata('paths."/mypath/secondpath".get.parameters[3]');
             let paramSpec = expression.evaluate(spec);
-            // expect(paramSpec.type).toEqual('string');
-            // expect(paramSpec.enum).toEqual(['option1', 'option2']);
+            expect(paramSpec.schema).toHaveProperty('$ref');
+            expect(paramSpec.schema.$ref).toEqual('#/definitions/TestEnum');
+            expect(paramSpec.in).toEqual('query');
 
             expression = jsonata('paths."/mypath/secondpath".get.parameters[4]');
             paramSpec = expression.evaluate(spec);
-            // expect(paramSpec.type).toEqual('number');
-            // expect(paramSpec.enum).toEqual([0, 1]);
+            expect(paramSpec.schema).toHaveProperty('$ref');
+            expect(paramSpec.schema.$ref).toEqual('#/definitions/TestNumericEnum');
+            expect(paramSpec.in).toEqual('query');
 
             expression = jsonata('paths."/mypath/secondpath".get.parameters[5]');
             paramSpec = expression.evaluate(spec);
@@ -273,6 +284,7 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
             expression = jsonata('paths."/mypath/test-compiler-options".post.parameters[0].schema');
             expect(expression.evaluate(spec)).toEqual({ $ref: '#/definitions/TestInterface' });
         });
+        /*
         it('should support formparam', () => {
             expect(spec.paths).toHaveProperty('/mypath/test-form-param');
             let expression = jsonata('paths."/mypath/test-form-param".post.responses."200".schema');
@@ -286,6 +298,8 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
                 type: 'string',
             });
         });
+
+         */
     });
 
     describe('PrimitiveEndpoint', () => {
@@ -397,25 +411,6 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
         });
     });
 
-    describe('SecureEndpoint', () => {
-        it('should apply controller security to request', () => {
-            const expression = jsonata('paths."/secure".get.security');
-            expect(expression.evaluate(spec)).toStrictEqual([{ 'access_token': ['ROLE_1', 'ROLE_2'] }]);
-        });
-
-        it('method security should override controller security', () => {
-            const expression = jsonata('paths."/secure".post.security');
-            expect(expression.evaluate(spec)).toStrictEqual([{ 'user_email': [] }]);
-        });
-    });
-
-    describe('SuperSecureEndpoint', () => {
-        it('should apply two controller securities to request', () => {
-            const expression = jsonata('paths."/supersecure".get.security');
-            expect(expression.evaluate(spec)).toStrictEqual([{ 'default': ['access_token'] }, { 'default': ['user_email'] }, { 'default': [] }]);
-        });
-    });
-
     describe('ResponseController', () => {
         it('should support multiple response decorators on controller', () => {
             let expression = jsonata('paths."/response".get.responses."400".description');
@@ -439,21 +434,6 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
     describe('SpecGenerator', () => {
         it('should be able to generate open api 3.0 outputs', async () => {
             const openapi = await new Version3SpecGenerator(specGenerator.getMetaData(), getDefaultOptions()).getSwaggerSpec();
-            const expression = jsonata('paths."/supersecure".get.security');
-            expect(expression.evaluate(openapi)).toStrictEqual([
-                {
-                    name: 'default',
-                    scopes: ['access_token'] // todo: this should be object
-                },
-                {
-                    name: 'default',
-                    scopes: ['user_email']
-                },
-                {
-                    name: 'default',
-                    scopes: []
-                }
-            ]);
             expect(openapi.openapi).toEqual('3.0.0');
         });
     });
@@ -462,9 +442,9 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator) {
         it('should support union types', () => {
             const expression = jsonata('paths."/unionTypes".post.parameters[0]');
             const paramSpec = expression.evaluate(spec);
-            const definitionExpression = jsonata('definitions.MytypeWithUnion.properties.property');
+            const definitionExpression = jsonata('definitions.MyTypeWithUnion.properties.property');
             const myTypeDefinition = definitionExpression.evaluate(spec);
-            expect(paramSpec.schema.$ref).toEqual('#/definitions/MytypeWithUnion');
+            expect(paramSpec.schema.$ref).toEqual('#/definitions/MyTypeWithUnion');
             expect(myTypeDefinition.type).toEqual('string');
             expect(myTypeDefinition.enum).toEqual(['value1', 'value2']);
         });

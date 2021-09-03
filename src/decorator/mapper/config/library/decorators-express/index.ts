@@ -1,46 +1,64 @@
 import {Decorator} from "../../../../type";
 
 export namespace DecoratorExpressLibrary {
-    export const DecoratorRepresentations: Decorator.TypeRepresentationMapping = {
+    export const DecoratorRepresentations: Partial<Decorator.TypeRepresentationMap> = {
         // Class
         CLASS_PATH: {
             id: 'Controller',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
 
         // Method
         METHOD_PATH: [
             {
                 id: 'All',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             },
             {
                 id: 'Get',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             },
             {
                 id: 'Post',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             },
             {
                 id: 'Put',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             },
             {
                 id: 'Delete',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             },
             {
                 id: 'Patch',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             },
             {
                 id: 'Options',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             },
             {
                 id: 'Head',
-                properties: [{}]
+                properties: {
+                    DEFAULT: {}
+                }
             }
         ],
 
@@ -48,37 +66,47 @@ export namespace DecoratorExpressLibrary {
         SERVER_CONTEXT: [
             {
                 id: 'Request',
-                properties: []
+                properties: {}
             },
             {
                 id: 'Response',
-                properties: []
+                properties: {}
             },
             {
                 id: 'Next',
-                properties: []
+                properties: {}
             },
         ],
         SERVER_QUERY: {
             id: 'Query',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_FORM: undefined,
         SERVER_BODY: {
             id: 'Body',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_HEADERS: {
             id: 'Headers',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_COOKIES: {
             id: 'Cookies',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_PATH_PARAMS: {
             id: 'Params',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         }
-    } as Decorator.TypeRepresentationMapping;
+    };
 }

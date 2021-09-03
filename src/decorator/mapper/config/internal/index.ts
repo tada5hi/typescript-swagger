@@ -1,77 +1,88 @@
 import {Decorator} from "../../../type";
 
-export const InternalMapping: Decorator.TypeRepresentationMapping = {
-    DEPRECATED: {
-        id: 'Deprecated',
-        properties: []
-    },
+export const InternalMapping: Partial<Decorator.TypeRepresentationMap> = {
     EXTENSION: {
         id: 'Extension',
-        properties: [
-            {amount: "one", declaredAs: "argument", position: 0},
-            {amount: "one", declaredAs: "argument", position: 1}
-        ]
+        properties: {
+            KEY: {type: "element", srcArgumentType: "argument", srcPosition: 0},
+            VALUE: {type: "element", srcArgumentType: "argument", srcPosition: 1}
+        }
     },
 
     // Class
     SWAGGER_TAGS: {
         id: 'SwaggerTags',
-        properties: [{amount: 'all', declaredAs: "argument"}]
+        properties: {
+            DEFAULT: {type: 'array', srcArgumentType: "argument"}
+        }
     },
 
     // Class + Method
     RESPONSE_EXAMPLE: {
         id: 'ResponseExample',
-        properties: [
-            {type: "TYPE", declaredAs: "typeArgument"},
-            {type: "PAYLOAD", declaredAs: "argument"}
-        ]
+        properties: {
+            TYPE: {type: "element", srcArgumentType: "typeArgument"},
+            PAYLOAD: {type: "src", srcArgumentType: "argument"}
+        }
     },
     RESPONSE_DESCRIPTION: {
         id: 'ResponseDescription',
-        properties: [
-            {type: "TYPE", declaredAs: "typeArgument"},
-            {type: "STATUS_CODE", declaredAs: "argument", position: 0},
-            {type: "DESCRIPTION", declaredAs: "argument", position: 1},
-            {type: "PAYLOAD", declaredAs: "argument", position: 2}
-        ]
+        properties: {
+            TYPE: {type: "element", srcArgumentType: "typeArgument"},
+            STATUS_CODE: {type: "element", srcArgumentType: "argument", srcPosition: 0},
+            DESCRIPTION: {type: "element", srcArgumentType: "argument", srcPosition: 1},
+            PAYLOAD: {type: "src", srcArgumentType: "argument", srcPosition: 2}
+        }
     },
     REQUEST_CONSUMES: {
         id: 'RequestConsumes',
-        properties: [{amount: 'all', declaredAs: "argument"}]
+        properties: {
+            DEFAULT: {type: 'array', srcArgumentType: "argument", srcAmount: -1, srcArrayStrategy: "merge"}
+        }
     },
     RESPONSE_PRODUCES: {
         id: 'ResponseProduces',
-        properties: [{amount: 'all', declaredAs: "argument"}]
+        properties: {
+            DEFAULT: {type: 'array', srcArgumentType: "argument", srcAmount: -1, srcArrayStrategy: "merge"}
+        }
     },
     HIDDEN: {
         id: 'SwaggerHidden',
         properties: []
     },
 
+    DEPRECATED: {
+        id: 'Deprecated',
+        properties: undefined
+    },
+
     IS_INT: {
         id: 'IsInt',
-        properties: []
+        properties: undefined
     },
     IS_LONG: {
         id: 'IsLong',
-        properties: []
+        properties: undefined
     },
     IS_FlOAT: {
         id: 'IsFloat',
-        properties: []
+        properties: undefined
     },
     IS_DOUBLE: {
         id: 'IsDouble',
-        properties: []
+        properties: undefined
     },
 
     SERVER_FILES_PARAM: {
         id: 'RequestFileParam',
-        properties: [{}]
+        properties: {
+            DEFAULT: {}
+        }
     },
     SERVER_FILE_PARAM: {
         id: 'RequestFileParam',
-        properties: [{}]
+        properties: {
+            DEFAULT: {}
+        }
     },
-} as Decorator.TypeRepresentationMapping;
+};

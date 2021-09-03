@@ -1,12 +1,16 @@
+import {hasOwnProperty} from "../../metadata/resolver/utils";
 import {Decorator} from "../type";
 import {extendRepresentationPropertyConfig, extractRepresentationPropertyValue} from "./property/utils";
+import TypePropertyMaps = Decorator.TypePropertyMaps;
 
-export class RepresentationManager {
+export class RepresentationManager<T extends Decorator.Type> {
+    protected extendedProperties : Partial<Decorator.RepresentationProperties<Decorator.TypePropertyMaps[T]>> = {};
+
     constructor(
-        protected representation: Decorator.Representation,
+        protected representation: Decorator.Representation<T>,
         public readonly decorators: Decorator.Data[]
     ) {
-        this.extendProperties();
+
     }
 
     // -------------------------------------------
@@ -16,11 +20,11 @@ export class RepresentationManager {
      * @param type
      * @param decoratorOrIndex
      */
-    public getPropertyValue(
-        type: Decorator.PropertyType | Decorator.Property = 'SIMPLE',
+    public getPropertyValue<P extends keyof Decorator.TypePropertyMaps[T]>(
+        type: P,
         decoratorOrIndex?: number | Decorator.Data
-    ) : unknown | undefined {
-        const config : Decorator.Property = typeof type === 'string' ? this.getPropertyConfiguration(type) : type;
+    ) : TypePropertyMaps[T][P] | undefined {
+        const config : Decorator.Property = this.getPropertyConfiguration(type);
         if(typeof config === 'undefined') {
             return undefined;
         }
@@ -41,26 +45,31 @@ export class RepresentationManager {
             decorator = decoratorOrIndex;
         }
 
-        return extractRepresentationPropertyValue(decorator, config);
+        return extractRepresentationPropertyValue<T, P>(decorator, config);
     }
 
     // -------------------------------------------
 
-    public getPropertyConfiguration(type: Decorator.PropertyType = 'SIMPLE') : Decorator.Property | undefined {
-        // tslint:disable-next-line:no-shadowed-variable
-        const index = this.representation.properties.findIndex(property => property.type === type);
-        if(index === -1) {
+    public getPropertyConfiguration(type: keyof Decorator.TypePropertyMaps[T]) : Decorator.Property | undefined {
+        if(!hasOwnProperty(this.representation.properties, type)) {
             return undefined;
         }
 
-        return this.representation.properties[index];
+        return this.extendProperty(type);
     }
 
     // -------------------------------------------
 
-    protected extendProperties() : void {
-        this.representation.properties = this.representation.properties
-            .map(property => extendRepresentationPropertyConfig(property));
+    protected extendProperty<P extends keyof Decorator.TypePropertyMaps[T]>(type: P) : Decorator.Property {
+        if(hasOwnProperty(this.extendedProperties, type)) {
+            return this.extendedProperties[type];
+        }
+
+        const property = this.representation.properties[type];
+        this.extendedProperties[type] = extendRepresentationPropertyConfig(property);
+
+        return this.extendedProperties[type];
+
     }
 }
 

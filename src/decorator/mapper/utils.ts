@@ -8,9 +8,9 @@ import {Decorator} from "../type";
  * @param reducer
  */
 export function reduceTypeRepresentationMapping(
-    mapping: Decorator.TypeRepresentationMapping,
+    mapping: Partial<Decorator.TypeRepresentationMap>,
     reducer: (type: Decorator.Type) => boolean
-): Decorator.TypeRepresentationMapping {
+): Partial<Decorator.TypeRepresentationMap> {
     const mappingKeys: Decorator.Type[] = (Object.keys(mapping) as Decorator.Type[]);
     const allowedTypes: Decorator.Type[] = mappingKeys
         .filter(reducer);
@@ -19,8 +19,9 @@ export function reduceTypeRepresentationMapping(
         return mapping;
     }
 
-    const result: Decorator.TypeRepresentationMapping = {} as Decorator.TypeRepresentationMapping;
+    const result: Partial<Decorator.TypeRepresentationMap> = {};
     for (let i = 0; i < allowedTypes.length; i++) {
+        // @ts-ignore
         result[allowedTypes[i]] = mapping[allowedTypes[i]];
     }
 

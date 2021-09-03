@@ -1,69 +1,73 @@
 import {Decorator} from "../../../../type";
 
 export namespace TypescriptRestLibrary {
-    export const DecoratorRepresentations: Decorator.TypeRepresentationMapping = {
+    export const DecoratorRepresentations: Partial<Decorator.TypeRepresentationMap> = {
         // Class
         CLASS_PATH: {
             id: 'Path',
-            properties: [{amount: 'one', declaredAs: "argument"}]
+            properties: {
+                DEFAULT: {type: 'element', srcArgumentType: "argument"}
+            }
         },
 
         // Class + Method
         REQUEST_ACCEPT: undefined,
         RESPONSE_EXAMPLE: {
             id: 'Example',
-            properties: [
-                {type: "TYPE", declaredAs: "typeArgument"},
-                {type: "PAYLOAD", declaredAs: "argument"}
-            ]
+            properties: {
+                TYPE: {type: "element", srcArgumentType: "typeArgument"},
+                PAYLOAD: {type: "src", srcArgumentType: "argument"}
+            }
         },
         RESPONSE_DESCRIPTION: {
             id: 'Response',
-            properties: [
-                {type: "TYPE", declaredAs: "typeArgument"},
-                {type: "STATUS_CODE", declaredAs: "argument", position: 0},
-                {type: "DESCRIPTION", declaredAs: "argument", position: 1},
-                {type: "PAYLOAD", declaredAs: "argument", position: 2}
-            ]
+            properties: {
+                TYPE: {type: "element", srcArgumentType: "typeArgument"},
+                STATUS_CODE: {type: "element", srcArgumentType: "argument", srcPosition: 0},
+                DESCRIPTION: {type: "element", srcArgumentType: "argument", srcPosition: 1},
+                PAYLOAD: {type: "src", srcArgumentType: "argument", srcPosition: 2}
+            }
         },
 
         // Method
         ALL: {
             id: 'ALL',
-            properties: []
+            properties: {}
         },
         GET: {
             id: 'GET',
-            properties: []
+            properties: {}
         },
         POST: {
             id: 'POST',
-            properties: []
+            properties: {}
         },
         PUT: {
             id: 'PUT',
-            properties: []
+            properties: {}
         },
         DELETE: {
             id: 'DELETE',
-            properties: []
+            properties: {}
         },
         PATCH: {
             id: 'PATCH',
-            properties: []
+            properties: {}
         },
         OPTIONS: {
             id: 'OPTIONS',
-            properties: []
+            properties: {}
         },
         HEAD: {
             id: 'HEAD',
-            properties: []
+            properties: {}
         },
 
         METHOD_PATH: {
             id: 'Path',
-            properties: [{amount: 'one', declaredAs: "argument"}]
+            properties: {
+                DEFAULT: {type: 'element', srcArgumentType: "argument"}
+            }
         },
 
         // Parameter
@@ -89,36 +93,52 @@ export namespace TypescriptRestLibrary {
         ],
         SERVER_PARAMS: {
             id: 'Param',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_QUERY: {
             id: 'QueryParam',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_FORM: {
             id: 'FormParam',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_BODY: undefined,
         SERVER_HEADERS: {
             id: 'HeaderParam',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_COOKIES: {
             id: 'CookieParam',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_PATH_PARAMS: {
             id: 'PathParam',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_FILES_PARAM: {
             id: 'FilesParam',
-            properties: [{}]
+            properties: {
+                DEFAULT: {}
+            }
         },
         SERVER_FILE_PARAM: {
             id: 'FileParam',
-            properties: [{}]
-        },
-    } as Decorator.TypeRepresentationMapping;
+            properties: {
+                DEFAULT: {}
+            }
+        }
+    };
 }

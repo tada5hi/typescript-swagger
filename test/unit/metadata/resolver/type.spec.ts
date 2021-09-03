@@ -6,9 +6,9 @@ describe('type.ts', () => {
             typeName: "void"
         };
         expect(Resolver.isVoidType(type)).toBeTruthy();
-        
+
         type.typeName = 'any';
-        
+
         expect(Resolver.isVoidType(type)).toBeFalsy();
     });
 
@@ -66,10 +66,12 @@ describe('type.ts', () => {
 
     it('check ref enum type', () => {
         let type : Resolver.RefEnumType | Resolver.AnyType = {
+            deprecated: false,
             typeName: "refEnum",
             members: [],
             refName: "test"
         };
+
         expect(Resolver.isRefEnumType(type)).toBeTruthy();
         expect(Resolver.isReferenceType(type)).toBeTruthy();
 
@@ -85,6 +87,7 @@ describe('type.ts', () => {
 
     it('check ref object type', () => {
         let type : Resolver.RefObjectType | Resolver.AnyType = {
+            deprecated: false,
             typeName: "refObject",
             refName: "test",
             properties: []
@@ -105,6 +108,7 @@ describe('type.ts', () => {
 
     it('check ref alias type', () => {
         let type : Resolver.RefAliasType | Resolver.AnyType = {
+            deprecated: false,
             typeName: "refAlias",
             refName: "test",
             type: null

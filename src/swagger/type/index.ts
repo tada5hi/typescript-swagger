@@ -47,7 +47,7 @@ export namespace Swagger {
     }
 
     export interface Example {
-        value: unknown;
+        value: unknown | unknown[];
         summary?: string;
         description?: string;
     }
