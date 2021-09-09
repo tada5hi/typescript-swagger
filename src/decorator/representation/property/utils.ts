@@ -1,3 +1,9 @@
+import {
+    ArrayLiteralExpression,
+    isArrayLiteralExpression,
+    Node,
+} from "typescript";
+import {hasOwnProperty} from "../../../metadata/resolver/utils";
 import {Decorator} from "../../type";
 
 export function extendRepresentationPropertyConfig(property: Decorator.Property): Decorator.Property {
@@ -19,7 +25,7 @@ export function extendRepresentationPropertyConfig(property: Decorator.Property)
 export function extractRepresentationPropertyValue<
     T extends Decorator.Type,
     P extends keyof Decorator.TypePropertyMaps[T]
->(
+    >(
     decorator: Decorator.Data,
     config: Decorator.Property
 ): Decorator.TypePropertyMaps[T][P] | undefined {
@@ -35,6 +41,10 @@ export function extractRepresentationPropertyValue<
         case "argument":
             items = decorator.arguments;
             break;
+    }
+
+    if(config.type !== 'src') {
+        items = extractValueFromArgumentType(items);
     }
 
     switch (config.type) {
@@ -55,13 +65,20 @@ export function extractRepresentationPropertyValue<
                         return undefined;
                     }
 
-                    if(config.srcObjectStrategy === 'merge') {
-                        let output : Record<string, any> = {};
-                        for(let i=0; i<data.length; i++) {
-                            output = Object.assign(output, data[i]);
-                        }
+                    if(
+                        typeof config.srcObjectStrategy === 'undefined' ||
+                        config.srcObjectStrategy === 'none'
+                    ) {
+                        return items[srcPosition] as Decorator.TypePropertyMaps[T][P];
+                    }
 
-                        return output as Decorator.TypePropertyMaps[T][P];
+                    if(typeof config.srcObjectStrategy === 'function') {
+                        return config.srcObjectStrategy(items[srcPosition]) as Decorator.TypePropertyMaps[T][P];
+                    }
+
+                    switch (config.srcObjectStrategy) {
+                        case "merge":
+                            return mergeObjectArguments(data) as Decorator.TypePropertyMaps[T][P];
                     }
                 }
             }
@@ -80,30 +97,85 @@ export function extractRepresentationPropertyValue<
                     return [] as unknown as Decorator.TypePropertyMaps[T][P];
                 }
 
+                // extractValueFromArgumentType(items);
+
                 if(data.length === 1) {
                     return (Array.isArray(data[0]) ? data[0] : [data[0]]) as unknown as Decorator.TypePropertyMaps[T][P];
                 }
 
-                if(config.srcArrayStrategy === 'merge') {
-                    let merged : unknown[] = [];
-                    for(let i=0; i<data.length; i++) {
-                        if(Array.isArray(data[i])) {
-                            merged = [...merged, ...data[i] as unknown[]];
-                        } else {
-                            merged.push(data[i]);
-                        }
-                    }
+                if(
+                    typeof config.srcArrayStrategy === 'undefined' ||
+                    config.srcArrayStrategy === 'none'
+                ) {
 
-                    return merged as unknown as Decorator.TypePropertyMaps[T][P];
+
+                    return [] as unknown as Decorator.TypePropertyMaps[T][P];
                 }
 
                 if(typeof config.srcArrayStrategy === 'function') {
                     return config.srcArrayStrategy(data) as unknown as Decorator.TypePropertyMaps[T][P];
                 }
 
-                return [] as unknown as Decorator.TypePropertyMaps[T][P];
+                switch (config.srcArrayStrategy) {
+                    case "merge":
+                        return mergeArrayArguments(data) as unknown as Decorator.TypePropertyMaps[T][P];
+                }
             }
     }
 
     return undefined;
+}
+
+function mergeObjectArguments(data: unknown[]) {
+    let output : Record<string, any> = {};
+    for(let i=0; i<data.length; i++) {
+        const prototype = Object.prototype.toString.call(data[i]);
+        if(prototype === '[object Object]') {
+            output = Object.assign(output, data[i]);
+        }
+    }
+
+    return output;
+}
+
+function mergeArrayArguments(data: unknown[]) {
+    let merged : unknown[] = [];
+    for(let i=0; i<data.length; i++) {
+        if(Array.isArray(data[i])) {
+            merged = [...merged, ...data[i] as unknown[]];
+        } else {
+            merged.push(data[i]);
+        }
+    }
+
+    return merged;
+}
+
+function extractValueFromArgumentType(argument: unknown[]) {
+    const values : unknown[] = [];
+
+    for(let i=0; i<argument.length; i++) {
+        if(!hasOwnProperty(argument[i], 'kind')) {
+            values.push(argument[i]);
+            continue;
+        }
+
+        const node : Node = argument[i] as Node;
+
+        switch (true) {
+            case isArrayLiteralExpression(node):
+                const elements : string[] = [];
+                const arrayExpression : ArrayLiteralExpression = node as ArrayLiteralExpression;
+                for(let j=0; j < arrayExpression.elements.length; j++) {
+                    const element : Record<string, any> = arrayExpression.elements[j];
+                    if(hasOwnProperty(element, 'text')) {
+                        elements.push(element.text as string);
+                    }
+                }
+                values.push(elements);
+                break;
+        }
+    }
+
+    return values;
 }

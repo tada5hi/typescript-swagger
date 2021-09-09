@@ -3,12 +3,12 @@
 
 import {ArgumentParser} from 'argparse';
 import {Debugger} from 'debug';
-import {Specification} from "../config";
+import {CompilerOptions} from "typescript";
+import {Config} from "../config";
+import {getConfig} from "../config/utils";
 import {useDebugger} from "../debug";
-import {MetadataGenerator} from '../metadata';
-import {Version2SpecGenerator} from "../swagger/generator/v2";
-import {Version3SpecGenerator} from "../swagger/generator/v3";
-import {getCompilerOptions, getSwaggerConfig, validateSwaggerConfig} from "./utils";
+import {createSpecGenerator} from "../swagger";
+import {getCompilerOptions} from "./utils";
 
 
 const packageJson = require('../../package.json');
@@ -32,59 +32,51 @@ parser.addArgument(
 parser.addArgument(
     ['-t', '--tsconfig'],
     {
-        action: 'storeTrue',
-        defaultValue: false,
-        help: 'Load tsconfig.json file',
-    }
-);
-
-parser.addArgument(
-    ['-p', '--tsconfig_path'],
-    {
-        help: 'The tsconfig file (tsconfig.json) path. Default to {cwd}/tsconfig.json.',
+        defaultValue: true,
+        help: 'Load the tsconfig.json file. Read the README.md for more information.'
     }
 );
 
 const parameters = parser.parseArgs();
 
-try {
-    const config = getSwaggerConfig(workingDir, parameters.config);
+(async () => {
+    try {
+        const config : Config = await getConfig(workingDir, parameters.config);
+        debugLog('Starting generation tool...');
 
-    const compilerOptions = getCompilerOptions(parameters.tsconfig, parameters.tsconfig_path);
-    debugLog('Starting Swagger generation tool');
-    debugLog('Compiler Options: %j', compilerOptions);
+        debugLog('Processing Services Metadata');
+        const isBoolean : boolean = parameters.tsconfig === 'true' || parameters.tsconfig === 'false' || typeof parameters.tsconfig === 'boolean';
+        const isPath : boolean = !isBoolean && typeof parameters.tsconfig === 'string';
 
-    const swaggerConfig = validateSwaggerConfig(workingDir, config.swagger);
-    debugLog('Swagger Config: %j', swaggerConfig);
+        let compilerOptions : boolean | CompilerOptions | undefined;
+        if(isPath) {
+            compilerOptions = getCompilerOptions(parameters.tsconfig as string);
+        }
 
-    debugLog('Processing Services Metadata');
-    const metadata = new MetadataGenerator(config, compilerOptions).generate();
-    debugLog('Generated Metadata: %j', metadata);
+        if(isBoolean) {
+            const isFalse : boolean = parameters.tsconfig === 'false' || !parameters.tsconfig;
+            compilerOptions = !isFalse;
+        }
 
-    let specGenerator : Version2SpecGenerator | Version3SpecGenerator;
-    switch (config.swagger.outputFormat) {
-        case Specification.Swagger_2:
-            specGenerator = new Version2SpecGenerator(metadata, swaggerConfig);
-            break;
-        case Specification.OpenApi_3:
-            specGenerator = new Version3SpecGenerator(metadata, swaggerConfig);
-            break;
+        const specGenerator = createSpecGenerator(config, compilerOptions);
 
+        specGenerator.build();
+
+        specGenerator.save()
+            .then(() => {
+                console.log('Swagger file(s) saved to disk.');
+                process.exit(0);
+            })
+            .catch((err: any) => {
+                console.log(`Error saving generating swagger. ${err}`);
+                process.exit(1);
+            });
+
+    } catch (e) {
+        console.log('Swagger config not found. Did you specify the path to the swagger config file?');
+        process.exit(1);
     }
+})();
 
-    specGenerator.build();
-
-    specGenerator.save()
-        .then(() => {
-            console.log('Swagger file(s) saved to disk.');
-        })
-        .catch((err: any) => {
-            console.log(`Error saving generating swagger. ${err}`);
-        });
-
-} catch (e) {
-    console.log('Swagger config not found. Did you specify the path to the swagger config file?');
-    process.exit(1);
-}
 
 

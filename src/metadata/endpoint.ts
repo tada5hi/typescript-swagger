@@ -1,15 +1,14 @@
 'use strict';
 
-import {castArray} from 'lodash';
 import {ArrayLiteralExpression, isArrayLiteralExpression, Node, SyntaxKind, TypeNode} from 'typescript';
 import {useDebugger} from "../debug";
 import {Decorator} from "../decorator/type";
-import { getDecorators } from '../decorator/utils';
-import {isExistJSDocTag} from "../utils/jsDocUtils";
-import {normalizePath} from "../utils/pathUtils";
+import { getDecorators } from '../decorator/utils/index';
+import {normalizePath} from "../utils/path";
 import {MetadataGenerator} from './index';
 import {TypeNodeResolver} from './resolver';
-import {Response} from "./type";
+import {Metadata} from "./type";
+import {isExistJSDocTag} from "./utils/js-doc";
 
 export abstract class EndpointGenerator<T extends Node> {
     protected path: string | undefined;
@@ -27,13 +26,15 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // --------------------------------------------------------------------
 
-    protected generatePath(key: Extract<Decorator.Type, 'CLASS_PATH' | 'METHOD_PATH'>) {
+    protected generatePath(
+        key: Extract<Decorator.Type, 'CLASS_PATH' | 'METHOD_PATH'>
+    ) : void {
         const values : string[] = [];
 
         const representation = this.current.decoratorMapper.match(key, this.node);
         if(typeof representation !== 'undefined') {
             const value = representation.getPropertyValue('DEFAULT');
-            if(typeof value === 'string') {
+            if(typeof value !== 'undefined') {
                 values.push(value);
             }
         }
@@ -66,10 +67,14 @@ export abstract class EndpointGenerator<T extends Node> {
         const securities = this.getDecoratorValues('Security', true);
         if (!securities || !securities.length) { return undefined; }
 
-        return securities.map(security => ({
-            name: security[1] ? security[1] : 'default',
-            scopes: security[0] ? castArray(this.handleRolesArray(security[0])) : []
-        }));
+        return securities.map(security => {
+            const rolesArray : string[] = security[0] ? this.handleRolesArray(security[0]) : [];
+
+            return {
+                name: security[1] ? security[1] : 'default',
+                scopes: rolesArray
+            };
+        });
     }
 
     protected handleRolesArray(argument: ArrayLiteralExpression): string[] {
@@ -132,13 +137,13 @@ export abstract class EndpointGenerator<T extends Node> {
 
     // -------------------------------------------
 
-    protected getResponses(): Response[] {
+    protected getResponses(): Metadata.Response[] {
         const representation = this.current.decoratorMapper.match('RESPONSE_DESCRIPTION', this.node);
         if(typeof representation === 'undefined') {
             return [];
         }
 
-        const responses : Response[] = [];
+        const responses : Metadata.Response[] = [];
 
         for(let i=0; i<representation.decorators.length; i++) {
             const description = representation.getPropertyValue('DESCRIPTION', i) || 'Ok';
@@ -151,7 +156,7 @@ export abstract class EndpointGenerator<T extends Node> {
 
             const type = representation.getPropertyValue('TYPE');
 
-            const response : Response = {
+            const response : Metadata.Response = {
                 description: description,
                 examples: examples,
                 schema: type ? new TypeNodeResolver(type as TypeNode, this.current).resolve() : undefined,
@@ -170,34 +175,17 @@ export abstract class EndpointGenerator<T extends Node> {
     // -------------------------------------------
 
     public getProduces() : string[] {
-        let representation = this.current.decoratorMapper.match('RESPONSE_PRODUCES', this.node);
+        const representation = this.current.decoratorMapper.match('RESPONSE_PRODUCES', this.node);
         if(typeof representation === 'undefined') {
             return [];
         }
 
-        let value : string[] = representation.getPropertyValue('DEFAULT');
+        const value : string[] = representation.getPropertyValue('DEFAULT');
         if(typeof value === 'undefined') {
             return [];
         }
 
-        value = Array.isArray(value) ? value : [value];
-
-        if(value.length === 0) {
-            representation = this.current.decoratorMapper.match('REQUEST_ACCEPT', this.node);
-            if(typeof representation === 'undefined') {
-                return [];
-            }
-
-            value = representation.getPropertyValue('DEFAULT');
-
-            if(typeof value === 'undefined') {
-                return [];
-            }
-
-            value = Array.isArray(value) ? value : [value];
-        }
-
-        return value;
+        return Array.isArray(value) ? value : [value];
     }
 
     public getConsumes() : string[] {

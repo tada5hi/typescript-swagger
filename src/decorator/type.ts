@@ -135,12 +135,11 @@ export namespace Decorator {
 
     // -------------------------------------------
 
-    export type PropertySrcType = 'src';
     export interface Property {
         /**
          * Default: 'element'
          */
-        type?: 'element' | 'array' | PropertySrcType;
+        type?: 'element' | 'array' | 'src';
 
         /**
          * Default: 'argument'
@@ -169,7 +168,7 @@ export namespace Decorator {
     }
 
     // -------------------------------------------
-    // Record<Type, PropertyReturnValueTypeMap[Type]>
+
     export type TypeRepresentationMap = {
         [T in keyof TypePropertyMaps]: Representation<T> | Array<Representation<T>>;
     };

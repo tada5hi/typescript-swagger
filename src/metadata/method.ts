@@ -1,14 +1,14 @@
 import * as pathUtil from 'path';
 import * as ts from 'typescript';
 import {Decorator} from "../decorator/type";
-import {getDecorators} from '../decorator/utils';
-import { getJSDocDescription, getJSDocTagComment } from '../utils/jsDocUtils';
+import {getDecorators} from '../decorator/utils/index';
 import { EndpointGenerator } from './endpoint';
 import {MetadataGenerator} from './index';
 import { ParameterGenerator } from './parameter';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
-import {Metadata, Parameter, Response, ResponseData} from "./type";
+import {Metadata} from "./type";
+import { getJSDocDescription, getJSDocTagComment } from './utils/js-doc';
 import MethodHttpVerbKey = Decorator.MethodHttpVerbType;
 
 
@@ -96,10 +96,10 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
                 const parameterId = p.name as ts.Identifier;
                 throw new Error(`Error generate parameter method: '${controllerId.text}.${methodId.text}' argument: ${parameterId.text} ${e}`);
             }
-        }).filter((p: Parameter) => (p.in !== 'context') && (p.in !== 'cookie'));
+        }).filter((p: Metadata.Parameter) => (p.in !== 'context') && (p.in !== 'cookie'));
 
-        const bodyParameters = parameters.filter((p: Parameter) => p.in === 'body');
-        const formParameters = parameters.filter((p: Parameter) => p.in === 'formData');
+        const bodyParameters = parameters.filter((p: Metadata.Parameter) => p.in === 'body');
+        const formParameters = parameters.filter((p: Metadata.Parameter) => p.in === 'formData');
 
         if (bodyParameters.length > 1) {
             throw new Error(`Only one body parameter allowed in '${this.getCurrentLocation()}' method.`);
@@ -128,7 +128,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         this.debugger('Mapping endpoint %s %s', this.method, this.path);
     }
 
-    private getMethodSuccessResponse(type: Resolver.BaseType): Response {
+    private getMethodSuccessResponse(type: Resolver.BaseType): Metadata.Response {
         const responseData = MethodGenerator.getMethodSuccessResponseData(type);
 
         return {
@@ -141,7 +141,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         };
     }
 
-    private static getMethodSuccessResponseData(type:  Resolver.BaseType): ResponseData {
+    private static getMethodSuccessResponseData(type:  Resolver.BaseType): Metadata.ResponseData {
         switch (type.typeName) {
             case 'void': return { status: '204', type: type };
             default: return { status: '200', type: type };
@@ -162,7 +162,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         return this.getExamplesValue(value);
     }
 
-    private mergeResponses(responses: Response[], defaultResponse: Response) {
+    private mergeResponses(responses: Metadata.Response[], defaultResponse: Metadata.Response) {
         if (!responses || !responses.length) {
             return [defaultResponse];
         }

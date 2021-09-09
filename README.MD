@@ -64,8 +64,9 @@ In case of the above configuration, the library can understand relative imports 
 ```bash
 swagger-generate -c ./swagger-config.json
 swagger-generate -c ./swagger-config.js #.js files are also allowed as config files
-swagger-generate -c ./swagger-config.json -t # load {cwd}/tsconfig.json
-swagger-generate -c ./swagger-config.json -p ./tsconfig.json # load custom tsconfig.json
+swagger-generate -c ./swagger-config.json -t true # load {cwd}/tsconfig.json
+swagger-generate -c ./swagger-config.json -t false # don't load tsconfig.json
+swagger-generate -c ./swagger-config.json -t ./tsconfig.json # load custom tsconfig.json
 ```
 
 Where the [swagger-config.json](#swagger-configjson) file, contains settings about the swagger generation. For example:

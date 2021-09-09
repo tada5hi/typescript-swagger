@@ -1,4 +1,4 @@
-import {Property} from "../type";
+import {Metadata} from "../type";
 
 export namespace Resolver {
     export type TypeStringLiteral =
@@ -166,7 +166,7 @@ export namespace Resolver {
 
     export interface NestedObjectLiteralType extends BaseType {
         typeName: 'nestedObjectLiteral';
-        properties: Property[];
+        properties: Metadata.Property[];
         additionalProperties?: Type;
     }
 
@@ -222,7 +222,7 @@ export namespace Resolver {
 
     export interface RefObjectType extends ReferenceTypeBase {
         typeName: 'refObject';
-        properties: Property[];
+        properties: Metadata.Property[];
         additionalProperties?: Type;
     }
 
@@ -230,7 +230,7 @@ export namespace Resolver {
         return param.typeName === 'refObject';
     }
 
-    export interface RefAliasType extends Omit<Property, 'name' | 'required'>, ReferenceTypeBase {
+    export interface RefAliasType extends Omit<Metadata.Property, 'name' | 'required'>, ReferenceTypeBase {
         typeName: 'refAlias';
     }
 

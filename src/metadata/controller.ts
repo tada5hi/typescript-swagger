@@ -2,7 +2,7 @@ import {ClassDeclaration, MethodDeclaration, SyntaxKind} from 'typescript';
 import {EndpointGenerator} from './endpoint';
 import {MetadataGenerator} from './index';
 import {MethodGenerator} from './method';
-import {Controller, Metadata} from "./type";
+import {Metadata} from "./type";
 
 export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
     private genMethods: Set<string> = new Set<string>();
@@ -18,7 +18,7 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
         return !!this.path || this.path === '';
     }
 
-    public generate(): Controller {
+    public generate(): Metadata.Controller {
         if (!this.node.parent) { throw new Error('Controller node doesn\'t have a valid parent source file.'); }
         if (!this.node.name) { throw new Error('Controller node doesn\'t have a valid name.'); }
 
@@ -26,7 +26,7 @@ export class ControllerGenerator extends EndpointGenerator<ClassDeclaration> {
         this.debugger('Generating Metadata for controller %s', this.getCurrentLocation());
         this.debugger('Controller path: %s', this.path);
 
-        const controllerMetadata : Controller = {
+        const controllerMetadata : Metadata.Controller = {
             consumes: this.getConsumes(),
             location: sourceFile.fileName,
             methods: this.buildMethods(),

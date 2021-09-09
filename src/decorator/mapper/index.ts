@@ -2,7 +2,7 @@ import {Node} from "typescript";
 import {hasOwnProperty} from "../../metadata/resolver/utils";
 import {RepresentationManager} from "../representation";
 import {Decorator} from "../type";
-import {getDecorators} from "../utils";
+import {getDecorators} from "../utils/index";
 import {InternalMapping} from "./config/internal";
 import {getLibraryMapping} from "./config/library/utils";
 import {isMappingTypeIncluded, reduceTypeRepresentationMapping} from "./utils";

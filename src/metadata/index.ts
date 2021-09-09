@@ -1,5 +1,4 @@
 import {sync} from 'glob';
-import {castArray} from 'lodash';
 import {
     ClassDeclaration,
     CompilerOptions,
@@ -15,7 +14,7 @@ import {
     SyntaxKind,
     TypeChecker
 } from 'typescript';
-import {Config} from "../config";
+import {Config} from "../config/type";
 import {useDebugger} from "../debug";
 import {DecoratorMapper} from "../decorator/mapper";
 import {ControllerGenerator} from './controller';
@@ -31,7 +30,7 @@ export class MetadataGenerator {
 
     public readonly decoratorMapper: DecoratorMapper;
 
-    private readonly config: Config;
+    public readonly config: Config;
 
     private readonly program: Program;
 
@@ -51,7 +50,7 @@ export class MetadataGenerator {
 
         this.decoratorMapper = new DecoratorMapper(config.decorator);
 
-        const sourceFiles = this.scanSourceFiles(config.swagger.entryFile);
+        const sourceFiles = this.scanSourceFiles(config.metadata.entryFile);
 
         this.debugger('Starting Metadata Generator');
         this.debugger('Source files: %j ', sourceFiles);
@@ -117,11 +116,11 @@ export class MetadataGenerator {
      * @protected
      */
     protected isIgnoredPath(path: string) : boolean {
-        if(typeof this.config.swagger.ignore === 'undefined') {
+        if(typeof this.config.metadata.ignore === 'undefined') {
             return false;
         }
 
-        return this.config.swagger.ignore.some(item => minimatch(path, item));
+        return this.config.metadata.ignore.some(item => minimatch(path, item));
     }
 
     // -------------------------------------------------------------------------
@@ -175,7 +174,7 @@ export class MetadataGenerator {
     private scanSourceFiles(sourceFiles: string | string[]) {
         this.debugger('Getting source files from expressions');
         this.debugger('Source file patterns: %j ', sourceFiles);
-        const sourceFilesExpressions = castArray(sourceFiles);
+        const sourceFilesExpressions = Array.isArray(sourceFiles) ? sourceFiles : [sourceFiles];
         const result: Set<string> = new Set<string>();
         const options = { cwd: process.cwd() };
         sourceFilesExpressions.forEach(pattern => {
@@ -201,4 +200,3 @@ export class MetadataGenerator {
             .map(generator => generator.generate());
     }
 }
-

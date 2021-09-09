@@ -1,15 +1,14 @@
-import * as _ from 'lodash';
 import * as ts from 'typescript';
 import {Decorator} from "../../decorator/type";
-import {getDecorators} from "../../decorator/utils";
+import {getDecorators} from "../../decorator/utils/index";
 
+import {MetadataGenerator} from '../index';
+import {Metadata} from "../type";
 import {
     getJSDocTagComment,
     getJSDocTagNames,
     isExistJSDocTag
-} from '../../utils/jsDocUtils';
-import {MetadataGenerator} from '../index';
-import {Property} from "../type";
+} from '../utils/js-doc';
 import {ResolverError} from "./error";
 import {
     Resolver
@@ -110,11 +109,11 @@ export class TypeNodeResolver {
         }
 
         if (ts.isTypeLiteralNode(this.typeNode)) {
-            const properties : Property[] = this.typeNode.members
+            const properties : Metadata.Property[] = this.typeNode.members
                 .filter(member => ts.isPropertySignature(member))
                 .reduce((res, propertySignature: ts.PropertySignature) => {
                     const type = new TypeNodeResolver(propertySignature.type as ts.TypeNode, this.current, propertySignature, this.context).resolve();
-                    const property: Property = {
+                    const property: Metadata.Property = {
                         deprecated: isExistJSDocTag(propertySignature, tag => tag.tagName.text === 'deprecated'),
                         example: TypeNodeResolver.getNodeExample(propertySignature),
                         default: getJSDocTagComment(propertySignature, 'default'),
@@ -165,7 +164,7 @@ export class TypeNodeResolver {
                     (declaration !== undefined && !ts.isPropertyDeclaration(declaration) && !ts.isPropertySignature(declaration) && !ts.isParameter(declaration))
                 );
             };
-            const properties: Property[] = type
+            const properties: Metadata.Property[] = type
                 .getProperties()
                 // Ignore methods, getter, setter and @ignored props
                 .filter(property => isIgnored(property) === false)
@@ -737,8 +736,8 @@ export class TypeNodeResolver {
 
     private getModelReference(modelType: ts.InterfaceDeclaration | ts.ClassDeclaration, name: string, utilityType?: UtilityType, utilityOptions?: UtilityOptions) : Resolver.ReferenceType {
         const example = TypeNodeResolver.getNodeExample(modelType);
-        const description = this.getNodeDescription(modelType);
-        const deprecated = isExistJSDocTag(modelType, tag => tag.tagName.text === 'deprecated') || typeof this.current.decoratorMapper.match('DEPRECATED', modelType) !== 'undefined';
+        const description : string = this.getNodeDescription(modelType);
+        const deprecated : boolean = isExistJSDocTag(modelType, tag => tag.tagName.text === 'deprecated') || typeof this.current.decoratorMapper.match('DEPRECATED', modelType) !== 'undefined';
 
         // Handle toJSON methods
         if (!modelType.name) {
@@ -769,7 +768,7 @@ export class TypeNodeResolver {
         const additionalProperties = this.getModelAdditionalProperties(modelType);
         const inheritedProperties = this.getModelInheritedProperties(modelType) || [];
 
-        const referenceType: Resolver.ReferenceType & { properties: Property[] } = {
+        const referenceType: Resolver.ReferenceType & { properties: Metadata.Property[] } = {
             additionalProperties: additionalProperties,
             typeName: 'refObject',
             description: description,
@@ -985,7 +984,7 @@ export class TypeNodeResolver {
         return modelTypes[0];
     }
 
-    private getModelProperties(node: ts.InterfaceDeclaration | ts.ClassDeclaration, overrideToken?: OverrideToken, utilityType?: UtilityType, utilityOptions?: UtilityOptions): Property[] {
+    private getModelProperties(node: ts.InterfaceDeclaration | ts.ClassDeclaration, overrideToken?: OverrideToken, utilityType?: UtilityType, utilityOptions?: UtilityOptions): Metadata.Property[] {
         const isIgnored = (e: ts.TypeElement | ts.ClassElement) => {
             return isExistJSDocTag(e, tag => tag.tagName.text === 'ignore');
         };
@@ -1029,7 +1028,7 @@ export class TypeNodeResolver {
             required = false;
         }
 
-        const property: Property = {
+        const property: Metadata.Property = {
             deprecated: isExistJSDocTag(propertySignature, tag => tag.tagName.text === 'deprecated'),
             default: getJSDocTagComment(propertySignature, 'default'),
             description: this.getNodeDescription(propertySignature),
@@ -1075,7 +1074,7 @@ export class TypeNodeResolver {
             }
         }
 
-        const property: Property = {
+        const property: Metadata.Property = {
             deprecated: isExistJSDocTag(propertyDeclaration, tag => tag.tagName.text === 'deprecated'),
             default: getInitializerValue(propertyDeclaration.initializer, this.current.typeChecker),
             description: this.getNodeDescription(propertyDeclaration),
@@ -1140,8 +1139,10 @@ export class TypeNodeResolver {
         return context;
     }
 
-    private getModelInheritedProperties(modelTypeDeclaration: Exclude<UsableDeclaration, ts.PropertySignature | ts.TypeAliasDeclaration | ts.EnumMember>): Property[] {
-        let properties: Property[] = [];
+    private getModelInheritedProperties(
+        modelTypeDeclaration: Exclude<UsableDeclaration, ts.PropertySignature | ts.TypeAliasDeclaration | ts.EnumMember>
+    ): Metadata.Property[] {
+        let properties: Metadata.Property[] = [];
 
         const heritageClauses = modelTypeDeclaration.heritageClauses;
         if (!heritageClauses) {

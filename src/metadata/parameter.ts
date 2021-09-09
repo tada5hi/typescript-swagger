@@ -1,12 +1,12 @@
 import * as ts from 'typescript';
 import {RepresentationManager} from "../decorator/representation";
 import {Decorator} from "../decorator/type";
-import {getDecorators} from '../decorator/utils';
-import { MetadataGenerator} from './index';
+import {getDecorators} from '../decorator/utils/index';
+import {MetadataGenerator} from './index';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
 import {getInitializerValue} from "./resolver/utils";
-import {Parameter} from "./type";
+import {Metadata} from "./type";
 
 const supportedParameterKeys : Decorator.ParameterServerType[] = [
     'SERVER_CONTEXT',
@@ -28,7 +28,7 @@ export class ParameterGenerator {
         private readonly current: MetadataGenerator
     ) { }
 
-    public generate(): Parameter {
+    public generate(): Metadata.Parameter {
         const decorators = getDecorators(this.parameter);
 
         for(let i=0; i<supportedParameterKeys.length; i++) {
@@ -70,7 +70,7 @@ export class ParameterGenerator {
         return `${controllerId.text}.${methodId.text}`;
     }
 
-    private getRequestParameter(representationManager: RepresentationManager<'SERVER_PARAMS'>): Parameter {
+    private getRequestParameter(representationManager: RepresentationManager<'SERVER_PARAMS'>): Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
         const type = this.getValidatedType(this.parameter);
@@ -95,7 +95,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getContextParameter(): Parameter {
+    private getContextParameter(): Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
 
         return {
@@ -130,7 +130,7 @@ export class ParameterGenerator {
     private getFileParameter(
         representationManager: RepresentationManager<'SERVER_FILE_PARAM' | 'SERVER_FILES_PARAM'>,
         isArray?: boolean
-    ): Parameter {
+    ) : Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -161,7 +161,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getFormParameter(representationManager: RepresentationManager<'SERVER_FORM'>): Parameter {
+    private getFormParameter(representationManager: RepresentationManager<'SERVER_FORM'>): Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -187,7 +187,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getCookieParameter(representationManager: RepresentationManager<'SERVER_COOKIES'>): Parameter {
+    private getCookieParameter(representationManager: RepresentationManager<'SERVER_COOKIES'>): Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -212,7 +212,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getBodyParameter(representationManager?: RepresentationManager<'SERVER_BODY'>): Parameter {
+    private getBodyParameter(representationManager?: RepresentationManager<'SERVER_BODY'>): Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -239,7 +239,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getHeaderParameter(representationManager: RepresentationManager<'SERVER_HEADERS'>): Parameter {
+    private getHeaderParameter(representationManager: RepresentationManager<'SERVER_HEADERS'>) : Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let name = parameterName;
 
@@ -264,7 +264,7 @@ export class ParameterGenerator {
         };
     }
 
-    private getQueryParameter(representationManager: RepresentationManager<'SERVER_QUERY'>): Parameter {
+    private getQueryParameter(representationManager: RepresentationManager<'SERVER_QUERY'>): Metadata.Parameter | Metadata.ArrayParameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         const type = this.getValidatedType(this.parameter);
 
@@ -292,7 +292,7 @@ export class ParameterGenerator {
             options = optionsValue;
         }
 
-        return {
+        const properties : Metadata.Parameter = {
             allowEmptyValue: options.allowEmptyValue,
             collectionFormat: options.collectionFormat,
             default: getInitializerValue(this.parameter.initializer, this.current.typeChecker, type),
@@ -305,9 +305,19 @@ export class ParameterGenerator {
             required: !this.parameter.questionToken && !this.parameter.initializer,
             type: type
         };
+
+        if (type.typeName === 'array') {
+            return {
+                ...properties,
+                collectionFormat: 'multi',
+                type: type,
+            };
+        }
+
+        return properties;
     }
 
-    private getPathParameter(representationManager: RepresentationManager<'SERVER_PATH_PARAMS'>): Parameter {
+    private getPathParameter(representationManager: RepresentationManager<'SERVER_PATH_PARAMS'>): Metadata.Parameter {
         const parameterName = (this.parameter.name as ts.Identifier).text;
         let pathName = parameterName;
 
@@ -367,6 +377,7 @@ export class ParameterGenerator {
             const type = this.current.typeChecker.getTypeAtLocation(parameter);
             typeNode = this.current.typeChecker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.NoTruncation) as ts.TypeNode;
         }
+
         return new TypeNodeResolver(typeNode, this.current, parameter).resolve();
     }
 }

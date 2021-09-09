@@ -21,14 +21,14 @@ export const InternalMapping: Partial<Decorator.TypeRepresentationMap> = {
     RESPONSE_EXAMPLE: {
         id: 'ResponseExample',
         properties: {
-            TYPE: {type: "element", srcArgumentType: "typeArgument"},
+            TYPE: {type: "src", srcArgumentType: "typeArgument"},
             PAYLOAD: {type: "src", srcArgumentType: "argument"}
         }
     },
     RESPONSE_DESCRIPTION: {
         id: 'ResponseDescription',
         properties: {
-            TYPE: {type: "element", srcArgumentType: "typeArgument"},
+            TYPE: {type: "src", srcArgumentType: "typeArgument"},
             STATUS_CODE: {type: "element", srcArgumentType: "argument", srcPosition: 0},
             DESCRIPTION: {type: "element", srcArgumentType: "argument", srcPosition: 1},
             PAYLOAD: {type: "src", srcArgumentType: "argument", srcPosition: 2}
@@ -46,13 +46,13 @@ export const InternalMapping: Partial<Decorator.TypeRepresentationMap> = {
             DEFAULT: {type: 'array', srcArgumentType: "argument", srcAmount: -1, srcArrayStrategy: "merge"}
         }
     },
+
     HIDDEN: {
         id: 'SwaggerHidden',
         properties: []
     },
-
     DEPRECATED: {
-        id: 'Deprecated',
+        id: 'SwaggerDeprecated',
         properties: undefined
     },
 

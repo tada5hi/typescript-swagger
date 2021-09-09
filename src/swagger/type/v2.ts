@@ -73,13 +73,13 @@ export namespace SwaggerV2 {
         scopes?: Record<string, string>;
     }
 
-    export type Oauth2Security = OAuth2AccessCodeSecurity |
+    export type OAuth2Security = OAuth2AccessCodeSecurity |
         OAuth2ApplicationSecurity |
         OAuth2ImplicitSecurity |
         OAuth2PasswordSecurity;
 
     export type Security =
         BasicSecurity |
-        Oauth2Security |
+        OAuth2Security |
         Swagger.ApiKeySecurity;
 }

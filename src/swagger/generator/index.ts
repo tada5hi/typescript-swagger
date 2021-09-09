@@ -2,17 +2,14 @@ import {Debugger} from "debug";
 import {promises, writeFile} from 'fs';
 import * as path from "path";
 import {stringify} from 'yamljs';
-import {SwaggerConfig} from '../../config';
 import {useDebugger} from "../../debug";
 import {Resolver} from "../../metadata/resolver/type";
 import {hasOwnProperty} from "../../metadata/resolver/utils";
-import {Metadata, Property} from "../../metadata/type";
-
+import {Metadata} from "../../metadata/type";
 import {Swagger} from '../type';
 import {SwaggerV2} from "../type/v2";
 import {SwaggerV3} from "../type/v3";
 import {SwaggerOutputFormatData, SwaggerOutputFormatType} from "../utils";
-import BaseSchema = Swagger.BaseSchema;
 
 export abstract class SpecGenerator<
     Spec extends SwaggerV2.Spec | SwaggerV3.Spec,
@@ -22,12 +19,13 @@ export abstract class SpecGenerator<
 
     protected spec: Spec;
 
-    constructor(protected readonly metadata: Metadata.Output, protected readonly config: SwaggerConfig) {
+    constructor(protected readonly metadata: Metadata.Output, protected readonly config: Swagger.Config) {
 
     }
 
     public async save() : Promise<Record<SwaggerOutputFormatType, SwaggerOutputFormatData>> {
-        const swaggerDir : string = this.config.outputDirectory;
+        const spec = this.build();
+        const swaggerDir : string = path.resolve(this.config.outputDirectory);
         this.debugger('Saving specs to folder: %j', swaggerDir);
 
         await promises.mkdir(swaggerDir, {recursive: true});
@@ -36,7 +34,7 @@ export abstract class SpecGenerator<
             json: {
                 filePath: path.join(swaggerDir, 'swagger.json'),
                 fileName: 'swagger.json',
-                content: JSON.stringify(this.spec, null, '\t')
+                content: JSON.stringify(spec, null, '\t')
             },
             yaml: undefined
         };
@@ -45,7 +43,7 @@ export abstract class SpecGenerator<
             data.yaml = {
                 filePath: path.join(swaggerDir, 'swagger.yaml'),
                 fileName: 'swagger.yaml',
-                content: stringify(this.spec, 1000)
+                content: stringify(spec, 1000)
             };
         }
 
@@ -78,15 +76,9 @@ export abstract class SpecGenerator<
         return this.metadata;
     }
 
-    public getSwaggerSpec() : Spec {
-        if(typeof this.spec === 'undefined') {
-            this.build();
-        }
+    public abstract getSwaggerSpec() : Spec;
 
-        return this.spec;
-    }
-
-    public abstract build() : void;
+    public abstract build() : Spec;
 
     protected buildInfo() {
         const info: Swagger.Info = {
@@ -105,26 +97,7 @@ export abstract class SpecGenerator<
         return info;
     }
 
-    /*
-    public async getOpenApiSpec() {
-        return await this.convertToOpenApiSpec();
-    }
-
-
-    private async convertToOpenApiSpec() {
-        const spec = this.getSwaggerSpec();
-
-        const converter = require('swagger2openapi');
-        const openapi = await converter.convertObj(spec, {
-            patch: true,
-            warnOnly: true
-        });
-
-        return openapi.openapi;
-    }
-    */
-
-    protected getSwaggerType(type: Resolver.BaseType) : Schema | BaseSchema<Schema> {
+    protected getSwaggerType(type: Resolver.BaseType) : Schema | Swagger.BaseSchema<Schema> {
         if (Resolver.isVoidType(type)) {
             return {} as Schema;
         } else if (Resolver.isReferenceType(type)) {
@@ -165,7 +138,7 @@ export abstract class SpecGenerator<
 
     protected abstract getSwaggerTypeForEnumType(enumType: Resolver.EnumType) : Schema;
 
-    protected getSwaggerTypeForUnionType(type: Resolver.UnionType) : Schema | BaseSchema<Schema> {
+    protected getSwaggerTypeForUnionType(type: Resolver.UnionType) : Schema | Swagger.BaseSchema<Schema> {
         if (type.members.every((subType: Resolver.Type) => subType.typeName === 'enum')) {
             const mergedEnum: Resolver.EnumType = { typeName: 'enum', members: [] };
             type.members.forEach((t: Resolver.Type) => {
@@ -211,8 +184,8 @@ export abstract class SpecGenerator<
         return { type: 'object' } as Schema;
     }
 
-    private getSwaggerTypeForPrimitiveType(type: Resolver.PrimitiveTypeLiteral) : BaseSchema<Schema> {
-        const PrimitiveSwaggerTypeMap: Record<Resolver.PrimitiveTypeLiteral, BaseSchema<Schema>> = {
+    private getSwaggerTypeForPrimitiveType(type: Resolver.PrimitiveTypeLiteral) : Swagger.BaseSchema<Schema> {
+        const PrimitiveSwaggerTypeMap: Record<Resolver.PrimitiveTypeLiteral, Swagger.BaseSchema<Schema>> = {
             any: {
                 // While the any type is discouraged, it does explicitly allows anything, so it should always allow additionalProperties
                 additionalProperties: true,
@@ -241,12 +214,12 @@ export abstract class SpecGenerator<
 
 
 
-    public getSwaggerTypeForObjectLiteral(objectLiteral: Resolver.NestedObjectLiteralType) : BaseSchema<Schema> {
+    public getSwaggerTypeForObjectLiteral(objectLiteral: Resolver.NestedObjectLiteralType) : Swagger.BaseSchema<Schema> {
         const properties = this.buildProperties(objectLiteral.properties);
 
         const additionalProperties = objectLiteral.additionalProperties && this.getSwaggerType(objectLiteral.additionalProperties);
 
-        const required = objectLiteral.properties.filter((prop: Property) => prop.required).map((prop: Property) => prop.name);
+        const required = objectLiteral.properties.filter((prop: Metadata.Property) => prop.required).map((prop: Metadata.Property) => prop.name);
 
         // An empty list required: [] is not valid.
         // If all properties are optional, do not specify the required keyword.
@@ -255,12 +228,12 @@ export abstract class SpecGenerator<
             ...(additionalProperties && {additionalProperties: additionalProperties}),
             ...(required && required.length && {required: required}),
             type: 'object',
-        } as BaseSchema<Schema>;
+        } as Swagger.BaseSchema<Schema>;
     }
 
     protected abstract getSwaggerTypeForReferenceType(referenceType: Resolver.ReferenceType): Schema;
 
-    protected abstract buildProperties(properties: Property[]) : Record<string, Schema>;
+    protected abstract buildProperties(properties: Metadata.Property[]) : Record<string, Schema>;
 
     protected determineTypesUsedInEnum(anEnum: Array<string | number | boolean | null>) {
         return anEnum.reduce((theSet, curr) => {
@@ -274,3 +247,4 @@ export abstract class SpecGenerator<
         return methodName.charAt(0).toUpperCase() + methodName.substr(1);
     }
 }
+export {createSpecGenerator} from "./utils";

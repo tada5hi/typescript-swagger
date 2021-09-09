@@ -1,44 +1,17 @@
-import {Decorator} from "../../../../src/decorator/type";
-import {MetadataGenerator} from "../../../../src/metadata";
-import {Version2SpecGenerator} from "../../../../src/swagger/generator/v2";
+import {SpecGenerator} from "../../../../src";
 import {Version3SpecGenerator} from "../../../../src/swagger/generator/v3";
-import {getDefaultOptions} from "../../../data/defaultOptions";
+import {getDefaultSwaggerTestConfig} from "../../../data/defaultOptions";
 
 const jsonata = require('jsonata');
-
-export function createSwaggerSpecGenerator(
-    library: Decorator.ConfigLibrary,
-    entryFile: string[] | string
-) {
-    const compilerOptions = {
-        baseUrl: '.',
-        paths: {
-            '@/*': ['test/data/*'],
-        },
-    };
-    const metadata = new MetadataGenerator(
-        {
-            decorator: {
-                useBuildIn: true,
-                useLibrary: library
-            },
-            swagger: {
-                entryFile: entryFile,
-                outputDirectory: undefined,
-                yaml: true
-            }
-        },
-        compilerOptions,
-    ).generate();
-
-    return new Version2SpecGenerator(metadata, getDefaultOptions());
-}
 
 export interface LibraryTestsOptions {
     title?: string;
 }
 
-export function buildLibraryTests(specGenerator: Version2SpecGenerator, options?: LibraryTestsOptions) {
+export function buildLibraryTests(
+    specGenerator: SpecGenerator<any, any>,
+    options?: LibraryTestsOptions
+) {
     options = options ?? {};
     options.title ??= 'Unknown';
 
@@ -269,7 +242,6 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator, options?
         it('should support compilerOptions', () => {
             let expression = jsonata('definitions.TestInterface');
             expect(expression.evaluate(spec)).toEqual({
-                additionalProperties: true,
                 description: undefined,
                 properties: {
                     a: { type: 'string', description: undefined },
@@ -433,7 +405,7 @@ export function buildLibraryTests(specGenerator: Version2SpecGenerator, options?
 
     describe('SpecGenerator', () => {
         it('should be able to generate open api 3.0 outputs', async () => {
-            const openapi = await new Version3SpecGenerator(specGenerator.getMetaData(), getDefaultOptions()).getSwaggerSpec();
+            const openapi = await new Version3SpecGenerator(specGenerator.getMetaData(), getDefaultSwaggerTestConfig()).getSwaggerSpec();
             expect(openapi.openapi).toEqual('3.0.0');
         });
     });

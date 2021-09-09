@@ -2,14 +2,22 @@ import {union} from "lodash";
 import {posix} from "path";
 import {Resolver} from "../../metadata/resolver/type";
 import {hasOwnProperty} from "../../metadata/resolver/utils";
-import {Metadata, Parameter, Property, Response} from "../../metadata/type";
+import {Metadata} from "../../metadata/type";
 import {Swagger} from "../type";
 import {SwaggerV2} from "../type/v2";
 import {SpecGenerator} from "./index";
 
 
 export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, SwaggerV2.Schema> {
-    public build() {
+    public getSwaggerSpec(): SwaggerV2.Spec {
+        return this.build();
+    }
+
+    public build() : SwaggerV2.Spec {
+        if(typeof this.spec !== 'undefined') {
+            return this.spec;
+        }
+
         let spec: SwaggerV2.Spec = {
             basePath: this.config.basePath,
             definitions: this.buildDefinitions(),
@@ -19,7 +27,7 @@ export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, Swagger
         };
 
         spec.securityDefinitions = this.config.securityDefinitions
-            ? this.config.securityDefinitions
+            ? Version2SpecGenerator.translateSecurityDefinitions(this.config.securityDefinitions)
             : {};
 
         if (this.config.consumes) {
@@ -43,6 +51,71 @@ export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, Swagger
         }
 
         this.spec = spec;
+
+        return spec;
+    }
+
+    private static translateSecurityDefinitions(securityDefinitions: Swagger.SecurityDefinitions) : Record<string, SwaggerV2.Security> {
+        const definitions : Record<string, SwaggerV2.Security> = {};
+
+        // tslint:disable-next-line:forin
+        for(const name in securityDefinitions) {
+            const securityDefinition : Swagger.SecurityDefinition = securityDefinitions[name];
+
+            switch (securityDefinition.type) {
+                case 'http':
+                    if(securityDefinition.schema === 'basic') {
+                        definitions[name] = {
+                            type: 'basic'
+                        };
+                    }
+                    break;
+                case 'apiKey':
+                    definitions[name] = securityDefinition;
+                    break;
+                case 'oauth2':
+                    if(securityDefinition.flows.implicit) {
+                        definitions[`${name}Implicit`] = {
+                            type: "oauth2",
+                            flow: "implicit",
+                            authorizationUrl: securityDefinition.flows.implicit.authorizationUrl,
+                            scopes: securityDefinition.flows.implicit.scopes
+                        };
+                    }
+
+                    if(securityDefinition.flows.password) {
+                        definitions[`${name}Implicit`] = {
+                            type: "oauth2",
+                            flow: "password",
+                            tokenUrl: securityDefinition.flows.password.tokenUrl,
+                            scopes: securityDefinition.flows.password.scopes
+                        };
+                    }
+
+                    if(securityDefinition.flows.authorizationCode) {
+                        definitions[`${name}AccessCode`] = {
+                            type: "oauth2",
+                            flow: "accessCode",
+                            tokenUrl: securityDefinition.flows.authorizationCode.tokenUrl,
+                            authorizationUrl: securityDefinition.flows.authorizationCode.authorizationUrl,
+                            scopes: securityDefinition.flows.authorizationCode.scopes
+                        };
+                    }
+
+                    if(securityDefinition.flows.clientCredentials) {
+                        definitions[`${name}Application`] = {
+                            type: "oauth2",
+                            flow: "application",
+                            tokenUrl: securityDefinition.flows.clientCredentials.tokenUrl,
+                            scopes: securityDefinition.flows.clientCredentials.scopes
+                        };
+                    }
+
+                    break;
+            }
+        }
+
+        return definitions;
     }
 
     /*
@@ -56,7 +129,7 @@ export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, Swagger
             // const key : string = referenceType.typeName.replace('_', '');
 
             if (Resolver.isRefObjectType(referenceType)) {
-                const required = referenceType.properties.filter((p: Property) => p.required).map((p: Property) => p.name);
+                const required = referenceType.properties.filter((p: Metadata.Property) => p.required).map((p: Metadata.Property) => p.name);
 
                 definitions[referenceType.refName] = {
                     description: referenceType.description,
@@ -66,10 +139,6 @@ export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, Swagger
                 };
 
                 if (referenceType.additionalProperties) {
-                    definitions[referenceType.refName].additionalProperties = true;
-                } else {
-                    // Since additionalProperties was not explicitly set in the TypeScript interface for this model
-                    //      ...we need to make a decision
                     definitions[referenceType.refName].additionalProperties = true;
                 }
 
@@ -212,7 +281,7 @@ export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, Swagger
         return pathMethod;
     }
 
-    private buildParameter(parameter: Parameter): Swagger.Parameter<SwaggerV2.Schema> {
+    private buildParameter(parameter: Metadata.Parameter): Swagger.Parameter<SwaggerV2.Schema> {
         const swaggerParameter: any = {
             description: parameter.description,
             in: parameter.in,
@@ -315,7 +384,7 @@ export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, Swagger
         return { $ref: `#/definitions/${referenceType.refName}` };
     }
 
-    protected buildProperties(properties: Property[]) : Record<string, SwaggerV2.Schema> {
+    protected buildProperties(properties: Metadata.Property[]) : Record<string, SwaggerV2.Schema> {
         const swaggerProperties: { [propertyName: string]: SwaggerV2.Schema } = {};
 
         properties.forEach(property => {
@@ -337,7 +406,7 @@ export class Version2SpecGenerator extends SpecGenerator<SwaggerV2.Spec, Swagger
         };
         const methodReturnTypes = new Set<string>();
 
-        method.responses.forEach((res: Response) => {
+        method.responses.forEach((res: Metadata.Response) => {
             operation.responses[res.status] = {
                 description: res.description
             };

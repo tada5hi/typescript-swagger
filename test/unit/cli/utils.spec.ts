@@ -1,11 +1,9 @@
 import * as path from "path";
-import {SwaggerConfig} from "../../../src";
 import {
     getCompilerOptions,
-    getPackageJsonStringValue,
-    getSwaggerConfig,
-    validateSwaggerConfig
+    getPackageJsonStringValue
 } from "../../../src/cli/utils";
+import {getConfig} from "../../../src/config/utils";
 
 describe('utils.ts', () => {
     it('package json string value', () => {
@@ -19,35 +17,50 @@ describe('utils.ts', () => {
         expect(getPackageJsonStringValue(path.join(swaggerPath, 'non-existing'), 'abc')).toBe('');
     });
 
-    it('get swagger config', () => {
+    it('get and parse config', async () => {
         const cwd = process.cwd();
-        const swaggerPath = path.join(cwd, './test/data/');
+        const swaggerPath = path.join(cwd, './test/data/config/');
 
-        const swaggerConfig = getSwaggerConfig(swaggerPath);
-        expect(swaggerConfig.swagger.yaml).toBeTruthy();
+        const config = await getConfig(swaggerPath);
 
-        expect(() => getSwaggerConfig(swaggerPath, 'swagger.yml')).toThrow();
-        expect(getSwaggerConfig(swaggerPath, 'swagger.js')).toBeTruthy();
+        expect(config.swagger.yaml).toBeTruthy();
+        expect(await getConfig(swaggerPath, 'swagger-cjs.js')).toBeTruthy();
     });
 
+    // todo: async error handling
+    /*
     it('validate swagger config - errors', () => {
         const cwd = process.cwd();
         const swaggerPath = path.join(cwd, './test/data/');
 
-        expect(() => validateSwaggerConfig(swaggerPath, {outputDirectory: swaggerPath} as SwaggerConfig)).toThrow();
-        expect(() => validateSwaggerConfig(swaggerPath, {entryFile: swaggerPath} as SwaggerConfig)).toThrow();
-        expect(validateSwaggerConfig(swaggerPath, {outputDirectory: swaggerPath, entryFile: swaggerPath} as SwaggerConfig)).toBeDefined();
+        expect(() => parseConfig({
+            swagger: {
+                outputDirectory: swaggerPath
+            }
+        } as Config)).toThrow();
+        expect(() => parseConfig({
+            metadata: {
+                entryFile: swaggerPath
+            }
+        } as Config)).toThrow();
+        expect(parseConfig({
+            swagger: {
+                outputDirectory: swaggerPath
+            },
+            metadata: {
+                entryFile: swaggerPath
+        }} as Config)).toBeDefined();
     });
 
-    it('get compiler options', () => {
-        expect(getCompilerOptions(false)).toEqual({});
+     */
 
-        const compilerOptions = getCompilerOptions(false, './test/data/tsconfig.json');
+    it('get compiler options', () => {
+        const compilerOptions = getCompilerOptions( './test/data/tsconfig.json');
 
         expect(compilerOptions).toBeDefined();
         expect(compilerOptions.allowJs).toBeTruthy();
 
-        expect(getCompilerOptions(false, path.join(process.cwd(), './test/data/tsconfig.json'))).toBeDefined();
-        expect(() => getCompilerOptions(false, './test/data/non-existing/tsconfig.json')).toThrow();
+        expect(getCompilerOptions(path.join(process.cwd(), './test/data/tsconfig.json'))).toBeDefined();
+        expect(() => getCompilerOptions('./test/data/non-existing/tsconfig.json')).toThrow();
     });
 });

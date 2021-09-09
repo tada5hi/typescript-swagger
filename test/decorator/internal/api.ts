@@ -6,6 +6,12 @@ interface Address {
 }
 
 interface Person {
+    /**
+     * Id of Person
+     * @example 1
+     * @isFloat
+     */
+    id: number;
     name: string;
     address?: Address;
 }
@@ -23,14 +29,16 @@ export class MyService {
 
     /**
      * a a
+     *
      * @param body
      */
     @POST
     @ResponseExample<Person[]>([{
+        id: 1,
         name: 'Joe'
     }])
-    @RequestConsumes(['application/json'], ['text/html'])
-    @ResponseProduces(['application/json', 'text/html'], ['application/xml'])
+    @RequestConsumes('application/json', 'text/html')
+    @ResponseProduces('application/json')
     public testPostString(body: string): Person[] {
         return [];
     }

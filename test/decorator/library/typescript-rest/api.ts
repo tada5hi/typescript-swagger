@@ -62,6 +62,11 @@ export class MyService {
     /**
      * This is the method description
      * @param test This is the test param description
+     * @param test2
+     * @param test3
+     * @param test4
+     * @param test5
+     * @param test6
      */
     @GET
     @Path('secondpath')

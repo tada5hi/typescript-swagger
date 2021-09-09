@@ -1,5 +1,5 @@
 import {isCallExpression, isNumericLiteral, isStringLiteral, Node} from 'typescript';
-import {Decorator} from "./type";
+import {Decorator} from "../type";
 
 /**
  * Get Decorators for a specific node.

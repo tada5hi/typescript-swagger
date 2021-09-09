@@ -1,0 +1,127 @@
+{
+	"definitions": {
+		"Address": {
+			"properties": {
+				"street": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"street"
+			],
+			"type": "object"
+		},
+		"Person": {
+			"properties": {
+				"id": {
+					"type": "number",
+					"format": "float",
+					"description": "Id of Person"
+				},
+				"name": {
+					"type": "string"
+				},
+				"address": {
+					"$ref": "#/definitions/Address"
+				}
+			},
+			"required": [
+				"id",
+				"name"
+			],
+			"type": "object"
+		}
+	},
+	"info": {
+		"title": "",
+		"version": "1.0.0"
+	},
+	"paths": {
+		"/mypath": {
+			"get": {
+				"operationId": "Test",
+				"produces": [
+					"text/html"
+				],
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"schema": {
+							"type": "string"
+						},
+						"examples": {
+							"application/json": []
+						}
+					},
+					"400": {
+						"description": "The request format was incorrect.",
+						"schema": {
+							"type": "string"
+						}
+					},
+					"500": {
+						"description": "There was an unexpected error.",
+						"schema": {
+							"type": "string"
+						}
+					},
+					"default": {
+						"description": "Error",
+						"schema": {
+							"type": "string"
+						}
+					}
+				},
+				"tags": [
+					"My Services"
+				],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "TestPostString",
+				"produces": [
+					"application/json"
+				],
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/Person"
+							}
+						},
+						"examples": {
+							"application/json": [
+								{
+									"id": 1,
+									"name": "Joe"
+								}
+							]
+						}
+					}
+				},
+				"description": "a a",
+				"tags": [
+					"My Services"
+				],
+				"consumes": [
+					"application/json"
+				],
+				"parameters": [
+					{
+						"description": "",
+						"in": "body",
+						"name": "body",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		}
+	},
+	"swagger": "2.0",
+	"securityDefinitions": {}
+}

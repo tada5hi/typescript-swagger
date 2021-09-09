@@ -1,14 +1,21 @@
 import {Resolver} from "../../metadata/resolver/type";
 import {hasOwnProperty} from "../../metadata/resolver/utils";
-import {Metadata, Parameter, Property, Response} from "../../metadata/type";
+import {Metadata} from "../../metadata/type";
 import {Swagger} from "../type";
-import {SwaggerV2} from "../type/v2";
 import {SwaggerV3} from "../type/v3";
 import {SpecGenerator} from "./index";
 import {removeFinalCharacter, removeRepeatingCharacter} from "./utils";
 
 export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, SwaggerV3.Schema> {
-    public build(): void {
+    public getSwaggerSpec(): SwaggerV3.Spec {
+        return this.build();
+    }
+
+    public build() : SwaggerV3.Spec {
+        if(typeof this.spec !== 'undefined') {
+            return this.spec;
+        }
+
         let spec: SwaggerV3.Spec = {
             components: this.buildComponents(),
             info: this.buildInfo(),
@@ -22,7 +29,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
             spec = require('merge').recursive(spec, this.config.spec);
         }
 
-        this.spec = spec;
+        return spec;
     }
 
     private buildComponents() {
@@ -43,68 +50,23 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
         return components;
     }
 
-    private static translateSecurityDefinitions(securityDefinitions: Record<string, SwaggerV2.Security>) : Record<string, SwaggerV3.Security> {
+    private static translateSecurityDefinitions(securityDefinitions: Swagger.SecurityDefinitions) : Record<string, SwaggerV3.Security> {
         const security : Record<string, SwaggerV3.Security> = {};
 
         // tslint:disable-next-line:forin
         for(const name in securityDefinitions) {
-            const securityDefinition = securityDefinitions[name];
+            const securityDefinition : Swagger.SecurityDefinition = securityDefinitions[name];
+
             switch (securityDefinition.type) {
-                case "basic":
-                    security[name] = {
-                        schema: 'basic',
-                        type: 'http'
-                    };
+                case "http":
+                    security[name] = securityDefinition;
                     break;
                 case "oauth2":
-                    let definition : SwaggerV3.OAuth2Security = {
-                        type: "oauth2",
-                        description: securityDefinition.description,
-                        flows: {}
-                    };
-
-                    if(
-                        hasOwnProperty(security, name) &&
-                        security[name].type === 'oauth2'
-                    ) {
-                        definition = {...definition, ...security[name] as SwaggerV3.OAuth2Security};
-                    }
-
-                    if(hasOwnProperty(securityDefinition, 'flow')) {
-                        switch (securityDefinition.flow) {
-                            case "accessCode":
-                                definition.flows.authorizationCode = {
-                                    tokenUrl: securityDefinition.tokenUrl,
-                                    authorizationUrl: securityDefinition.authorizationUrl,
-                                    scopes: securityDefinition.scopes || {}
-                                };
-                                break;
-                            case "application":
-                                definition.flows.clientCredentials = {
-                                    tokenUrl: securityDefinition.tokenUrl,
-                                    scopes: securityDefinition.scopes || {}
-                                };
-                                break;
-                            case "implicit":
-                                definition.flows.implicit = {
-                                    authorizationUrl: securityDefinition.authorizationUrl,
-                                    scopes: securityDefinition.scopes || {}
-                                };
-                                break;
-                            case "password":
-                                definition.flows.password = {
-                                    tokenUrl: securityDefinition.tokenUrl,
-                                    scopes: securityDefinition.scopes || {}
-                                };
-                                break;
-                        }
-                    }
-
-                    security[name] = definition;
+                    security[name] = securityDefinition;
                     break;
                 case "apiKey":
-                    security[name] = securityDefinitions[name] as Swagger.ApiKeySecurity;
-
+                    security[name] = securityDefinition;
+                    break;
             }
         }
 
@@ -119,7 +81,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
             controller.methods
                 .filter(method => !method.isHidden)
                 .forEach(method => {
-                    const path = removeFinalCharacter(removeRepeatingCharacter(`/${controller.path}/${method.path}`), '/');
+                    const path = removeFinalCharacter(removeRepeatingCharacter(`/${controller.path}/${method.path}`, '/'), '/');
                     paths[path] = paths[path] || {};
                     this.buildMethod(controller.name, method, paths[path]);
                 });
@@ -171,7 +133,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
         method.extensions.forEach(ext => (pathMethod[ext.key] = ext.value));
     }
 
-    private buildRequestBodyWithFormData(parameters: Parameter[]): SwaggerV3.RequestBody {
+    private buildRequestBodyWithFormData(parameters: Metadata.Parameter[]): SwaggerV3.RequestBody {
         const required: string[] = [];
         const properties: { [propertyName: string]: SwaggerV3.Schema } = {};
         for (const parameter of parameters) {
@@ -197,7 +159,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
         };
     }
 
-    private buildRequestBody(parameter: Parameter): SwaggerV3.RequestBody {
+    private buildRequestBody(parameter: Metadata.Parameter): SwaggerV3.RequestBody {
         const mediaType = this.buildMediaType(parameter);
 
         return {
@@ -209,7 +171,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
         };
     }
 
-    private buildMediaType(parameter: Parameter): SwaggerV3.MediaType {
+    private buildMediaType(parameter: Metadata.Parameter): SwaggerV3.MediaType {
         const mediaType: SwaggerV3.MediaType = {
             schema: this.getSwaggerType(parameter.type),
         };
@@ -222,7 +184,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
     protected buildOperation(controllerName: string, method: Metadata.Method): SwaggerV3.Operation {
         const swaggerResponses: { [name: string]: SwaggerV3.Response } = {};
 
-        method.responses.forEach((res: Response) => {
+        method.responses.forEach((res: Metadata.Response) => {
             const name : string = res.status ?? 'default';
             // no string key
             swaggerResponses[name] = {
@@ -254,7 +216,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
                         description: res.headers.description,
                     };
                 } else if (res.headers.typeName === 'nestedObjectLiteral') {
-                    res.headers.properties.forEach((each: Property) => {
+                    res.headers.properties.forEach((each: Metadata.Property) => {
                         headers[each.name] = {
                             schema: this.getSwaggerType(each.type) as SwaggerV3.Schema,
                             description: each.description,
@@ -273,7 +235,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
         };
     }
 
-    private buildParameter(source: Parameter): SwaggerV3.Parameter {
+    private buildParameter(source: Metadata.Parameter): SwaggerV3.Parameter {
         const parameter : SwaggerV3.Parameter = {
             description: source.description,
             in: source.in as Swagger.ParameterInType,
@@ -319,7 +281,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
 
     private buildFromParameterExamples(
         parameter: SwaggerV3.Parameter | SwaggerV3.MediaType,
-        sourceParameter: Parameter
+        sourceParameter: Metadata.Parameter
     ) {
         if (
             (Array.isArray(sourceParameter.example) && sourceParameter.example.length === 1) ||
@@ -433,7 +395,7 @@ export class Version3SpecGenerator extends SpecGenerator<SwaggerV3.Spec, Swagger
         return { allOf: type.members.map((x: Resolver.Type) => this.getSwaggerType(x)) };
     }
 
-    protected buildProperties<T>(properties: Property[]): Record<string, SwaggerV3.Schema> {
+    protected buildProperties<T>(properties: Metadata.Property[]): Record<string, SwaggerV3.Schema> {
         const result: { [propertyName: string]: SwaggerV3.Schema } = {};
 
         properties.forEach(property => {

@@ -1,8 +1,10 @@
-module.exports = {
+{
+    "metadata": {
+        "entryFile": "./test/data/apis.ts"
+    },
     "swagger": {
         "yaml": true,
         "outputDirectory": "./test/dist",
-        "entryFile": "./test/data/apis.ts",
         "host": "localhost:3000",
         "version": "1.0",
         "name": "Typescript-rest Test API",

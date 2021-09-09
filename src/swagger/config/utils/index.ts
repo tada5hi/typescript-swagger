@@ -1,0 +1,1 @@
+export {extendSwaggerConfig} from "./validator";
