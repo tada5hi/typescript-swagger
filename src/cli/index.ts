@@ -7,6 +7,7 @@ import {CompilerOptions} from "typescript";
 import {Config} from "../config";
 import {getConfig} from "../config/utils";
 import {useDebugger} from "../debug";
+import {createMetadataGenerator} from "../metadata/utils";
 import {createSpecGenerator} from "../swagger";
 import {getCompilerOptions} from "./utils";
 
@@ -58,7 +59,11 @@ const parameters = parser.parseArgs();
             compilerOptions = !isFalse;
         }
 
-        const specGenerator = createSpecGenerator(config, compilerOptions);
+        const metadataGenerator = createMetadataGenerator(config, compilerOptions);
+
+        const metadata = metadataGenerator.generate();
+
+        const specGenerator = createSpecGenerator(config, metadata);
 
         specGenerator.build();
 

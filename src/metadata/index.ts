@@ -17,6 +17,7 @@ import {
 import {Config} from "../config/type";
 import {useDebugger} from "../debug";
 import {DecoratorMapper} from "../decorator/mapper";
+import {MetadataCache} from "./cache/index";
 import {ControllerGenerator} from './controller';
 import {TypeNodeResolver} from "./resolver";
 import {Resolver} from "./resolver/type";
@@ -34,8 +35,12 @@ export class MetadataGenerator {
 
     private readonly program: Program;
 
-    private referenceTypes: { [typeName: string]: Resolver.ReferenceType} = {};
-    private circularDependencyResolvers = new Array<(referenceTypes: { [refName: string]: Resolver.ReferenceType}) => void>();
+    private cache : MetadataCache;
+    private controllers: Metadata.Controller[];
+    private referenceTypes: Resolver.ReferenceTypes = {};
+
+    private circularDependencyResolvers = new Array<Resolver.DependencyResolver>();
+
     private debugger = useDebugger();
 
     // -------------------------------------------------------------------------
@@ -46,16 +51,12 @@ export class MetadataGenerator {
     ) {
         this.config = config;
 
-        TypeNodeResolver.clearCache();
-
+        this.cache = new MetadataCache(config.metadata);
         this.decoratorMapper = new DecoratorMapper(config.decorator);
 
+        TypeNodeResolver.clearCache();
+
         const sourceFiles = this.scanSourceFiles(config.metadata.entryFile);
-
-        this.debugger('Starting Metadata Generator');
-        this.debugger('Source files: %j ', sourceFiles);
-        this.debugger('Compiler Options: %j ', compilerOptions);
-
         this.program = createProgram(sourceFiles, compilerOptions);
         this.typeChecker = this.program.getTypeChecker();
     }
@@ -63,26 +64,42 @@ export class MetadataGenerator {
     // -------------------------------------------------------------------------
 
     public generate(): Metadata.Output {
-        this.buildNodesFromSourceFiles();
+        const sourceFileSize : number = this.buildNodesFromSourceFiles();
 
-        this.debugger('Building Metadata for controllers Generator');
-        const controllers = this.buildControllers();
+        let cache = this.cache.get(sourceFileSize);
 
-        this.debugger('Handling circular references');
-        this.circularDependencyResolvers.forEach(c => c(this.referenceTypes));
+        if(!cache) {
+            this.debugger('Building Metadata for controllers Generator');
+            this.buildControllers();
+
+            this.debugger('Handling circular references');
+            this.circularDependencyResolvers.forEach(resolve => resolve(this.referenceTypes));
+
+            cache = {
+                controllers: this.controllers,
+                referenceTypes: this.referenceTypes,
+                sourceFileSize: sourceFileSize
+            };
+
+            this.cache.save(cache);
+        }
 
         return {
-            controllers: controllers,
-            referenceTypes: this.referenceTypes
+            controllers: cache.controllers,
+            referenceTypes: cache.referenceTypes
         };
     }
 
-    protected buildNodesFromSourceFiles() : void {
+    protected buildNodesFromSourceFiles() : number {
+        let endSize : number = 0;
+
         this.program.getSourceFiles().forEach((sf: SourceFile) => {
             const isIgnored : boolean = this.isIgnoredPath(sf.fileName);
             if(isIgnored) {
                 return;
             }
+
+            endSize += sf.end;
 
             forEachChild(sf, (node: any) => {
                 if (isModuleDeclaration(node)) {
@@ -105,6 +122,8 @@ export class MetadataGenerator {
                 this.nodes.push(node);
             });
         });
+
+        return endSize;
     }
 
     // -------------------------------------------------------------------------
@@ -112,15 +131,15 @@ export class MetadataGenerator {
     /**
      * Check if the source file path is in the ignored path list.
      *
-     * @param path
+     * @param filePath
      * @protected
      */
-    protected isIgnoredPath(path: string) : boolean {
+    protected isIgnoredPath(filePath: string) : boolean {
         if(typeof this.config.metadata.ignore === 'undefined') {
             return false;
         }
 
-        return this.config.metadata.ignore.some(item => minimatch(path, item));
+        return this.config.metadata.ignore.some(item => minimatch(filePath, item));
     }
 
     // -------------------------------------------------------------------------
@@ -143,7 +162,7 @@ export class MetadataGenerator {
         return this.referenceTypes[refName];
     }
 
-    public onFinish(callback: (referenceTypes: { [refName: string]: Resolver.ReferenceType}) => void) {
+    public registerDependencyResolver(callback: Resolver.DependencyResolver) {
         this.circularDependencyResolvers.push(callback);
     }
 
@@ -186,8 +205,8 @@ export class MetadataGenerator {
         return Array.from(result);
     }
 
-    private buildControllers() {
-        return this.nodes
+    private buildControllers() : void {
+        this.controllers = this.nodes
             .filter(node => node.kind === SyntaxKind.ClassDeclaration)
             .filter(node => {
                 const isHidden = this.decoratorMapper.match('HIDDEN', node);

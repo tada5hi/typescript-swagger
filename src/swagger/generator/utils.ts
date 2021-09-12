@@ -1,8 +1,6 @@
 // todo: implement character in regex matching
-import {CompilerOptions} from "typescript";
-import {getCompilerOptions} from "../../cli/utils";
 import {Config} from "../../config/type";
-import {MetadataGenerator} from "../../metadata";
+import {MetadataGenerator} from "../../metadata/index";
 import {Metadata} from "../../metadata/type";
 import {Swagger} from "../type/index";
 import {SpecGenerator} from "./index";
@@ -22,43 +20,21 @@ export function removeFinalCharacter(str: string, character: string) {
 }
 
 export function createSpecGenerator(
-    src: Config | MetadataGenerator,
-    compilerOptions?: CompilerOptions | boolean
+    config: Config,
+    metadata: Metadata.Output | MetadataGenerator
 ) {
-    let metadata: MetadataGenerator | undefined;
+    const data : Metadata.Output = metadata instanceof MetadataGenerator ? metadata.generate() : metadata;
 
-    if (src instanceof MetadataGenerator) {
-        metadata = src;
-    } else {
-        const skipLoad: boolean =
-            (typeof compilerOptions === 'boolean' && !compilerOptions) ||
-            (typeof compilerOptions !== 'boolean' && typeof compilerOptions !== 'undefined');
+    const outputFormat : Swagger.Specification = config.swagger.outputFormat || Swagger.Specification.VERSION_2;
 
-        let tscConfig: CompilerOptions = typeof compilerOptions !== 'boolean' && typeof compilerOptions !== 'undefined' ? compilerOptions : {};
-
-        if (!skipLoad) {
-            try {
-                tscConfig ??= getCompilerOptions();
-            } catch (e) {
-                tscConfig = {};
-            }
-        }
-
-        metadata = new MetadataGenerator(src, tscConfig);
-    }
-
-    let specGenerator: SpecGenerator<any, any>;
-
-    const output: Metadata.Output = metadata.generate();
-
-    const outputFormat : Swagger.Specification = metadata.config.swagger.outputFormat || Swagger.Specification.VERSION_2;
+    let specGenerator : SpecGenerator<any, any>;
 
     switch (outputFormat) {
         case Swagger.Specification.VERSION_2:
-            specGenerator = new Version2SpecGenerator(output, metadata.config.swagger);
+            specGenerator = new Version2SpecGenerator(data, config.swagger);
             break;
         case Swagger.Specification.VERSION_3:
-            specGenerator = new Version3SpecGenerator(output, metadata.config.swagger);
+            specGenerator = new Version3SpecGenerator(data, config.swagger);
             break;
     }
 

@@ -11,11 +11,16 @@ export namespace Metadata {
          * Directory to ignore during TypeScript metadata scan.
          */
         ignore?: string[];
+
+        /**
+         * Directory to store and cache metadata cache files.
+         */
+        cache?: string | boolean;
     }
 
     export interface Output {
         controllers: Controller[];
-        referenceTypes: { [typeName: string]: Resolver.ReferenceType };
+        referenceTypes: Resolver.ReferenceTypes;
     }
 
     export interface Controller {

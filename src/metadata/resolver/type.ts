@@ -202,6 +202,12 @@ export namespace Resolver {
 
     export type ReferenceType = RefEnumType | RefObjectType | RefAliasType;
 
+    export interface ReferenceTypes {
+        [key: string]: ReferenceType;
+    }
+
+    export type DependencyResolver = (referenceTypes: Resolver.ReferenceTypes) => void;
+
     export interface ReferenceTypeBase extends BaseType {
         description?: string;
         typeName: RefTypeLiteral;

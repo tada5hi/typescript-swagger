@@ -22,7 +22,7 @@ export const InternalMapping: Partial<Decorator.TypeRepresentationMap> = {
         id: 'ResponseExample',
         properties: {
             TYPE: {type: "src", srcArgumentType: "typeArgument"},
-            PAYLOAD: {type: "src", srcArgumentType: "argument"}
+            PAYLOAD: {type: "src", srcArgumentType: "argument", srcPosition: 0}
         }
     },
     RESPONSE_DESCRIPTION: {

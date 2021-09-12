@@ -1,34 +1,43 @@
 import * as path from "path";
-import {createSpecGenerator} from "../../../src";
+import {CompilerOptions} from "typescript";
+import {Config, createSpecGenerator} from "../../../src";
+import {createMetadataGenerator} from "../../../src/metadata/utils";
+import {getDefaultSwaggerTestConfig} from "../../data/defaultOptions";
 
-const specGenerator = createSpecGenerator(
-    {
-        decorator: {
-            useBuildIn: true,
-            useLibrary: 'typescript-rest'
-        },
-        metadata: {
-            entryFile: ['./test/decorator/internal/api.ts'],
-        },
-        swagger: {
-            outputDirectory: path.resolve(__dirname),
+const config : Config = {
+    decorator: {
+        useBuildIn: true,
+        useLibrary: 'typescript-rest'
+    },
+    metadata: {
+        entryFile: ['./test/decorator/internal/api.ts'],
+        cache: path.join(process.cwd(), 'writable')
+    },
+    swagger: {
+        ...getDefaultSwaggerTestConfig(),
+        ...{
+            outputDirectory: path.join(process.cwd(), 'writable'),
             yaml: true
         }
-    },
-    {
-        baseUrl: '.',
-        paths: {
-            '@/*': ['test/data/*'],
-        },
     }
-);
+};
 
-specGenerator.save().then(r => r);
+const tsConfig : CompilerOptions = {
+    baseUrl: '.',
+    paths: {
+        '@/*': ['test/data/*'],
+    }
+};
+
+const metadataGenerator = createMetadataGenerator(config, tsConfig);
+
+const specGenerator = createSpecGenerator(config, metadataGenerator);
 
 const spec = specGenerator.getSwaggerSpec();
 
-describe('Internal', () => {
-    it('should generate paths for decorated services', () => {
-        expect(spec.paths).toHaveProperty('/mypath');
-    });
+specGenerator.save().then(r => r).catch(e => console.log(e));
+
+it('should generate paths for decorated services', () => {
+    expect(spec.paths).toHaveProperty('/mypath');
 });
+

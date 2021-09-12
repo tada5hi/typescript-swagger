@@ -861,11 +861,12 @@ export class TypeNodeResolver {
             refName: refName,
         } as Resolver.ReferenceType;
 
-        this.current.onFinish(referenceTypes => {
-            const realReferenceType = referenceTypes[refName];
+        this.current.registerDependencyResolver(referenceTypes => {
+            const realReferenceType : Resolver.ReferenceType | undefined = referenceTypes[refName];
             if (!realReferenceType) {
                 return;
             }
+
             referenceType.description = realReferenceType.description;
             if (realReferenceType.typeName === 'refObject' && referenceType.typeName === 'refObject') {
                 referenceType.properties = realReferenceType.properties;
@@ -907,40 +908,43 @@ export class TypeNodeResolver {
         return type;
     }
 
-    private resolveModelTypeScope(leftmost: ts.EntityName, statements: any): any[] {
-        /*
-        while (leftmost.parent && leftmost.parent.kind === ts.SyntaxKind.QualifiedName) {
-            const leftmostName = leftmost.kind === ts.SyntaxKind.Identifier ? leftmost.text : leftmost.right.text;
-            const moduleDeclarations = statements.filter((node: ts.Node) => {
-                if ((node.kind !== ts.SyntaxKind.ModuleDeclaration || !this.current.isExportedNode(node)) && !ts.isEnumDeclaration(node)) {
-                    return false;
-                }
-
-                const moduleDeclaration = node as ts.ModuleDeclaration | ts.EnumDeclaration;
-
-                return (moduleDeclaration.name as ts.Identifier).text.toLowerCase() === leftmostName.toLowerCase();
-            }) as Array<ts.ModuleDeclaration | ts.EnumDeclaration>;
-
-            if (!moduleDeclarations.length) {
-                throw new ResolverError(`No matching module declarations found for ${leftmostName}.`);
+    private findMatchingModuleOrEnumDeclaration(statements: ts.Node[], name: string) : Array<ts.ModuleDeclaration | ts.EnumDeclaration> {
+        return statements.filter((node: ts.Node) => {
+            if ((node.kind !== ts.SyntaxKind.ModuleDeclaration || !this.current.isExportedNode(node)) && !ts.isEnumDeclaration(node)) {
+                return false;
             }
 
-            statements = Array.prototype.concat(
-                ...moduleDeclarations.map(declaration => {
-                    if (ts.isEnumDeclaration(declaration)) {
-                        return declaration.members;
-                    } else {
-                        if (!declaration.body || !ts.isModuleBlock(declaration.body)) {
-                            throw new ResolverError(`Module declaration found for ${leftmostName} has no body.`);
+            const moduleDeclaration = node as ts.ModuleDeclaration | ts.EnumDeclaration;
+
+            return (moduleDeclaration.name as ts.Identifier).text.toLowerCase() === name.toLowerCase();
+        }) as Array<ts.ModuleDeclaration | ts.EnumDeclaration>;
+    }
+
+    private resolveModelTypeScope(
+        leftmost: ts.EntityName,
+        statements: ts.Node[]
+    ) : Array<ts.ModuleDeclaration | ts.EnumDeclaration | ts.Node> {
+        while (leftmost.parent && leftmost.parent.kind === ts.SyntaxKind.QualifiedName) {
+            const leftmostName : string = leftmost.kind === ts.SyntaxKind.Identifier ? leftmost.text : leftmost.right.text;
+            const moduleDeclarations : Array<ts.ModuleDeclaration | ts.EnumDeclaration>  = this.findMatchingModuleOrEnumDeclaration(statements, leftmostName);
+
+            if (moduleDeclarations.length > 0) {
+                statements = Array.prototype.concat(
+                    ...moduleDeclarations.map(declaration => {
+                        if (ts.isEnumDeclaration(declaration)) {
+                            return declaration.members;
+                        } else {
+                            if (!declaration.body || !ts.isModuleBlock(declaration.body)) {
+                                throw new ResolverError(`Module declaration found for ${leftmostName} has no body.`);
+                            }
+                            return declaration.body.statements;
                         }
-                        return declaration.body.statements;
-                    }
-                }),
-            );
+                    }),
+                );
+            }
 
             leftmost = leftmost.parent as ts.EntityName;
         }
-        */
 
         return statements;
     }

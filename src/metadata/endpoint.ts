@@ -95,7 +95,6 @@ export abstract class EndpointGenerator<T extends Node> {
             return example;
         }
 
-        this.debugger(argument);
         if (argument.properties) {
             argument.properties.forEach((p: any) => {
                 example[p.name.text] = this.getInitializerValue(p.initializer);

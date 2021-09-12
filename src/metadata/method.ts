@@ -7,6 +7,7 @@ import {MetadataGenerator} from './index';
 import { ParameterGenerator } from './parameter';
 import {TypeNodeResolver} from './resolver';
 import {Resolver} from "./resolver/type";
+import {hasOwnProperty} from "./resolver/utils";
 import {Metadata} from "./type";
 import { getJSDocDescription, getJSDocTagComment } from './utils/js-doc';
 import MethodHttpVerbKey = Decorator.MethodHttpVerbType;
@@ -129,23 +130,38 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     }
 
     private getMethodSuccessResponse(type: Resolver.BaseType): Metadata.Response {
-        const responseData = MethodGenerator.getMethodSuccessResponseData(type);
+        type = this.getMethodSuccessResponseType(type);
 
         return {
             description: Resolver.isVoidType(type) ? 'No content' : 'Ok',
             examples: this.getMethodSuccessExamples(),
-            schema: responseData.type,
-            status: responseData.status,
-            name: Resolver.isVoidType(type) ? '204' : '200',
-
+            schema: type,
+            status: Resolver.isVoidType(type) ? '204' : '200',
+            name: Resolver.isVoidType(type) ? '204' : '200'
         };
     }
 
-    private static getMethodSuccessResponseData(type:  Resolver.BaseType): Metadata.ResponseData {
-        switch (type.typeName) {
-            case 'void': return { status: '204', type: type };
-            default: return { status: '200', type: type };
+    private getMethodSuccessResponseType(type: Resolver.BaseType) : Resolver.BaseType {
+        if(!Resolver.isVoidType(type)) {
+            return type;
         }
+
+        const representation = this.current.decoratorMapper.match('RESPONSE_EXAMPLE', this.node);
+        if(typeof representation === 'undefined') {
+            return type;
+        }
+
+        const value = representation.getPropertyValue('TYPE');
+
+        if(
+            typeof value !== 'undefined' &&
+            hasOwnProperty(value, 'kind') &&
+            ts.isTypeNode(value as ts.Node)
+        ) {
+            type = new TypeNodeResolver(value as ts.TypeNode, this.current).resolve();
+        }
+
+        return type;
     }
 
     private getMethodSuccessExamples() {
@@ -154,12 +170,17 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             return [];
         }
 
-        const value : unknown = representation.getPropertyValue('PAYLOAD');
+        let value : unknown = representation.getPropertyValue('PAYLOAD');
         if(typeof value === 'undefined') {
             return [];
         }
 
-        return this.getExamplesValue(value);
+        value = this.getExamplesValue(value);
+        if(typeof value === 'undefined') {
+            return [];
+        }
+
+        return value;
     }
 
     private mergeResponses(responses: Metadata.Response[], defaultResponse: Metadata.Response) {

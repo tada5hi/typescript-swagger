@@ -1,3 +1,3 @@
 export * from './generator';
 export * from './type';
-export * from './utils';
+export * from './documentation';

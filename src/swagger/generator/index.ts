@@ -6,10 +6,10 @@ import {useDebugger} from "../../debug";
 import {Resolver} from "../../metadata/resolver/type";
 import {hasOwnProperty} from "../../metadata/resolver/utils";
 import {Metadata} from "../../metadata/type";
+import {SwaggerDocumentationFormatData, SwaggerDocumentationFormatType} from "../documentation/type";
 import {Swagger} from '../type';
 import {SwaggerV2} from "../type/v2";
 import {SwaggerV3} from "../type/v3";
-import {SwaggerOutputFormatData, SwaggerOutputFormatType} from "../utils";
 
 export abstract class SpecGenerator<
     Spec extends SwaggerV2.Spec | SwaggerV3.Spec,
@@ -23,17 +23,17 @@ export abstract class SpecGenerator<
 
     }
 
-    public async save() : Promise<Record<SwaggerOutputFormatType, SwaggerOutputFormatData>> {
+    public async save() : Promise<Record<SwaggerDocumentationFormatType, SwaggerDocumentationFormatData>> {
         const spec = this.build();
         const swaggerDir : string = path.resolve(this.config.outputDirectory);
         this.debugger('Saving specs to folder: %j', swaggerDir);
 
         await promises.mkdir(swaggerDir, {recursive: true});
 
-        const data : Record<SwaggerOutputFormatType, SwaggerOutputFormatData & {content: string} | undefined> = {
+        const data : Record<SwaggerDocumentationFormatType, SwaggerDocumentationFormatData> = {
             json: {
-                filePath: path.join(swaggerDir, 'swagger.json'),
-                fileName: 'swagger.json',
+                path: path.join(swaggerDir, 'swagger.json'),
+                name: 'swagger.json',
                 content: JSON.stringify(spec, null, '\t')
             },
             yaml: undefined
@@ -41,8 +41,8 @@ export abstract class SpecGenerator<
 
         if(this.config.yaml) {
             data.yaml = {
-                filePath: path.join(swaggerDir, 'swagger.yaml'),
-                fileName: 'swagger.yaml',
+                path: path.join(swaggerDir, 'swagger.yaml'),
+                name: 'swagger.yaml',
                 content: stringify(spec, 1000)
             };
         }
@@ -50,14 +50,14 @@ export abstract class SpecGenerator<
         const filePromises : Array<Promise<void>> = [];
 
         for(const key in data) {
-            if(typeof data[key as SwaggerOutputFormatType] === 'undefined') {
+            if(typeof data[key as SwaggerDocumentationFormatType] === 'undefined') {
                 continue;
             }
 
-            const output = data[key as SwaggerOutputFormatType];
+            const output = data[key as SwaggerDocumentationFormatType];
 
             filePromises.push(new Promise(((resolve, reject) => {
-                return writeFile(output.filePath, output.content, (err: any) => {
+                return writeFile(output.path, output.content, (err: any) => {
                     if (err) {
                         return reject(err);
                     }
