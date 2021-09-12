@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### BREAKING CHANGES
 
+## [0.0.9] - 2021-07-29
+
 - changed build-in decorator representations
     - `@Response` -> `@ResponseDescription`
     - `@Example` -> `@ResponseExample`
