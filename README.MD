@@ -2,22 +2,26 @@
 [![codecov](https://codecov.io/gh/Tada5hi/typescript-swagger/branch/master/graph/badge.svg?token=OATCN9VJR9)](https://codecov.io/gh/Tada5hi/typescript-swagger)
 [![Master Workflow](https://github.com/Tada5hi/typescript-swagger/workflows/main/badge.svg)](https://github.com/Tada5hi/typescript-swagger)
 [![Known Vulnerabilities](https://snyk.io/test/github/Tada5hi/typescript-swagger/badge.svg?targetFile=package.json)](https://snyk.io/test/github/Tada5hi/typescript-swagger?targetFile=package.json)
-# Swagger generation for decorator api(s) 🚀
-This is a tool to generate swagger files from a decorator library or your own definitions.
+# Metadata- & Swagger-generation with TypeScript Decorators 🚀
+This is a library to generate metadata for TypeScript HTTP Decorator APIs as well
+to generate a final swagger document.
 
 Please read the `CHANGELOG.md` in the repository for breaking changes.
 
 **Table of Contents**
 
 - [Installation](#installation)
-
-- [Build](#build)
+- [General](#general)
+- [Limitations](#limitations)
+- [Configuration](#configuration)
+  - [General](#general-configuration)
+  - [TypeScript](#typescript-configuration)
+- [Usage](#usage)
   - [CLI](#cli)
   - [Runtime](#runtime)
-- [Limitations](#limitations)
-- [Usage](#usage)
-  - [General](#general)
-  - [Build-In](#buildin)
+- [Decorator]()
+  - [Config]()
+  - [Internal]()
     - [@ResponseDescription](#responsedescription)
     - [@ResponseExample](#responseexample)
     - [@ResponseProduces](#responseproduces)
@@ -25,6 +29,11 @@ Please read the `CHANGELOG.md` in the repository for breaking changes.
     - [@SwaggerTags](#swaggertags)
     - [@SwaggerHidden](#swaggerhidden)
     - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
+  - [ThirdParty]()
+- [Functions]()
+  - [General](#general)
+  - [Build-In](#buildin)
+
   - [SwaggerConfig (swagger-config.json)](#swagger-configjson)
     - [DecoratorConfig](#decoratorconfig)
     - [SecurityDefinition](#securitydefinition)
@@ -39,13 +48,56 @@ Please read the `CHANGELOG.md` in the repository for breaking changes.
 npm install typescript-swagger -g
 ```
 
-## Build
+### General
 
-You can either build the `swagger.yml` and `swagger.json` file by command line or on runtime of your application.
-The files will be generated in the `outputDirectory` specified in the `SwaggerConfig`.
+The swagger documentation will be generated consulting all relevant decorators present on your code.
+The collection depends on the configuration file.
 
-The [tsconfig.json](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) file contains the compilerOptions, which
-are required for this library to work. The compilerOptions could look lke the following example:
+This library generates swagger documentations in a generic way for different HTTP Decorator APIs.
+Not all of these libraries acquire the same variety of information with their decorators,
+to generate a fully featured swagger documentation.
+
+> **NOTE:** In the context of this library, the information kind, which can be acquired by a Decorator, is called `DecoratorType`.
+A DecoratorType is expressed as string literal, for example 'SWAGGER_TAGS'.
+
+For that reason, this library already provides some build in DecoratorType representations which are not widely supported by other libraries.
+The build in representations, as well the third party representations can be enabled, disabled or overridden in the configuration object.
+
+
+## Configuration
+
+You can either generate the `swagger.{json|yml}` file via command line or during the runtime of your application.
+The files will be generated in the `outputDirectory`.
+
+
+### General Configuration
+The configuration for this library can be defined via json or yaml file. Module declaration with commonjs syntax
+is also supported. If you use this library during the runtime of your code, you can also define the configuration
+in your code base.
+To use this library the configuration must be provided as json, yaml or commonjs file.
+You can also set up the configuration during the runtime of your code, if you don't want to use the CLI.
+
+The configuration file could look like this (JSON):
+
+```json
+{
+    "decorator": {
+        "internal": true,
+        "library": ["typescript-rest", "@decorators/express"]
+    },
+    "metadata": {
+        "entryFile": "./tests/data/apis.ts"
+    },
+    "swagger": {
+        "outputDirectory": "./dist"
+    }
+}
+```
+
+### Typescript Configuration
+The [tsconfig.json](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html) file can be provided, so the library
+can for example also resolve typescript path aliases.
+The compilerOptions of the `tsconfig.json` file could therefore look like this:
 
 ```json
 {
@@ -57,8 +109,22 @@ are required for this library to work. The compilerOptions could look lke the fo
     }
 }
 ```
-In case of the above configuration, the library can understand relative imports like `import something from '@/something'`.
+In case of the above example, the library could understand relative imports like `import something from '@/something'`.
 
+## Limitations
+
+You can use pretty any type you have declared in your code. The only restriction are types form third party modules.
+
+Also, the following built in typescript utility types are supported:
+* NonNullable
+* Omit
+* Partial
+* Readonly
+* Record
+* Required
+* Pick
+
+## Usage
 ### CLI
 
 ```bash
@@ -69,83 +135,10 @@ swagger-generate -c ./swagger-config.json -t false # don't load tsconfig.json
 swagger-generate -c ./swagger-config.json -t ./tsconfig.json # load custom tsconfig.json
 ```
 
-Where the [swagger-config.json](#swagger-configjson) file, contains settings about the swagger generation. For example:
-
-```json
-{
-    "decorator": {
-        "useBuildIn": true,
-        "useLibrary": ["typescript-rest", "@decorators/express"]
-    },
-    "swagger": {
-        "outputDirectory": "./dist",
-        "entryFile": "./tests/data/apis.ts"
-    }
-}
-```
-
-### Runtime
-
-```typescript
-import {Config, generateDocumentation} from "typescript-swagger";
-
-const packageJson = require('package.json');
-const tsConfig = require('tsconfig.json');
-
-export const config: Config = {
-    decorator: {
-        useBuildIn: true,
-        useLibrary: ["typescript-rest", "@decorators/express"],
-    },
-    swagger: {
-        yaml: true,
-        name: 'API - Documentation',
-        description: packageJson.description,
-        basePath: '/',
-        version: packageJson.version,
-        outputDirectory: 'public',
-        entryFile: path.join('src', 'controllers', '**', '*.ts'),
-        ignore: ['**/node_modules/**'],
-        consumes: ['application/json'],
-        produces: ['application/json']
-    }
-}
-
-export async function generateSwaggerDocumentation(): Promise<void> {
-    await generateDocumentation(config, tsConfig);
-}
-```
-
-### Limitations
-
-You can use pretty any type you have declared in your code. The only restriction are types form third party modules.
-
-Also the following built in typescript utility types are supported:
-* NonNullable
-* Omit
-* Partial
-* Readonly
-* Record
-* Required
-* Pick
-
-## Usage
-
-### General
-
-The documentation will be generated consulting all decorators present on your code.
-
-Which decorator will be used, depends on your [swagger-config.json](#swagger-configjson).
-However, there are some additional information that only can be provided, through some third party decorator or your own defined representations.
-
-To cover all functions the following decorators packs are supported by default:
-* build-in
-* [typescript-rest](https://github.com/thiagobustamante/typescript-rest)
-* [@decorators/express](https://github.com/serhiisol/node-decorators)
-
-You can override the used decorator packs in you [swagger-config.json](#swagger-configjson).
-
-In the following there are two specific examples in combination with the third party libraries: typescript-rest and @decorators/express.
+## Example
+In the following there are two specific examples in combination with the following third party libraries:
+- typescript-rest
+- @decorators/express.
 
 #### typescript-rest
 ```typescript
@@ -830,6 +823,7 @@ According to this schema you can:
 
 How to provide the representation for decorators is described in the section of the [swagger-config.json](#swagger-configjson).
 
+
 ### Credits
 
-It was originally a fork of the [typescript-rest-swagger](https://github.com/thiagobustamante/typescript-rest-swagger) project.
+This library was originally a fork of the [typescript-rest-swagger](https://github.com/thiagobustamante/typescript-rest-swagger) project.
